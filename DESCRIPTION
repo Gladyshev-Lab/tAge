@@ -6,6 +6,8 @@ Description: tAge provides API for Gladyshev Lab transcriptomic clock use. The p
 License: MIT
 Encoding: UTF-8
 RoxygenNote: 7.3.2
+Depends:
+    R (>= 4.0.0)
 Imports:
     Biobase,
     edgeR,
@@ -19,5 +21,21 @@ Suggests:
     biomaRt,
     ggrepel,
     ggpubr,
-    YuGene
+    YuGene,
+    BiocManager,
+    knitr,
+    rmarkdown,
+    BiocStyle
+VignetteBuilder: knitr
+biocViews: 
+    GeneExpression,
+    Transcriptomics,
+    RNASeq,
+    Microarray,
+    Preprocessing,
+    Normalization,
+    StatisticalMethod,
+    Regression
 Config/testthat/edition: 3
+URL: https://github.com/Gladyshev-Lab/tAge
+BugReports: https://github.com/Gladyshev-Lab/tAge/issues
