@@ -68,69 +68,45 @@ predict_tAge <- function(eset, model_path, species, mode) {
 }
 
 
-#' Predict transcriptomic age for multiple processed datasets
-#'
-#' This function predicts transcriptomic age for multiple processed ExpressionSet
-#' objects (e.g., from tAge_preprocessing). It processes each dataset separately
-#' and combines the results into a single data frame with predictions from all
-#' normalization methods.
-#'
-#' @param tAge_esets_list A list of ExpressionSet objects from tAge_preprocessing.
-#'   Must contain valid names: "scaled", "scaled_diff", "yugene", "yugene_diff".
-#' @param model_path Character string specifying the path to the pre-trained model file.
-#'   The file must exist and be compatible with the specified mode.
-#' @param species Character string specifying the species for the model. This should
-#'   match the species the model was trained on.
-#' @param mode Character string specifying the model type. Must be either "EN" for
-#'   Elastic Net or "BR" for Bayesian Ridge.
-#' @return A data frame containing predicted transcriptomic age results from all
-#'   processed datasets, with columns named according to the dataset and mode
-#'   (e.g., "scaled_EN_tAge", "yugene_diff_BR_tAge").
-#' @export
-#' @examples
-#' # Load example data and preprocess
-#' expr_data <- load_example_expression_data()
-#' meta_data <- load_example_metadata()
-#' gene_list <- load_gene_list()
-#' eset <- make_ExpressionSet(expr_data, meta_data)
-#' processed_data <- tAge_preprocessing(eset, gene_list, species = "mouse")
-#' 
-#' # Predict using all processed datasets (example with dummy model path)
-#' # all_results <- predict_tAge_all(processed_data, 
-#' #                                model_path = "path/to/model.pkl", 
-#' #                                species = "mouse", mode = "EN")
-predict_tAge_all <- function(tAge_esets_list, model_path, species, mode) {
-  if (!is.list(tAge_esets_list) || length(tAge_esets_list) == 0) {
-    stop("tAge_esets_list must be a non-empty list of ExpressionSet objects.")
+predict_tAge_multiple <- function(tAge_eset, model_paths, species, mode) {
+  if (!is.list(tAge_eset) || length(tAge_eset) == 0) {
+    stop("tAge_eset must be a non-empty list of ExpressionSet objects.")
   }
-
   valid_names <- c("scaled", "scaled_diff", "yugene", "yugene_diff")
-  tAge_esets_list <- tAge_esets_list[names(tAge_esets_list) %in% valid_names]
-  if (length(tAge_esets_list) == 0) {
-    stop("No valid ExpressionSet objects found in tAge_esets_list. Valid names are: 'scaled', 'scaled_diff', 'yugene', 'yugene_diff'.")
+  tAge_eset <- tAge_eset[names(tAge_eset) %in% valid_names]
+  if (length(tAge_eset) == 0) {
+    stop("No valid ExpressionSet objects found in tAge_eset. Valid names are: 'scaled', 'scaled_diff', 'yugene', 'yugene_diff'.")
   }
-  
+  if (!is.list(model_paths) || length(model_paths) == 0) {
+    stop("model_paths must be a non-empty named list of model paths.")
+  }
+  model_paths <- model_paths[names(model_paths) %in% valid_names]
+  if (length(model_paths) == 0) {
+    stop("No valid model paths found in model_paths. Valid names are: 'scaled', 'scaled_diff', 'yugene', 'yugene_diff'.")
+  }
+  # Use only common names between tAge_eset and model_paths
+  common_names <- intersect(names(tAge_eset), names(model_paths))
+  if (length(common_names) == 0) {
+    stop("No overlapping names between tAge_eset and model_paths. Ensure at least one shared name like 'scaled_diff'.")
+  }
   results <- NULL
-  for (name in names(tAge_esets_list)) {
-    eset <- tAge_esets_list[[name]]
+  for (name in common_names) {
+    eset <- tAge_eset[[name]]
     if (!inherits(eset, "ExpressionSet")) {
-      stop(paste("Element", name, "is not an ExpressionSet."))
+      stop(paste("Element", name, "in tAge_eset is not an ExpressionSet."))
     }
+    model_path <- model_paths[[name]]
     res <- predict_tAge(eset, model_path, species, mode)
-  
     # Rename 'EN_tAge' or 'BR_tAge' to name + mode + '_tAge'
     tAge_col <- if (mode == "EN") "EN_tAge" else "BR_tAge"
     new_tAge_col <- paste0(name, "_", mode, "_tAge")
     colnames(res)[colnames(res) == tAge_col] <- new_tAge_col
-
     if (is.null(results)) {
       results <- res
     } else {
-      # Add new columns to results, only one tAge column at a time
+      # Add new columns to results, only the tAge column at a time
       results <- cbind(results, res[, new_tAge_col, drop = FALSE])
     }
-
   }
-
   return(results)
 }
