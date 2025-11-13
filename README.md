@@ -1,6 +1,8 @@
 # tAge: Transcriptomic Biological Age Analysis Package
 
-<img src="tAge_logo.png" alt="drawing" width="300"/>
+<p align="center">
+    <img src="tAge_logo.png" alt="drawing" width="300"/>
+</p>
 
 A comprehensive R package for transcriptomic age prediction and analysis, developed for the Gladyshev Lab at Harvard Medical School.
 
@@ -43,7 +45,7 @@ results <- predict_tAge(processed$scaled,
 
 - **Preprocessing**: Gene filtering, normalization (scaled/YuGene), differential expression
 - **Prediction**: Elastic Net (EN) and Bayesian Ridge (BR) models
-- **Visualization**: Age correlation plots, error analysis, gene expression heatmaps
+- **Visualization**: Density distribution and boxplots
 - **Species support**: Mouse, human, rat, and custom gene sets
 
 ## Main Functions

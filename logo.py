@@ -2,7 +2,7 @@ from PIL import Image, ImageDraw, ImageFont
 import numpy as np
 
 # Create image with transparent background
-width, height = 800, 800
+width, height = 600, 600
 img = Image.new('RGBA', (width, height), color=(255, 255, 255, 0))
 draw = ImageDraw.Draw(img)
 
@@ -11,6 +11,7 @@ primary_color = (30, 100, 180)
 accent_color = (100, 180, 230)
 
 center_x, center_y = width // 2, height // 2
+center_y -= 50
 
 # Simplified DNA helix - fewer points, cleaner look
 num_points = 50
@@ -85,5 +86,5 @@ sub_y = text_y + 130
 draw.text((sub_x, sub_y), subtitle, fill=accent_color + (255,), font=font_small)
 
 # Save as PNG with transparency
-img.save('tAge_logo_transparent.png')
-print("Transparent logo saved to tAge_logo_transparent.png")
+img.save('tAge_logo.png')
+print("Transparent logo saved to tAge_logo.png")
