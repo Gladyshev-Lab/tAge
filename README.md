@@ -59,6 +59,9 @@ results <- predict_tAge(processed$scaled,
 
 If you use tAge in your research, please cite the Gladyshev Lab.
 
+[Transcriptomic Hallmarks of Mortality Reveal Universal and Specific Mechanisms of Aging, Chronic Disease, and Rejuvenation (Tyshkovskiy et al. 2024)](https://www.biorxiv.org/content/10.1101/2024.07.04.601982v1)
+
 ## License
 
-MIT License. See `LICENSE` file for details.
+Free for non-commercial use under BSD, commercial use requires a separate license.
+
