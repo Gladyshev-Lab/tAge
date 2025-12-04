@@ -2,41 +2,26 @@
 % Please edit documentation in R/predict.R
 \name{predict_tAge}
 \alias{predict_tAge}
-\title{Predict transcriptomic age using pre-trained models}
+\title{Predict transcriptomic age for multiple processed ExpressionSet objects}
 \usage{
-predict_tAge(eset, model_path, species, mode)
+predict_tAge(tAge_eset, model_paths, species, mode)
 }
 \arguments{
-\item{eset}{An ExpressionSet object containing processed expression data.}
+\item{tAge_eset}{A named list of ExpressionSet objects, each representing a different
+normalization method (e.g., "scaled", "scaled_diff", "yugene", "yugene_diff").}
 
-\item{model_path}{Character string specifying the path to the pre-trained model file.
-The file must exist and be compatible with the specified mode.}
+\item{model_paths}{A named list of model paths corresponding to each normalization method.}
 
-\item{species}{Character string specifying the species for the model. This should
-match the species the model was trained on.}
+\item{species}{Character string specifying the species for the models.}
 
 \item{mode}{Character string specifying the model type. Must be either "EN" for
 Elastic Net or "BR" for Bayesian Ridge.}
 }
 \value{
-A data frame containing the predicted transcriptomic age results with
-  sample information and predicted ages.
+A data frame containing the predicted transcriptomic age results for all
+  provided ExpressionSet objects, with appropriately named columns.
 }
 \description{
-This function predicts transcriptomic age using pre-trained Elastic Net (EN) or
-Bayesian Ridge (BR) models. It interfaces with Python models through the reticulate
-package to perform the predictions.
-}
-\examples{
-# Load example data and preprocess
-expr_data <- load_example_expression_data()
-meta_data <- load_example_metadata()
-gene_list <- load_gene_list()
-eset <- make_ExpressionSet(expr_data, meta_data)
-processed_data <- tAge_preprocessing(eset, gene_list, species = "mouse")
-
-# Predict using Elastic Net model (example with dummy model path)
-# results <- predict_tAge(processed_data$scaled, 
-#                        model_path = "path/to/model.pkl", 
-#                        species = "mouse", mode = "EN")
+This function predicts transcriptomic age for multiple processed ExpressionSet objects
+using pre-trained models. It supports different normalization methods and model types.
 }

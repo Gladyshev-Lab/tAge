@@ -14,19 +14,7 @@
 #' @return A data frame containing the predicted transcriptomic age results with
 #'   sample information and predicted ages.
 #' @export
-#' @examples
-#' # Load example data and preprocess
-#' expr_data <- load_example_expression_data()
-#' meta_data <- load_example_metadata()
-#' gene_list <- load_gene_list()
-#' eset <- make_ExpressionSet(expr_data, meta_data)
-#' processed_data <- tAge_preprocessing(eset, gene_list, species = "mouse")
-#' 
-#' # Predict using Elastic Net model (example with dummy model path)
-#' # results <- predict_tAge(processed_data$scaled, 
-#' #                        model_path = "path/to/model.pkl", 
-#' #                        species = "mouse", mode = "EN")
-predict_tAge <- function(eset, model_path, species, mode) {
+predict_tAge_one <- function(eset, model_path, species, mode) {
   if (missing(model_path) || !file.exists(model_path)) {
     stop("Model path is missing or the file does not exist.")
   }
@@ -67,8 +55,20 @@ predict_tAge <- function(eset, model_path, species, mode) {
   return(sample_result)
 }
 
-
-predict_tAge_multiple <- function(tAge_eset, model_paths, species, mode) {
+#' Predict transcriptomic age for multiple processed ExpressionSet objects
+#'
+#' This function predicts transcriptomic age for multiple processed ExpressionSet objects
+#' using pre-trained models. It supports different normalization methods and model types.
+#' @param tAge_eset A named list of ExpressionSet objects, each representing a different
+#'   normalization method (e.g., "scaled", "scaled_diff", "yugene", "yugene_diff").
+#' @param model_paths A named list of model paths corresponding to each normalization method.
+#' @param species Character string specifying the species for the models.
+#' @param mode Character string specifying the model type. Must be either "EN" for
+#'   Elastic Net or "BR" for Bayesian Ridge.
+#' @return A data frame containing the predicted transcriptomic age results for all
+#'   provided ExpressionSet objects, with appropriately named columns.
+#' @export
+predict_tAge <- function(tAge_eset, model_paths, species, mode) {
   if (!is.list(tAge_eset) || length(tAge_eset) == 0) {
     stop("tAge_eset must be a non-empty list of ExpressionSet objects.")
   }
@@ -96,7 +96,7 @@ predict_tAge_multiple <- function(tAge_eset, model_paths, species, mode) {
       stop(paste("Element", name, "in tAge_eset is not an ExpressionSet."))
     }
     model_path <- model_paths[[name]]
-    res <- predict_tAge(eset, model_path, species, mode)
+    res <- predict_tAge_one(eset, model_path, species, mode)
     # Rename 'EN_tAge' or 'BR_tAge' to name + mode + '_tAge'
     tAge_col <- if (mode == "EN") "EN_tAge" else "BR_tAge"
     new_tAge_col <- paste0(name, "_", mode, "_tAge")
