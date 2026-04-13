@@ -4,6 +4,16 @@
     <img src="tAge_logo.png" alt="tAge logo" width="300"/>
 </p>
 
+> ⚠️ **Model availability notice**
+>
+> Pre-trained tAge models are not yet officially released.  
+> They will be made fully available alongside the publication of the manuscript.
+>
+> In the meantime, if you would like to run the models, please contact us and we can assist.
+>
+> Contacts: dglubokov@bwh.harvard.edu, atyshkovskii@bwh.harvard.edu
+
+
 R package for transcriptomic biological age prediction from gene expression data.
 
 ## Installation
