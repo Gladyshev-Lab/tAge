@@ -1,9 +1,9 @@
 Package: tAge
 Title: tAge -- Transcriptomic Biological Age Analysis Package
-Version: 0.1.0
+Version: 1.0.1
 Authors@R: person("Dmitrii Glubokov", "Developer", email = "dglubokov@bwh.harvard.edu", role = c("aut", "cre"))
 Description: tAge provides API for Gladyshev Lab transcriptomic clock use. The package implements preprocessing pipelines, age prediction using Elastic Net and Bayesian Ridge models, and comprehensive visualization tools for transcriptomic age analysis.
-License: MIT
+License: file LICENSE
 Encoding: UTF-8
 RoxygenNote: 7.3.3
 Depends:
