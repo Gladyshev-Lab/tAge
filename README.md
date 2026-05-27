@@ -4,15 +4,6 @@
     <img src="tAge_logo.png" alt="tAge logo" width="300"/>
 </p>
 
-> ⚠️ **Model availability notice**
->
-> Pre-trained tAge models are not yet officially released.  
-> They will be made fully available alongside the publication of the manuscript.
->
-> In the meantime, if you would like to run the models, please contact us and we can assist.
->
-> Contacts: dglubokov@bwh.harvard.edu, atyshkovskii@bwh.harvard.edu
-
 
 R package for transcriptomic biological age prediction from gene expression data.
 
@@ -36,6 +27,12 @@ Then in R, before running predictions:
 ```r
 Sys.setenv(RETICULATE_PYTHON = ".venv/bin/python")
 ```
+
+## Models availability
+
+The current tAge models can be obtained here:
+
+[Transcriptomic clock models and rodent gene expression meta-dataset](https://zenodo.org/records/18763485)
 
 ## Quick start
 
@@ -101,8 +98,13 @@ Mouse, human, rat, monkey. Non-mouse species are mapped to mouse orthologs inter
 
 ## Citation
 
-[Transcriptomic Hallmarks of Mortality Reveal Universal and Specific Mechanisms of Aging, Chronic Disease, and Rejuvenation (Tyshkovskiy et al. 2024)](https://www.biorxiv.org/content/10.1101/2024.07.04.601982v1)
+[Tyshkovskiy et al. (2026) Universal Transcriptomic Hallmarks of Mammalian Ageing and Mortality. Nature.](https://doi.org/10.1038/s41586-026-10542-3)
 
 ## License
 
-MIT
+This package and the associated transcriptomic clock models are distributed under the MGB Open Access License 1.0. These materials may be used for non-commercial academic purposes, subject to the license terms. Commercial uses require a separate commercial license or agreement with Mass General Brigham.
+
+For questions about commercial use, please contact MGB Innovation / Business Development & Licensing:
+
+- innovation@partners.org;
+- licensing@partners.org
