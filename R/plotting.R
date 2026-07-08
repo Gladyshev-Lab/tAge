@@ -92,7 +92,7 @@ plot_eset_density <- function(
   })
 }
 
-
+#' @export
 tage_boxplot <- function(
   data,
   x_var,
