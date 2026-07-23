@@ -99,7 +99,12 @@ predict_tAge <- function(tAge_eset, model_paths, species, mode) {
   
     model_path <- model_paths[[name]]
     res <- predict_tAge_one(eset, model_path, species, mode)
-  
+
+    # Ensure a 2D data.frame regardless of how reticulate converts the Python
+    # result (some reticulate/pandas versions can return a bare vector for a
+    # single column, which breaks the colnames<- below).
+    res <- as.data.frame(res, check.names = FALSE)
+
     # Rename 'EN_tAge' or 'BR_tAge' to name + mode + '_tAge'
     tAge_col <- if (mode == "EN") "EN_tAge" else "BR_tAge"
     new_tAge_col <- paste0(name, "_", mode, "_tAge")
