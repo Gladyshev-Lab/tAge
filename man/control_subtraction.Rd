@@ -2,28 +2,43 @@
 % Please edit documentation in R/preprocessing.R
 \name{control_subtraction}
 \alias{control_subtraction}
-\title{Subtract control group median from expression data}
+\title{Subtract reference group median from expression data (relative expression)}
 \usage{
-control_subtraction(eset, column_name, control_label, verbose = TRUE)
+control_subtraction(
+  eset,
+  column_name = NULL,
+  control_label = NULL,
+  verbose = TRUE
+)
 }
 \arguments{
 \item{eset}{An ExpressionSet object containing expression data.}
 
 \item{column_name}{Character string specifying the column name in phenoData that
-contains the group labels.}
+contains the group labels. Default \code{NULL} (centre on all samples).}
 
-\item{control_label}{Character string specifying the label for control samples.}
+\item{control_label}{Character string specifying the label for control samples.
+Default \code{NULL} (centre on all samples).}
 
 \item{verbose}{Logical indicating whether to print progress messages and create
 density plots. Default is TRUE.}
 }
 \value{
-An ExpressionSet object with control-subtracted expression data.
+An ExpressionSet object with reference-centred expression data.
 }
 \description{
-This function subtracts the median expression of a control group from all samples
-in the ExpressionSet. If no control samples are found, it uses the overall median
-across all samples.
+This function converts expression into relative (differential) expression by
+subtracting the per-gene median of a reference group from every sample. The
+distributed \code{_diff} clocks are relative models trained on
+reference-centred expression, so this centring must always be applied before
+predicting with them.
+}
+\details{
+If no reference group is specified (both \code{column_name} and
+\code{control_label} are \code{NULL}), or no matching control samples are
+found, all samples are used as the reference (per-gene overall median). This
+matches the default behaviour of the TACO reference application, which always
+centres and defaults the reference group to all samples.
 }
 \examples{
 # Load example data and create ExpressionSet

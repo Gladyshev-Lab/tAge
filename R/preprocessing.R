@@ -230,8 +230,13 @@ log_transform <- function(eset, verbose = TRUE) {
 
 #' Scale expression data to have zero mean and unit variance
 #'
-#' This function applies z-score scaling to the expression data in an ExpressionSet,
-#' where each gene is scaled to have zero mean and unit variance across samples.
+#' This function applies z-score scaling to the expression data in an ExpressionSet.
+#' It calls \code{\link[base]{scale}}, which operates column-wise, so scaling is
+#' performed \emph{per sample} (each sample/column is scaled to zero mean and unit
+#' variance across genes). This is the "Scaling" normalisation strategy from the
+#' paper and matches the TACO reference application. Per-gene standardisation is
+#' handled separately inside the trained clock model (its \code{StandardScaler}
+#' step), using training-set statistics.
 #'
 #' @param eset An ExpressionSet object containing expression data.
 #' @param verbose Logical indicating whether to print progress messages and create
@@ -259,41 +264,49 @@ scale_eset <- function(eset, verbose = TRUE) {
 }
 
 
-#' Subtract control group median from expression data
+#' Subtract reference group median from expression data (relative expression)
 #'
-#' This function subtracts the median expression of a control group from all samples
-#' in the ExpressionSet. If no control samples are found, it uses the overall median
-#' across all samples.
+#' This function converts expression into relative (differential) expression by
+#' subtracting the per-gene median of a reference group from every sample. The
+#' distributed \code{_diff} clocks are relative models trained on
+#' reference-centred expression, so this centring must always be applied before
+#' predicting with them.
+#'
+#' If no reference group is specified (both \code{column_name} and
+#' \code{control_label} are \code{NULL}), or no matching control samples are
+#' found, all samples are used as the reference (per-gene overall median). This
+#' matches the default behaviour of the TACO reference application, which always
+#' centres and defaults the reference group to all samples.
 #'
 #' @param eset An ExpressionSet object containing expression data.
 #' @param column_name Character string specifying the column name in phenoData that
-#'   contains the group labels.
+#'   contains the group labels. Default \code{NULL} (centre on all samples).
 #' @param control_label Character string specifying the label for control samples.
+#'   Default \code{NULL} (centre on all samples).
 #' @param verbose Logical indicating whether to print progress messages and create
 #'   density plots. Default is TRUE.
-#' @return An ExpressionSet object with control-subtracted expression data.
+#' @return An ExpressionSet object with reference-centred expression data.
 #' @export
 #' @examples
 #' # Load example data and create ExpressionSet
 #' expr_data <- load_example_expression_data()
 #' meta_data <- load_example_metadata()
 #' eset <- make_ExpressionSet(expr_data, meta_data)
-#' 
+#'
 #' # Subtract control group (assuming 'Group' column has 'Control' label)
 #' control_eset <- control_subtraction(eset, "Group", "Control", verbose = TRUE)
-control_subtraction <- function(eset, column_name, control_label, verbose = TRUE) {
-  # If column_name or control_label is NULL, return the eset unchanged
-  if (is.null(column_name) || is.null(control_label)) {
-    if (verbose) {
-      cat("✓ Skipping control subtraction (no control group specified).\n")
-    }
-    return(eset)
-  }
-
+control_subtraction <- function(eset, column_name = NULL, control_label = NULL, verbose = TRUE) {
   X <- Biobase::exprs(eset)
 
-  control_samples <- Biobase::pData(eset)[[column_name]]
-  control_idx <- which(!is.na(control_samples) & control_samples == control_label)
+  # No reference group specified: centre on all samples (overall per-gene
+  # median), matching the TACO default. Centring is never skipped, because the
+  # _diff clocks require reference-centred input.
+  if (is.null(column_name) || is.null(control_label)) {
+    control_idx <- integer(0)
+  } else {
+    control_samples <- Biobase::pData(eset)[[column_name]]
+    control_idx <- which(!is.na(control_samples) & control_samples == control_label)
+  }
 
   if (length(control_idx) == 0) {
     Xc <- apply(X, 1, median, na.rm = TRUE)
@@ -307,8 +320,11 @@ control_subtraction <- function(eset, column_name, control_label, verbose = TRUE
   Biobase::exprs(eset_final) <- X_adjusted
 
   if (verbose) {
-    if (length(control_idx) == 0) {
-      cat("✓ No control samples found for label '", control_label, "'. Using overall median for subtraction.\n", sep = "")
+    if (is.null(column_name) || is.null(control_label)) {
+      cat("✓ Centring on all samples (overall per-gene median; no reference group specified).\n")
+      plot_eset_density(eset_final, title = "Centred on All Samples (Overall Median)")
+    } else if (length(control_idx) == 0) {
+      cat("✓ No control samples found for label '", control_label, "'. Centring on all samples (overall median).\n", sep = "")
       plot_eset_density(eset_final, title = "Subtraction using Overall Median")
     } else {
       cat("✓ Control samples found for label '", control_label, "'. Using control group median for subtraction.\n", sep = "")
@@ -322,7 +338,11 @@ control_subtraction <- function(eset, column_name, control_label, verbose = TRUE
 #' Align an ExpressionSet to a reference gene list
 #'
 #' Reorders and subsets rows to match the reference gene list exactly.
-#' Genes missing from the ExpressionSet are filled with zeros.
+#' Genes missing from the ExpressionSet are padded with \code{NA}. This is
+#' intentional: at prediction time the trained clock model's imputer fills
+#' these with the training-set median for each gene, which is the correct
+#' neutral value (padding with zeros would not be). This matches the TACO
+#' reference application, where absent genes remain \code{NA}.
 #'
 #' @param eset An ExpressionSet object.
 #' @param gene_list Character vector of reference gene identifiers.
@@ -335,20 +355,20 @@ control_subtraction <- function(eset, column_name, control_label, verbose = TRUE
 
   if (length(missing_genes) > 0) {
     n_samples  <- ncol(eset)
-    zero_matrix <- matrix(NA_real_, nrow = length(missing_genes), ncol = n_samples,
-                          dimnames = list(missing_genes, colnames(eset)))
+    pad_matrix <- matrix(NA_real_, nrow = length(missing_genes), ncol = n_samples,
+                         dimnames = list(missing_genes, colnames(eset)))
 
-    zero_fdata <- data.frame(row.names = missing_genes)
+    pad_fdata <- data.frame(row.names = missing_genes)
 
-    zero_eset <- Biobase::ExpressionSet(
-      assayData      = zero_matrix,
+    pad_eset <- Biobase::ExpressionSet(
+      assayData      = pad_matrix,
       phenoData      = Biobase::phenoData(eset),
-      featureData    = methods::new("AnnotatedDataFrame", data = zero_fdata),
+      featureData    = methods::new("AnnotatedDataFrame", data = pad_fdata),
       experimentData = Biobase::experimentData(eset),
       annotation     = Biobase::annotation(eset)
     )
 
-    eset <- Biobase::combine(eset[intersect(gene_list, current), ], zero_eset)
+    eset <- Biobase::combine(eset[intersect(gene_list, current), ], pad_eset)
   }
 
   eset[match(gene_list, rownames(eset)), ]
@@ -419,9 +439,9 @@ tAge_preprocessing <- function(
   return(list(
     RLE_normalized = eset_RLE,
     log_transformed = eset_log_transformed,
-    scaled = eset_scaled,
+    scaled = eset_scaled_aligned,
     scaled_diff = eset_scaled_diff,
-    yugene = eset_yugene,
+    yugene = eset_yugene_aligned,
     yugene_diff = eset_yugene_diff
   ))
 }

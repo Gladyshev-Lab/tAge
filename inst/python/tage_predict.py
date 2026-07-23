@@ -18,6 +18,24 @@ warnings.filterwarnings("ignore", category=UserWarning)
 
 PREDICTIONS_SPECIES_ADJ = {"human": 122.5, "mouse": 48, "rat": 50.4, "monkey": 39}
 
+
+def _is_chronological_clock(model_path: Union[str, Path]) -> bool:
+    """Return True if the model is a chronological-age clock.
+
+    Only chronological-age clocks predict age normalised to the species
+    maximum lifespan; multiplying their output by ``PREDICTIONS_SPECIES_ADJ``
+    converts it back to age units (years for human, months for rodents).
+    Mortality clocks output log10(hazard ratio) and normalised-age clocks
+    output the normalised fraction directly, so neither must be rescaled.
+
+    This mirrors the TACO reference application, which applies the
+    species factor only to chronological clocks (``grepl("chronological")``).
+    Detection is based on the model file name, following the released
+    naming convention (``EN_Chronoage_...`` / ``EN_Mortality_...``).
+    """
+    return "chronoage" in Path(model_path).stem.lower()
+
+
 def _patch_simple_imputer(imputer: SimpleImputer) -> None:
     """Patch SimpleImputer to add missing _fill_dtype attribute.
 
@@ -162,7 +180,9 @@ def predict_tAge(
     if std is not None:
         ann.loc[:, f"{pfx}tAge_std"] = std
 
-    if species in PREDICTIONS_SPECIES_ADJ:
+    # Rescale to age units only for chronological-age clocks. Mortality
+    # (log10HR) and normalised-age clocks are reported on their native scale.
+    if _is_chronological_clock(model_path) and species in PREDICTIONS_SPECIES_ADJ:
         ann.loc[:, f"{pfx}tAge"] = ann.loc[:, f"{pfx}tAge"] * PREDICTIONS_SPECIES_ADJ[species]
 
     return ann
