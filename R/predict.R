@@ -45,10 +45,16 @@ predict_tAge_one <- function(eset, model_path, species, mode) {
   if (is.matrix(expr_df))  expr_df <- as.data.frame(expr_df, check.names = FALSE)
   if (is.matrix(meta_df))  meta_df <- as.data.frame(meta_df, check.names = FALSE)
 
+  # Whether to rescale the output to age units (species maximum lifespan). This
+  # is derived from the clock registry (falls back to a name-based heuristic on
+  # the Python side when the model is not in the registry).
+  adjust <- .clock_lifespan_scaled(model_path)
+  adjust_arg <- if (is.na(adjust)) NULL else adjust
+
   if (mode == "EN") {
-    sample_result <- mod$predict_tAge(model_path, expr_df, meta_df, species = species, return_std = FALSE, prefix = "EN_")
+    sample_result <- mod$predict_tAge(model_path, expr_df, meta_df, species = species, return_std = FALSE, prefix = "EN_", adjust_lifespan = adjust_arg)
   } else if (mode == "BR") {
-    sample_result <- mod$predict_tAge(model_path, expr_df, meta_df, species = species, return_std = FALSE, prefix = "BR_")
+    sample_result <- mod$predict_tAge(model_path, expr_df, meta_df, species = species, return_std = FALSE, prefix = "BR_", adjust_lifespan = adjust_arg)
   } else {
     stop("Unsupported mode. Use 'EN' or 'BR'.")
   }

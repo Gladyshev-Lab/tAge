@@ -122,6 +122,7 @@ def predict_tAge(
     *,
     return_std: bool = False,
     prefix: Optional[str] = None,
+    adjust_lifespan: Optional[bool] = None,
 ) -> pd.DataFrame:
     """Apply clock model to expression matrix and append predictions to annotation.
 
@@ -139,6 +140,10 @@ def predict_tAge(
         If True, also return predictive std (model must support return_std=True).
     prefix : str | None
         Prefix for column names (e.g., "BR_"). If None, use no prefix.
+    adjust_lifespan : bool | None
+        Whether to rescale the prediction to age units by the species maximum
+        lifespan. Only meaningful for chronological-age clocks. If None, fall
+        back to detecting the clock type from the model file name.
 
     Returns
     -------
@@ -182,7 +187,10 @@ def predict_tAge(
 
     # Rescale to age units only for chronological-age clocks. Mortality
     # (log10HR) and normalised-age clocks are reported on their native scale.
-    if _is_chronological_clock(model_path) and species in PREDICTIONS_SPECIES_ADJ:
+    # The caller may pass adjust_lifespan explicitly (e.g. from the clock
+    # registry); otherwise fall back to detecting the type from the file name.
+    do_adjust = adjust_lifespan if adjust_lifespan is not None else _is_chronological_clock(model_path)
+    if do_adjust and species in PREDICTIONS_SPECIES_ADJ:
         ann.loc[:, f"{pfx}tAge"] = ann.loc[:, f"{pfx}tAge"] * PREDICTIONS_SPECIES_ADJ[species]
 
     return ann

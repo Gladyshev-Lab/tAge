@@ -1,0 +1,61 @@
+filename,type,outcome,species,tissue,scaling,lifespan_scaled
+BR_Chronoage_Mouse_Multitissue_scaleddiff.pkl,BR,Chronological,Mouse,Multi-Tissue,Scaled,TRUE
+BR_Chronoage_Mouse_Multitissue_yugenediff.pkl,BR,Chronological,Mouse,Multi-Tissue,YuGene,TRUE
+BR_Chronoage_Multispecies_Multitissue_scaleddiff.pkl,BR,Chronological,Multispecies,Multi-Tissue,Scaled,TRUE
+BR_Chronoage_Multispecies_Multitissue_yugenediff.pkl,BR,Chronological,Multispecies,Multi-Tissue,YuGene,TRUE
+BR_Chronoage_Rodents_Brain_WT_scaleddiff.pkl,BR,Chronological,Rodents,Brain,Scaled,TRUE
+BR_Chronoage_Rodents_Brain_WT_yugenediff.pkl,BR,Chronological,Rodents,Brain,YuGene,TRUE
+BR_Chronoage_Rodents_Kidney_WT_scaleddiff.pkl,BR,Chronological,Rodents,Kidney,Scaled,TRUE
+BR_Chronoage_Rodents_Kidney_WT_yugenediff.pkl,BR,Chronological,Rodents,Kidney,YuGene,TRUE
+BR_Chronoage_Rodents_Liver_scaleddiff.pkl,BR,Chronological,Rodents,Liver,Scaled,TRUE
+BR_Chronoage_Rodents_Liver_yugenediff.pkl,BR,Chronological,Rodents,Liver,YuGene,TRUE
+BR_Chronoage_Rodents_Multitissue_scaleddiff.pkl,BR,Chronological,Rodents,Multi-Tissue,Scaled,TRUE
+BR_Chronoage_Rodents_Multitissue_yugenediff.pkl,BR,Chronological,Rodents,Multi-Tissue,YuGene,TRUE
+BR_Chronoage_Rodents_Skeletal muscle_WT_yugenediff.pkl,BR,Chronological,Rodents,Skeletal Muscle,YuGene,TRUE
+BR_Chronoage_Rodents_Skeletal_muscle_WT_scaleddiff.pkl,BR,Chronological,Rodents,Skeletal Muscle,Scaled,TRUE
+BR_Mortality_Mouse_Multitissue_scaleddiff.pkl,BR,Mortality,Mouse,Multi-Tissue,Scaled,FALSE
+BR_Mortality_Mouse_Multitissue_yugenediff.pkl,BR,Mortality,Mouse,Multi-Tissue,YuGene,FALSE
+BR_Mortality_Multispecies_Multitissue_scaleddiff.pkl,BR,Mortality,Multispecies,Multi-Tissue,Scaled,FALSE
+BR_Mortality_Multispecies_Multitissue_yugenediff.pkl,BR,Mortality,Multispecies,Multi-Tissue,YuGene,FALSE
+BR_Mortality_Rodents_Liver_scaleddiff.pkl,BR,Mortality,Rodents,Liver,Scaled,FALSE
+BR_Mortality_Rodents_Liver_yugenediff.pkl,BR,Mortality,Rodents,Liver,YuGene,FALSE
+BR_Mortality_Rodents_Multitissue_scaleddiff.pkl,BR,Mortality,Rodents,Multi-Tissue,Scaled,FALSE
+BR_Mortality_Rodents_Multitissue_yugenediff.pkl,BR,Mortality,Rodents,Multi-Tissue,YuGene,FALSE
+BR_NormalizedAge_Mouse_Multitissue_scaleddiff.pkl,BR,Normalized age,Mouse,Multi-Tissue,Scaled,FALSE
+BR_NormalizedAge_Mouse_Multitissue_yugenediff.pkl,BR,Normalized age,Mouse,Multi-Tissue,YuGene,FALSE
+BR_NormalizedAge_Multispecies_Multitissue_scaleddiff.pkl,BR,Normalized age,Multispecies,Multi-Tissue,Scaled,FALSE
+BR_NormalizedAge_Multispecies_Multitissue_yugenediff.pkl,BR,Normalized age,Multispecies,Multi-Tissue,YuGene,FALSE
+BR_NormalizedAge_Rodents_Liver_scaleddiff.pkl,BR,Normalized age,Rodents,Liver,Scaled,FALSE
+BR_NormalizedAge_Rodents_Liver_yugenediff.pkl,BR,Normalized age,Rodents,Liver,YuGene,FALSE
+BR_NormalizedAge_Rodents_Multitissue_scaleddiff.pkl,BR,Normalized age,Rodents,Multi-Tissue,Scaled,FALSE
+BR_NormalizedAge_Rodents_Multitissue_yugenediff.pkl,BR,Normalized age,Rodents,Multi-Tissue,YuGene,FALSE
+EN_Chronoage_Mouse_Multitissue_scaleddiff.pkl,EN,Chronological,Mouse,Multi-Tissue,Scaled,TRUE
+EN_Chronoage_Mouse_Multitissue_yugenediff.pkl,EN,Chronological,Mouse,Multi-Tissue,YuGene,TRUE
+EN_Chronoage_Multispecies_Multitissue_scaleddiff.pkl,EN,Chronological,Multispecies,Multi-Tissue,Scaled,TRUE
+EN_Chronoage_Multispecies_Multitissue_yugenediff.pkl,EN,Chronological,Multispecies,Multi-Tissue,YuGene,TRUE
+EN_Chronoage_Rodents_Brain_scaleddiff.pkl,EN,Chronological,Rodents,Brain,Scaled,TRUE
+EN_Chronoage_Rodents_Brain_yugenediff.pkl,EN,Chronological,Rodents,Brain,YuGene,TRUE
+EN_Chronoage_Rodents_Kidney_scaleddiff.pkl,EN,Chronological,Rodents,Kidney,Scaled,TRUE
+EN_Chronoage_Rodents_Kidney_yugenediff.pkl,EN,Chronological,Rodents,Kidney,YuGene,TRUE
+EN_Chronoage_Rodents_Liver_scaleddiff.pkl,EN,Chronological,Rodents,Liver,Scaled,TRUE
+EN_Chronoage_Rodents_Liver_yugenediff.pkl,EN,Chronological,Rodents,Liver,YuGene,TRUE
+EN_Chronoage_Rodents_Multitissue_scaleddiff.pkl,EN,Chronological,Rodents,Multi-Tissue,Scaled,TRUE
+EN_Chronoage_Rodents_Multitissue_yugenediff.pkl,EN,Chronological,Rodents,Multi-Tissue,YuGene,TRUE
+EN_Chronoage_Rodents_Skeletal_muscle_scaleddiff.pkl,EN,Chronological,Rodents,Skeletal Muscle,Scaled,TRUE
+EN_Chronoage_Rodents_Skeletal_muscle_yugenediff.pkl,EN,Chronological,Rodents,Skeletal Muscle,YuGene,TRUE
+EN_Mortality_Mouse_Multitissue_scaleddiff.pkl,EN,Mortality,Mouse,Multi-Tissue,Scaled,FALSE
+EN_Mortality_Mouse_Multitissue_yugenediff.pkl,EN,Mortality,Mouse,Multi-Tissue,YuGene,FALSE
+EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl,EN,Mortality,Multispecies,Multi-Tissue,Scaled,FALSE
+EN_Mortality_Multispecies_Multitissue_yugenediff.pkl,EN,Mortality,Multispecies,Multi-Tissue,YuGene,FALSE
+EN_Mortality_Rodents_Liver_scaleddiff.pkl,EN,Mortality,Rodents,Liver,Scaled,FALSE
+EN_Mortality_Rodents_Liver_yugenediff.pkl,EN,Mortality,Rodents,Liver,YuGene,FALSE
+EN_Mortality_Rodents_Multitissue_scaleddiff.pkl,EN,Mortality,Rodents,Multi-Tissue,Scaled,FALSE
+EN_Mortality_Rodents_Multitissue_yugenediff.pkl,EN,Mortality,Rodents,Multi-Tissue,YuGene,FALSE
+EN_NormalizedAge_Mouse_Multitissue_scaleddiff.pkl,EN,Normalized age,Mouse,Multi-Tissue,Scaled,FALSE
+EN_NormalizedAge_Mouse_Multitissue_yugenediff.pkl,EN,Normalized age,Mouse,Multi-Tissue,YuGene,FALSE
+EN_NormalizedAge_Multispecies_Multitissue_scaleddiff.pkl,EN,Normalized age,Multispecies,Multi-Tissue,Scaled,FALSE
+EN_NormalizedAge_Multispecies_Multitissue_yugenediff.pkl,EN,Normalized age,Multispecies,Multi-Tissue,YuGene,FALSE
+EN_NormalizedAge_Rodents_Liver_scaleddiff.pkl,EN,Normalized age,Rodents,Liver,Scaled,FALSE
+EN_NormalizedAge_Rodents_Liver_yugenediff.pkl,EN,Normalized age,Rodents,Liver,YuGene,FALSE
+EN_NormalizedAge_Rodents_Multitissue_scaleddiff.pkl,EN,Normalized age,Rodents,Multi-Tissue,Scaled,FALSE
+EN_NormalizedAge_Rodents_Multitissue_yugenediff.pkl,EN,Normalized age,Rodents,Multi-Tissue,YuGene,FALSE

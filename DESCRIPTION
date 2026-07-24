@@ -1,7 +1,7 @@
 Package: tAge
 Title: tAge -- Transcriptomic Biological Age Analysis Package
-Version: 1.0.1
-Authors@R: person("Dmitrii Glubokov", "Developer", email = "dglubokov@bwh.harvard.edu", role = c("aut", "cre"))
+Version: 1.1.0
+Authors@R: person("Dmitrii", "Glubokov", email = "dglubokov@bwh.harvard.edu", role = c("aut", "cre"))
 Description: tAge provides API for Gladyshev Lab transcriptomic clock use. The package implements preprocessing pipelines, age prediction using Elastic Net and Bayesian Ridge models, and comprehensive visualization tools for transcriptomic age analysis.
 License: file LICENSE
 Encoding: UTF-8
@@ -15,18 +15,20 @@ Imports:
     reticulate,
     methods,
     utils,
-    stats
-Suggests: 
+    stats,
+    Matrix
+Suggests:
     testthat (>= 3.0.0),
-    biomaRt,
     ggrepel,
     ggpubr,
-    YuGene,
+    Seurat,
+    SeuratDisk,
     BiocManager,
     knitr,
-    rmarkdown,
-    BiocStyle
+    rmarkdown
 VignetteBuilder: knitr
+SystemRequirements: Python (>= 3.9) with packages joblib, pandas,
+    scikit-learn and numpy (see inst/python/requirements.txt)
 biocViews: 
     GeneExpression,
     Transcriptomics,

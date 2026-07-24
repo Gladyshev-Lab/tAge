@@ -1,3 +1,4 @@
 joblib
 pandas
 scikit-learn
+numpy

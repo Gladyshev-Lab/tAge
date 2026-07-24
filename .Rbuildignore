@@ -1,0 +1,10 @@
+^.*\.Rproj$
+^\.Rproj\.user$
+^\.github$
+^\.claude$
+^logo\.py$
+^tAge_logo\.png$
+^.*\.ipynb$
+^.*\.h5ad$
+^GSM4505404.*$
+^s41586-.*\.pdf$

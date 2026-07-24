@@ -2,3 +2,4 @@ __pycache__
 GSM4505404_tabula-muris-senis-droplet-official-raw-obj-metadata.csv
 GSM4505404_tabula-muris-senis-droplet-official-raw-obj.h5ad
 settings.json
+*.pkl
