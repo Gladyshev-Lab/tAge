@@ -8,3 +8,4 @@
 ^.*\.h5ad$
 ^GSM4505404.*$
 ^s41586-.*\.pdf$
+^RELEASING\.md$
