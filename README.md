@@ -1,7 +1,7 @@
 # tAge
 
 <p align="center">
-    <img src="man/figures/logo.png" alt="tAge logo" width="300"/>
+    <img src="man/figures/logo-full.png" alt="tAge logo" width="300"/>
 </p>
 
 R package for transcriptomic biological age prediction from gene expression
