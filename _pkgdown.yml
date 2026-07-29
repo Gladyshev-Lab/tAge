@@ -1,0 +1,86 @@
+url: https://gladyshev-lab.github.io/tAge/
+
+template:
+  bootstrap: 5
+  bslib:
+    primary: "#2b6cb0"
+
+home:
+  title: tAge — transcriptomic biological age in R
+  description: >
+    Preprocessing, prediction and visualization for the Gladyshev Lab
+    transcriptomic clocks (Tyshkovskiy et al., Nature 654, 173, 2026).
+
+navbar:
+  structure:
+    left: [reference, articles, news]
+    right: [search, github]
+
+reference:
+- title: Pipelines
+  desc: >
+    End-to-end entry points. `tAge_preprocessing()` returns the list of
+    ExpressionSets that `predict_tAge()` consumes.
+  contents:
+  - tAge_preprocessing
+  - predict_tAge
+  - predict_tAge_one
+  - tAge_by_group
+
+- title: Clock catalogue
+  desc: Browse the registry of pre-trained models and fetch them from Zenodo.
+  contents:
+  - list_clocks
+  - download_clocks
+
+- title: Preprocessing steps
+  desc: >
+    The individual stages run by `tAge_preprocessing()`, for when you need a
+    non-standard order or want to inspect an intermediate.
+  contents:
+  - filter_genes
+  - map_genes
+  - RLE_normalization
+  - log_transform
+  - scale_eset
+  - YuGene
+  - control_subtraction
+
+- title: Single-cell and pseudobulk
+  desc: >
+    Pool single cells into pseudobulk samples, drop outliers, and move data in
+    from Seurat or h5ad.
+  contents:
+  - aggregate_pseudobulk
+  - aggregate_on_obs_columns
+  - pseudobulk_summary
+  - remove_outliers
+  - load_h5ad_simple
+  - load_h5ad_to_seurat
+  - subset_seurat_by_metadata
+
+- title: Plotting
+  contents:
+  - tage_boxplot
+  - plot_eset_density
+
+- title: Data and helpers
+  desc: Build an ExpressionSet and reach the example data shipped with the package.
+  contents:
+  - make_ExpressionSet
+  - load_example_expression_data
+  - load_example_metadata
+  - load_gene_list
+  - get_package_data
+  - get_metadata_dir
+
+- title: internal
+  contents:
+  - .align_to_gene_list
+
+articles:
+- title: Get started
+  navbar: ~
+  contents:
+  - tage-bulk
+  - tage-singlecell

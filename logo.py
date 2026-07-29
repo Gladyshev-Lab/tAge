@@ -86,5 +86,5 @@ sub_y = text_y + 130
 draw.text((sub_x, sub_y), subtitle, fill=accent_color + (255,), font=font_small)
 
 # Save as PNG with transparency
-img.save('tAge_logo.png')
-print("Transparent logo saved to tAge_logo.png")
+img.save('man/figures/logo.png')
+print("Transparent logo saved to man/figures/logo.png")

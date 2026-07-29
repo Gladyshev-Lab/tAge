@@ -4,3 +4,6 @@ GSM4505404_tabula-muris-senis-droplet-official-raw-obj.h5ad
 settings.json
 *.pkl
 *.zip
+
+# pkgdown build output
+docs/

@@ -92,6 +92,65 @@ plot_eset_density <- function(
   })
 }
 
+#' Box plot of tAge predictions with pairwise significance annotation
+#'
+#' Draws a box plot with jittered points for one prediction column, split by a
+#' grouping variable and optionally faceted by a subgroup. Pairwise comparisons
+#' are annotated with brackets; comparisons involving groups with too few
+#' observations, and — when \code{p_threshold} is set — non-significant ones, are
+#' dropped before plotting so the panel stays readable.
+#'
+#' @param data Data frame of per-sample values, typically the prediction table
+#'   returned by \code{\link{predict_tAge}}.
+#' @param x_var Column name defining the groups on the x axis.
+#' @param y_var Column name holding the values to plot, e.g. a \code{*_tAge}
+#'   column.
+#' @param subgroup_var Optional column name used to facet the plot. Default
+#'   \code{NULL}.
+#' @param colors Optional named vector of fill colours, keyed by the levels of
+#'   \code{x_var}.
+#' @param point_size,point_alpha Size and opacity of the jittered points.
+#' @param box_width Width of the boxes.
+#' @param stat_method Test used for the pairwise comparisons, passed to
+#'   \code{ggpubr::stat_compare_means}. Default \code{"t.test"}.
+#' @param comparisons List of length-2 character vectors giving the pairs to
+#'   test. Default \code{NULL} tests all pairs of \code{x_var} levels.
+#' @param p_label Label style for the annotations, e.g. \code{"p.signif"} for
+#'   stars or \code{"p.format"} for numeric p-values.
+#' @param p_threshold If supplied, comparisons whose p-value is not below this
+#'   threshold are removed from the plot. When faceting, a comparison is kept if
+#'   it is significant in at least one facet.
+#' @param min_group_n Minimum number of non-missing observations required in both
+#'   groups for a comparison to be shown. When faceting, every facet must meet it.
+#' @param font_size Base font size; also scales the annotation text.
+#' @param theme_type ggplot2 theme to apply, e.g. \code{"classic"} or
+#'   \code{"minimal"}.
+#' @param title,xlab,ylab Plot title and axis labels.
+#' @param legend_position Legend placement passed to \code{ggplot2::theme}.
+#' @param y_center If given, the y axis is made symmetric around this value —
+#'   useful for relative predictions centred on zero.
+#' @param y_min,y_max Explicit y-axis limits, overriding the automatic range.
+#' @param facet_scales Scale behaviour across facets, passed to
+#'   \code{ggplot2::facet_wrap}. Default \code{"free_y"}.
+#' @param x_order Character vector giving the order of the \code{x_var} levels.
+#' @param width,height Plot size in inches, used to set the inline display size.
+#'
+#' @return A \code{ggplot} object.
+#'
+#' @seealso \code{\link{predict_tAge}} for producing the input table.
+#'
+#' @examples
+#' \dontrun{
+#' results <- predict_tAge(tAge_eset, model_paths, species = "mouse", mode = "EN")
+#' tage_boxplot(
+#'   results,
+#'   x_var = "Genotype",
+#'   y_var = "yugene_diff_EN_tAge",
+#'   subgroup_var = "Tissue",
+#'   x_order = c("WT", "Klotho KO"),
+#'   ylab = "Relative tAge, months"
+#' )
+#' }
 #' @export
 tage_boxplot <- function(
   data,

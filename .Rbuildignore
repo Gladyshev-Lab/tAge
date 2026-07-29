@@ -2,10 +2,15 @@
 ^\.Rproj\.user$
 ^\.github$
 ^\.claude$
+^\.venv$
+^dev$
 ^logo\.py$
-^tAge_logo\.png$
 ^.*\.ipynb$
 ^.*\.h5ad$
 ^GSM4505404.*$
 ^s41586-.*\.pdf$
-^RELEASING\.md$
+^_pkgdown\.yml$
+^docs$
+^pkgdown$
+^clocks$
+^tAge-.*\.zip$
