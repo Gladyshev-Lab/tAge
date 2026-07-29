@@ -1,0 +1,282 @@
+# tAge
+
+![tAge logo](reference/figures/logo.png)
+
+R package for transcriptomic biological age prediction from gene
+expression data, implementing the transcriptomic clocks from
+[Tyshkovskiy et al. (2026),
+*Nature*](https://doi.org/10.1038/s41586-026-10542-3).
+
+The clocks predict two kinds of biological age from bulk RNA-seq (or
+pseudobulk single-cell) expression: **chronological age** and **expected
+mortality**. tAge handles preprocessing, normalisation, gene mapping
+across species, and prediction with the pre-trained Elastic Net (EN) and
+Bayesian Ridge (BR) models.
+
+## Installation
+
+``` r
+
+# install.packages("devtools")
+devtools::install_github("Gladyshev-Lab/tAge")
+```
+
+### Python dependency
+
+tAge calls Python (via
+[`reticulate`](https://rstudio.github.io/reticulate/)) to run the model
+predictions. Create a virtual environment with the packages listed in
+`inst/python/requirements.txt`:
+
+``` bash
+python -m venv .venv
+.venv/bin/pip install -r inst/python/requirements.txt   # joblib pandas scikit-learn numpy
+```
+
+Point R at that interpreter **before** calling
+[`predict_tAge()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge.md):
+
+``` r
+
+# Linux / macOS
+Sys.setenv(RETICULATE_PYTHON = ".venv/bin/python")
+# Windows
+Sys.setenv(RETICULATE_PYTHON = ".venv/Scripts/python.exe")
+```
+
+## Clock models
+
+Models are published on Zenodo ([record
+18763485](https://zenodo.org/records/18763485)). You can list and
+download them directly from R:
+
+``` r
+
+library(tAge)
+
+# Browse available clocks (filter by type / outcome / species / tissue / scaling)
+list_clocks(type = "EN", outcome = "Mortality")
+
+# Download a chosen set; returns the table with a `path` column
+clocks <- list_clocks(type = "EN", outcome = "Mortality",
+                      species = "Multispecies", tissue = "Multi-Tissue")
+clocks <- download_clocks(clocks, dest_dir = "clocks")
+
+model_paths <- list(
+  scaled_diff = clocks$path[clocks$scaling == "Scaled"],
+  yugene_diff = clocks$path[clocks$scaling == "YuGene"]
+)
+```
+
+## Quick start
+
+### Bulk RNA-seq
+
+``` r
+
+library(tAge)
+Sys.setenv(RETICULATE_PYTHON = ".venv/bin/python")
+
+# 1. Load raw counts (genes x samples) and sample metadata (samples x variables)
+exprs_data <- read.csv("expression_matrix.csv", row.names = 1)
+metadata   <- read.csv("metadata.csv", row.names = 1)
+eset <- make_ExpressionSet(exprs_data, metadata)
+
+# 2. Preprocess: filter, map genes, RLE-normalise, log, scale, YuGene, centre
+tAge_eset <- tAge_preprocessing(
+  eset,
+  species = "mouse",
+  gene_mapping_type = "Gene.Symbol"    # or "Ensembl"
+)
+
+# 3. Predict
+results <- predict_tAge(tAge_eset, model_paths, species = "mouse", mode = "EN")
+head(results)
+```
+
+### Single-cell (pseudobulk)
+
+``` r
+
+library(Seurat)
+
+eset <- aggregate_on_obs_columns(
+  seurat_obj,
+  obs_column_names = c("sample_id", "tissue"),
+  coverage_threshold = 1e7
+)
+eset_clean <- remove_outliers(eset, split_by = "tissue")
+
+results <- tAge_by_group(
+  eset_clean,
+  split_by = "tissue",
+  model_paths = model_paths,
+  species = "mouse",
+  mode = "EN",
+  control_group_column = "age",
+  control_group_label  = "young"
+)
+```
+
+## Interpreting the output
+
+The units of the prediction depend on the clock **outcome**:
+
+| Outcome | Column | Units | Notes |
+|----|----|----|----|
+| Chronological | `*_tAge` | age (years for human, months for rodents) | normalised age rescaled by species max lifespan |
+| Mortality | `*_tAge` | `log10(hazard ratio)` | **not** an age; higher = higher expected mortality |
+| Normalized age | `*_tAge` | fraction of max lifespan | reported on its native scale |
+
+Only **chronological** clocks are rescaled to age units. Mortality
+clocks output a `log10` hazard ratio and must **not** be interpreted in
+years — tAge derives this automatically from the clock registry.
+
+## Relative (differential) clocks and centring
+
+All distributed clocks are **relative** (`_scaleddiff` / `_yugenediff`)
+models: they operate on expression *centred against a reference group*.
+[`tAge_preprocessing()`](https://gladyshev-lab.github.io/tAge/reference/tAge_preprocessing.md)
+centres the data automatically:
+
+- **No reference group given (default):** centres on all samples
+  (overall per-gene median). Use this for a general age/mortality
+  readout of a cohort.
+- **Reference group given:** pass `control_group_column` and
+  `control_group_label` to centre on age-/sex-matched controls within
+  your design (recommended when comparing treatment vs control).
+
+## Supported species
+
+Mouse, human, rat, monkey. Non-mouse species are mapped to mouse
+orthologs internally, so all clocks operate in the mouse Entrez gene
+space.
+
+## Citation
+
+[Tyshkovskiy et al. (2026) Universal Transcriptomic Hallmarks of
+Mammalian Ageing and Mortality.
+*Nature*.](https://doi.org/10.1038/s41586-026-10542-3)
+
+## License
+
+This package and the associated transcriptomic clock models are
+distributed under the MGB Open Access License 1.0. These materials may
+be used for non-commercial academic purposes, subject to the license
+terms. Commercial uses require a separate commercial license or
+agreement with Mass General Brigham.
+
+For questions about commercial use, please contact MGB Innovation /
+Business Development & Licensing:
+
+- <innovation@partners.org>
+- <licensing@partners.org>
+
+# Package index
+
+## Pipelines
+
+End-to-end entry points.
+[`tAge_preprocessing()`](https://gladyshev-lab.github.io/tAge/reference/tAge_preprocessing.md)
+returns the list of ExpressionSets that
+[`predict_tAge()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge.md)
+consumes.
+
+- [`tAge_preprocessing()`](https://gladyshev-lab.github.io/tAge/reference/tAge_preprocessing.md)
+  : Complete preprocessing pipeline for tAge analysis
+- [`predict_tAge()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge.md)
+  : Predict transcriptomic age for multiple processed ExpressionSet
+  objects
+- [`predict_tAge_one()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge_one.md)
+  : Predict transcriptomic age using pre-trained models
+- [`tAge_by_group()`](https://gladyshev-lab.github.io/tAge/reference/tAge_by_group.md)
+  : Run tAge pipeline separately per group factor (e.g., "tissue")
+
+## Clock catalogue
+
+Browse the registry of pre-trained models and fetch them from Zenodo.
+
+- [`list_clocks()`](https://gladyshev-lab.github.io/tAge/reference/list_clocks.md)
+  : List available transcriptomic clock models
+- [`download_clocks()`](https://gladyshev-lab.github.io/tAge/reference/download_clocks.md)
+  : Download clock models from Zenodo
+
+## Preprocessing steps
+
+The individual stages run by
+[`tAge_preprocessing()`](https://gladyshev-lab.github.io/tAge/reference/tAge_preprocessing.md),
+for when you need a non-standard order or want to inspect an
+intermediate.
+
+- [`filter_genes()`](https://gladyshev-lab.github.io/tAge/reference/filter_genes.md)
+  : Filter genes based on expression thresholds
+- [`map_genes()`](https://gladyshev-lab.github.io/tAge/reference/map_genes.md)
+  : Map genes in an ExpressionSet using local CSV mapping tables
+- [`RLE_normalization()`](https://gladyshev-lab.github.io/tAge/reference/RLE_normalization.md)
+  : Perform RLE (Relative Log Expression) normalization
+- [`log_transform()`](https://gladyshev-lab.github.io/tAge/reference/log_transform.md)
+  : Apply log10 transformation to expression data
+- [`scale_eset()`](https://gladyshev-lab.github.io/tAge/reference/scale_eset.md)
+  : Scale expression data to have zero mean and unit variance
+- [`YuGene()`](https://gladyshev-lab.github.io/tAge/reference/YuGene.md)
+  : Perform YuGene normalization
+- [`control_subtraction()`](https://gladyshev-lab.github.io/tAge/reference/control_subtraction.md)
+  : Subtract reference group median from expression data (relative
+  expression)
+
+## Single-cell and pseudobulk
+
+Pool single cells into pseudobulk samples, drop outliers, and move data
+in from Seurat or h5ad.
+
+- [`aggregate_pseudobulk()`](https://gladyshev-lab.github.io/tAge/reference/aggregate_pseudobulk.md)
+  : Aggregate single-cell data into pseudobulk samples based on read
+  coverage
+- [`aggregate_on_obs_columns()`](https://gladyshev-lab.github.io/tAge/reference/aggregate_on_obs_columns.md)
+  : Aggregate single-cell data into pseudobulk samples within obs column
+  groups
+- [`pseudobulk_summary()`](https://gladyshev-lab.github.io/tAge/reference/pseudobulk_summary.md)
+  : Get summary statistics for pseudobulk samples
+- [`remove_outliers()`](https://gladyshev-lab.github.io/tAge/reference/remove_outliers.md)
+  : Remove outlier pseudobulk samples using PCA-based Mahalanobis
+  distance
+- [`load_h5ad_simple()`](https://gladyshev-lab.github.io/tAge/reference/load_h5ad_simple.md)
+  : Load h5ad file using reticulate and anndata
+- [`load_h5ad_to_seurat()`](https://gladyshev-lab.github.io/tAge/reference/load_h5ad_to_seurat.md)
+  : Load AnnData h5ad file and convert to Seurat object
+- [`subset_seurat_by_metadata()`](https://gladyshev-lab.github.io/tAge/reference/subset_seurat_by_metadata.md)
+  : Subset Seurat object by metadata criteria
+
+## Plotting
+
+- [`tage_boxplot()`](https://gladyshev-lab.github.io/tAge/reference/tage_boxplot.md)
+  : Box plot of tAge predictions with pairwise significance annotation
+- [`plot_eset_density()`](https://gladyshev-lab.github.io/tAge/reference/plot_eset_density.md)
+  : Plot density curves for ExpressionSet data
+
+## Data and helpers
+
+Build an ExpressionSet and reach the example data shipped with the
+package.
+
+- [`make_ExpressionSet()`](https://gladyshev-lab.github.io/tAge/reference/make_ExpressionSet.md)
+  : Create ExpressionSet object from expression data and phenotype data
+- [`load_example_expression_data()`](https://gladyshev-lab.github.io/tAge/reference/load_example_expression_data.md)
+  : Load example expression data
+- [`load_example_metadata()`](https://gladyshev-lab.github.io/tAge/reference/load_example_metadata.md)
+  : Load example metadata
+- [`load_gene_list()`](https://gladyshev-lab.github.io/tAge/reference/load_gene_list.md)
+  : Load gene list
+- [`get_package_data()`](https://gladyshev-lab.github.io/tAge/reference/get_package_data.md)
+  : Get package data file paths
+- [`get_metadata_dir()`](https://gladyshev-lab.github.io/tAge/reference/get_metadata_dir.md)
+  : Get path to the package metadata directory
+
+# Articles
+
+### Get started
+
+- [Transcriptomic age from bulk RNA-seq with
+  tAge](https://gladyshev-lab.github.io/tAge/articles/tage-bulk.md):
+- [Transcriptomic age from single-cell RNA-seq (pseudobulk) with
+  tAge](https://gladyshev-lab.github.io/tAge/articles/tage-singlecell.md):
