@@ -4,6 +4,7 @@
 ^\.claude$
 ^\.venv$
 ^dev$
+^Makefile$
 ^logo\.py$
 ^.*\.ipynb$
 ^.*\.h5ad$

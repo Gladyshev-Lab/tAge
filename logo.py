@@ -131,6 +131,8 @@ MARK_PATH = 'man/figures/logo.png'
 # The Python docs use the same mark for html_logo and html_favicon. Kept in sync
 # here so the two sites cannot drift apart.
 PYTHON_MARK_PATH = '../tage-python/docs/_static/logo.png'
+# The Python homepage shows the full logo in its hero block.
+PYTHON_FULL_PATH = '../tage-python/docs/_static/logo-full.png'
 MARK_PADDING = 12
 
 # What the mark contains:
@@ -188,7 +190,9 @@ print(f"clock mark -> {MARK_PATH}  ({side}x{side} at +{crop_left}+{crop_top})")
 
 if os.path.isdir(os.path.dirname(PYTHON_MARK_PATH)):
     shutil.copyfile(MARK_PATH, PYTHON_MARK_PATH)
+    shutil.copyfile(FULL_PATH, PYTHON_FULL_PATH)
     print(f"clock mark -> {PYTHON_MARK_PATH}")
+    print(f"full logo  -> {PYTHON_FULL_PATH}")
 else:
     print(f"skipped {PYTHON_MARK_PATH} (directory not found)")
 
