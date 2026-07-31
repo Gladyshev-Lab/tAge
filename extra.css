@@ -1,0 +1,46 @@
+/* Custom CSS for the pkgdown site.
+ *
+ * pkgdown picks this file up automatically and links it after the theme's own
+ * stylesheet, so plain selectors win without !important. It lives under
+ * pkgdown/, which .Rbuildignore keeps out of the package tarball.
+ */
+
+/* --------------------------------------------------------------------------
+ * Home page logo
+ *
+ * pkgdown injects man/figures/logo.png into the page header as `img.logo`, and
+ * the theme floats it:
+ *
+ *     img.logo                { float: right; width: 100px; margin-left: 30px }
+ *     .template-home img.logo { width: 120px }
+ *     .page-header            { min-height: 104px }
+ *
+ * The README already opens with the full logo, so the home page ends up showing
+ * two. Worse, the float occupies the right-hand side of the first line box, so
+ * the README's <p align="center"> centres within what is left over and the big
+ * logo visibly sits left of centre.
+ *
+ * Drop the floated duplicate; the README logo then has the full column width and
+ * centres properly. The mark still serves as the favicon and the og:image.
+ * ------------------------------------------------------------------------ */
+.template-home .page-header img.logo {
+  display: none;
+}
+
+/* The min-height only existed to reserve room for that float. */
+.template-home .page-header {
+  min-height: 0;
+}
+
+/* Do not depend on the deprecated align attribute for layout, and keep the logo
+ * from overflowing a narrow screen. */
+.template-home p[align="center"] img {
+  display: block;
+  margin-inline: auto;
+  max-width: 100%;
+  height: auto;
+}
+
+img.logo {
+  width: 70px;
+}
