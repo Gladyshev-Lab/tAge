@@ -4,6 +4,15 @@ template:
   bootstrap: 5
   bslib:
     primary: "#2b6cb0"
+  opengraph:
+    image:
+      # Link previews in Slack, Twitter and the like do not render SVG, and
+      # pkgdown otherwise points og:image at the logo — which is SVG now. This
+      # is the 512px raster that build_favicons() already produces from it, so
+      # nothing extra has to be maintained. Absolute, because the tag is emitted
+      # verbatim on every page, at every depth.
+      src: https://gladyshev-lab.github.io/tAge/web-app-manifest-512x512.png
+      alt: "tAge — transcriptomic biological age"
 
 home:
   title: tAge — transcriptomic biological age in R

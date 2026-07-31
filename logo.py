@@ -1,10 +1,35 @@
-from PIL import Image, ImageDraw, ImageFont
-import numpy as np
+"""Generate the tAge logo, as SVG only.
 
-# Create image with transparent background
+Two assets come out of this, because they are consumed at very different sizes:
+
+    man/figures/logo-full.svg   clock + wordmark. Legible at README size, which
+                                is its one and only use.
+    man/figures/logo.svg        square clock mark. pkgdown's find_logo() prefers
+                                logo.svg over logo.png, so this is what the
+                                navbar shows, and it is the source the favicon
+                                set is generated from. The wordmark is not in it
+                                because it is unreadable below ~48 px.
+
+Nothing here rasterises: the geometry is emitted straight to SVG, and the mark's
+viewBox is computed from the drawn extents rather than measured off a bitmap.
+Pillow is still imported, but only for font metrics - see SvgCanvas.text().
+
+After changing the artwork, regenerate the icon set (7 files, never hand-edited):
+
+    make favicons
+"""
+
+import os
+import shutil
+
+import numpy as np
+from fontTools.pens.svgPathPen import SVGPathPen
+from fontTools.ttLib import TTFont
+from PIL import ImageFont
+
+# -- Canvas ------------------------------------------------------------------
+
 width, height = 600, 600
-img = Image.new('RGBA', (width, height), color=(255, 255, 255, 0))
-draw = ImageDraw.Draw(img)
 
 # Color scheme
 primary_color = (30, 100, 180)
@@ -13,8 +38,120 @@ accent_color = (100, 180, 230)
 center_x, center_y = width // 2, height // 2
 center_y -= 50
 
-# Simplified DNA helix - fewer points, cleaner look
 num_points = 50
+clock_radius = 100
+clock_y = center_y - 50
+
+
+class SvgCanvas:
+    """Collects drawing primitives as SVG elements, tracking their extents.
+
+    The method signatures mirror the subset of PIL's ImageDraw that the artwork
+    uses, so draw_helix() and draw_dial() describe the geometry exactly once and
+    know nothing about the output format.
+    """
+
+    def __init__(self):
+        self.parts = []
+        self.bounds = None      # (min_x, min_y, max_x, max_y)
+
+    def _grow(self, x0, y0, x1, y1):
+        if self.bounds is None:
+            self.bounds = [x0, y0, x1, y1]
+        else:
+            b = self.bounds
+            b[0], b[1] = min(b[0], x0), min(b[1], y0)
+            b[2], b[3] = max(b[2], x1), max(b[3], y1)
+
+    @staticmethod
+    def _paint(color):
+        r, g, b = color[:3]
+        alpha = color[3] / 255 if len(color) > 3 else 1.0
+        opacity = '' if alpha >= 1 else f' opacity="{alpha:.3f}"'
+        return f'rgb({r},{g},{b})', opacity
+
+    def ellipse(self, box, fill=None, outline=None, width=1):
+        x0, y0, x1, y1 = box
+        cx, cy = (x0 + x1) / 2, (y0 + y1) / 2
+        rx, ry = (x1 - x0) / 2, (y1 - y0) / 2
+        if outline is not None:
+            # An SVG stroke straddles the path, so pull the radius in by half
+            # the stroke width to keep the outer edge on the given box.
+            rx -= width / 2
+            ry -= width / 2
+        attrs = f'cx="{cx:.2f}" cy="{cy:.2f}" rx="{rx:.2f}" ry="{ry:.2f}"'
+        if fill is not None:
+            colour, opacity = self._paint(fill)
+            attrs += f' fill="{colour}"{opacity}'
+        else:
+            attrs += ' fill="none"'
+        if outline is not None:
+            colour, opacity = self._paint(outline)
+            attrs += f' stroke="{colour}" stroke-width="{width}"{opacity}'
+        self.parts.append(f'<ellipse {attrs}/>')
+        self._grow(x0, y0, x1, y1)
+
+    def line(self, points, fill=None, width=1):
+        x0, y0, x1, y1 = points
+        colour, opacity = self._paint(fill)
+        self.parts.append(
+            f'<line x1="{x0:.2f}" y1="{y0:.2f}" x2="{x1:.2f}" y2="{y1:.2f}" '
+            f'stroke="{colour}" stroke-width="{width}" '
+            f'stroke-linecap="round"{opacity}/>'
+        )
+        half = width / 2      # round caps stick out in every direction
+        self._grow(min(x0, x1) - half, min(y0, y1) - half,
+                   max(x0, x1) + half, max(y0, y1) + half)
+
+    def text(self, xy, string, font, fill):
+        """Add a string as outlines rather than an SVG <text> element.
+
+        <text> would depend on DejaVu Sans being installed wherever the logo is
+        viewed and silently fall back to something else where it is not. Glyph
+        outlines render identically everywhere.
+
+        Pen positions come from Pillow's getlength(), which applies the font's
+        kerning; stepping through raw advance widths would not.
+        """
+        tt = TTFont(font.path, fontNumber=getattr(font, 'index', 0))
+        upem = tt['head'].unitsPerEm
+        scale = font.size / upem
+        ascent, _ = font.getmetrics()
+        baseline = xy[1] + ascent
+        cmap = tt.getBestCmap()
+        glyphs = tt.getGlyphSet()
+        colour, opacity = self._paint(fill)
+
+        for i, char in enumerate(string):
+            name = cmap.get(ord(char))
+            if name is None:
+                continue
+            pen = SVGPathPen(glyphs)
+            glyphs[name].draw(pen)
+            commands = pen.getCommands()
+            if not commands:          # spaces and other blank glyphs
+                continue
+            x = xy[0] + font.getlength(string[:i])
+            self.parts.append(
+                f'<path d="{commands}" fill="{colour}"{opacity} '
+                f'transform="translate({x:.2f} {baseline:.2f}) '
+                f'scale({scale:.6f} {-scale:.6f})"/>'
+            )
+        tt.close()
+
+    def save(self, path, viewbox):
+        x, y, w, h = viewbox
+        body = '\n  '.join(self.parts)
+        with open(path, 'w', encoding='utf-8') as fh:
+            fh.write(
+                f'<svg xmlns="http://www.w3.org/2000/svg" '
+                f'viewBox="{x:g} {y:g} {w:g} {h:g}" '
+                f'width="{w:g}" height="{h:g}">\n'
+                f'  {body}\n</svg>\n'
+            )
+
+
+# -- Artwork -----------------------------------------------------------------
 
 
 def draw_helix(target, cx, cy, r_start, r_step, dot_base=5, dot_growth=0.06,
@@ -23,7 +160,7 @@ def draw_helix(target, cx, cy, r_start, r_step, dot_base=5, dot_growth=0.06,
 
     Parameterised because the small icon needs the same motif compressed: at
     favicon sizes a ring sitting far out from the dial thins to nothing, so the
-    mark redraws it close in rather than cropping the large version.
+    mark redraws it close in rather than reusing the large version's radii.
     """
     for i in range(points):
         angle = (i / points) * 3 * np.pi
@@ -40,14 +177,6 @@ def draw_helix(target, cx, cy, r_start, r_step, dot_base=5, dot_growth=0.06,
                        fill=primary_color + (alpha,))
         target.ellipse([x2-size, y2-size, x2+size, y2+size],
                        fill=accent_color + (alpha,))
-
-
-# The helix is centred 50 px above the canvas centre, same as the dial below.
-draw_helix(draw, center_x, center_y - 50, r_start=120, r_step=1.2)
-
-# Simplified clock - cleaner design
-clock_radius = 100
-clock_y = center_y - 50
 
 
 def draw_dial(target, cx, cy, radius=clock_radius):
@@ -73,74 +202,41 @@ def draw_dial(target, cx, cy, radius=clock_radius):
                    fill=primary_color + (255,))
 
 
-# The dial goes on its own transparent layer so the 'clock' mark can be taken
-# from it cleanly; cropping the flattened image would drag fragments of the
-# surrounding helix dots into the corners.
-clock_layer = Image.new('RGBA', (width, height), color=(255, 255, 255, 0))
-draw_dial(ImageDraw.Draw(clock_layer), center_x, clock_y)
-
-# Flatten the dial onto the helix and go back to drawing on the main canvas.
-img.alpha_composite(clock_layer)
-draw = ImageDraw.Draw(img)
-
-# Text
+# Fonts. The Debian-style paths do not exist on Arch, but Pillow falls back to
+# searching the system font directories by basename, so both resolve.
 try:
-    font_large = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 120)
-    font_small = ImageFont.truetype("/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36)
-except:
-    font_large = ImageFont.load_default()
-    font_small = ImageFont.load_default()
+    font_large = ImageFont.truetype(
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf", 120)
+    font_small = ImageFont.truetype(
+        "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf", 36)
+except OSError as exc:
+    raise SystemExit(f"DejaVu Sans not found, cannot draw the wordmark: {exc}")
 
-# Main text
 text = "tAge"
-bbox = draw.textbbox((0, 0), text, font=font_large)
-text_width = bbox[2] - bbox[0]
-text_x = (width - text_width) // 2
+text_x = (width - font_large.getlength(text)) // 2
 text_y = height - 200
 
-draw.text((text_x, text_y), text, fill=primary_color + (255,), font=font_large)
-
-# Subtitle
 subtitle = "Transcriptomic Age"
-bbox_sub = draw.textbbox((0, 0), subtitle, font=font_small)
-sub_width = bbox_sub[2] - bbox_sub[0]
-sub_x = (width - sub_width) // 2
+sub_x = (width - font_small.getlength(subtitle)) // 2
 sub_y = text_y + 130
 
-draw.text((sub_x, sub_y), subtitle, fill=accent_color + (255,), font=font_small)
 
-# ---------------------------------------------------------------------------
-# Output: two assets, because they are consumed at very different sizes.
-#
-#   man/figures/logo-full.png   clock + wordmark. Legible only at README size
-#                               (300 px), which is its one and only use.
-#   man/figures/logo.png        square crop of the clock alone. pkgdown derives
-#                               BOTH the navbar logo (~30 px) and every favicon
-#                               from this file, and the wordmark is unreadable
-#                               mush at those sizes.
-#
-# Neither crop is hardcoded: both are measured from the alpha channel, so if the
-# artwork moves or changes size the crops follow. MARK_STYLE below picks what the
-# small icon contains.
-# ---------------------------------------------------------------------------
-import os
-import shutil
+# -- Output ------------------------------------------------------------------
 
-FULL_PATH = 'man/figures/logo-full.png'
-MARK_PATH = 'man/figures/logo.png'
-# The Python docs use the same mark for html_logo and html_favicon. Kept in sync
-# here so the two sites cannot drift apart.
-PYTHON_MARK_PATH = '../tage-python/docs/_static/logo.png'
-# The Python homepage shows the full logo in its hero block.
-PYTHON_FULL_PATH = '../tage-python/docs/_static/logo-full.png'
+FULL_PATH = 'man/figures/logo-full.svg'
+MARK_PATH = 'man/figures/logo.svg'
+# The Python docs use the same two files; kept in sync here so the sites cannot
+# drift apart.
+PYTHON_STATIC = '../tage-python/docs/_static'
+
 MARK_PADDING = 12
 
 # What the mark contains:
 #   'compact'  dial plus the ring of dots, redrawn close in. Keeps the motif of
 #              the full logo and still reads at 16 px, because the dial fills
 #              most of the frame instead of floating inside a wide halo.
-#   'wide'     the full artwork above the wordmark, cropped as-is. Faithful to
-#              logo-full.png, but the outer dots thin to nothing and the whole
+#   'wide'     dial plus the ring at the full logo's radii. Faithful to
+#              logo-full.svg, but the outer dots thin to nothing and the whole
 #              icon greys into a blob in a browser tab.
 #   'clock'    dial only, no dots.
 MARK_STYLE = 'compact'
@@ -149,52 +245,49 @@ MARK_STYLE = 'compact'
 # 103 (radius 100 + half of the 6 px stroke), so the ring starts just clear of it
 # and stops well short of where the full logo puts it (120 -> 179).
 COMPACT_RING = dict(r_start=113, r_step=0.62, dot_base=5, dot_growth=0.05)
+WIDE_RING = dict(r_start=120, r_step=1.2)
 
-img.save(FULL_PATH)
-print(f"full logo  -> {FULL_PATH}  ({img.width}x{img.height})")
+# Order matters: SVG has no z-index, it paints in document order.
+full = SvgCanvas()
+draw_helix(full, center_x, center_y - 50, **WIDE_RING)
+draw_dial(full, center_x, clock_y)
+full.text((text_x, text_y), text, font_large, primary_color + (255,))
+full.text((sub_x, sub_y), subtitle, font_small, accent_color + (255,))
+full.save(FULL_PATH, viewbox=(0, 0, width, height))
+print(f"full logo  -> {FULL_PATH}  ({width}x{height})")
 
+mark = SvgCanvas()
 if MARK_STYLE == 'compact':
-    # Drawn fresh on its own square canvas rather than cropped: the ring has to
-    # move inwards, which no crop of the large artwork can do.
-    side_guess = 2 * (clock_radius + 60)
-    source = Image.new('RGBA', (side_guess, side_guess), color=(255, 255, 255, 0))
-    mid = side_guess // 2
-    draw_helix(ImageDraw.Draw(source), mid, mid, **COMPACT_RING)
-    draw_dial(ImageDraw.Draw(source), mid, mid)
-    bounds = source.getchannel('A').getbbox()
+    draw_helix(mark, center_x, clock_y, **COMPACT_RING)
+    draw_dial(mark, center_x, clock_y)
 elif MARK_STYLE == 'clock':
-    # Crop the dial layer, so no helix dots survive in the corners.
-    source = clock_layer
-    bounds = clock_layer.getchannel('A').getbbox()
+    draw_dial(mark, center_x, clock_y)
+elif MARK_STYLE == 'wide':
+    draw_helix(mark, center_x, center_y - 50, **WIDE_RING)
+    draw_dial(mark, center_x, clock_y)
 else:
-    # text_y is the top of the wordmark, so the mark is everything above it.
-    source = img
-    bounds = img.crop((0, 0, width, text_y)).getchannel('A').getbbox()
+    raise SystemExit(f"unknown MARK_STYLE {MARK_STYLE!r}")
 
-if bounds is None:
-    raise SystemExit(f"no artwork found for MARK_STYLE={MARK_STYLE!r}")
-left, top, right, bottom = bounds
-mid_x, mid_y = (left + right) / 2, (top + bottom) / 2
-side = max(right - left, bottom - top) + 2 * MARK_PADDING
+if mark.bounds is None:
+    raise SystemExit(f"nothing drawn for MARK_STYLE={MARK_STYLE!r}")
 
-# Keep the square inside the canvas; the artwork is centred, so this only ever
-# trims the padding rather than the mark itself.
-# Clamp against the source canvas, which is not the 600x600 one for every style.
-side = int(min(side, source.width, source.height))
-crop_left = int(round(min(max(mid_x - side / 2, 0), source.width - side)))
-crop_top = int(round(min(max(mid_y - side / 2, 0), source.height - side)))
+# Square viewBox around whatever was drawn, so the mark is centred and tight
+# regardless of which style produced it.
+min_x, min_y, max_x, max_y = mark.bounds
+mid_x, mid_y = (min_x + max_x) / 2, (min_y + max_y) / 2
+side = max(max_x - min_x, max_y - min_y) + 2 * MARK_PADDING
+mark.save(MARK_PATH, viewbox=(round(mid_x - side / 2, 2),
+                              round(mid_y - side / 2, 2),
+                              round(side, 2), round(side, 2)))
+print(f"clock mark -> {MARK_PATH}  ({side:.0f}x{side:.0f}, style={MARK_STYLE})")
 
-mark = source.crop((crop_left, crop_top, crop_left + side, crop_top + side))
-mark.save(MARK_PATH)
-print(f"clock mark -> {MARK_PATH}  ({side}x{side} at +{crop_left}+{crop_top})")
-
-if os.path.isdir(os.path.dirname(PYTHON_MARK_PATH)):
-    shutil.copyfile(MARK_PATH, PYTHON_MARK_PATH)
-    shutil.copyfile(FULL_PATH, PYTHON_FULL_PATH)
-    print(f"clock mark -> {PYTHON_MARK_PATH}")
-    print(f"full logo  -> {PYTHON_FULL_PATH}")
+if os.path.isdir(PYTHON_STATIC):
+    for src in (FULL_PATH, MARK_PATH):
+        dst = os.path.join(PYTHON_STATIC, os.path.basename(src))
+        shutil.copyfile(src, dst)
+        print(f"           -> {dst}")
 else:
-    print(f"skipped {PYTHON_MARK_PATH} (directory not found)")
+    print(f"skipped {PYTHON_STATIC} (directory not found)")
 
-print("\nNext: regenerate the icon set - 7 files, never edited by hand:")
-print("  Rscript -e 'pkgdown::build_favicons(overwrite = TRUE)'")
+print("\nNext, if the mark changed: make favicons")
+print("  (the icon set stays raster - .ico and apple-touch-icon cannot be SVG)")
