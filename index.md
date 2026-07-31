@@ -1,6 +1,6 @@
 # tAge
 
-![tAge logo](reference/figures/logo-full.png)
+![tAge logo](reference/figures/logo-full.svg)
 
 R package for transcriptomic biological age prediction from gene
 expression data, implementing the transcriptomic clocks from
