@@ -1,3 +1,38 @@
+# tAge 1.3.1
+
+## Bug fixes
+
+* `map_genes(species = "monkey")` failed on every input with "subscript out
+  of bounds": macaque genes without a mouse ortholog were looked up with `[[`.
+  Mapping is now vectorised and drops those genes, as for the other species.
+
+* `tage_clock_forest(clocks_meta = list_clocks(...))` could not find the
+  prediction columns: `predict_tAge()` names them `<normalisation>_<mode>_tAge`,
+  not by model file. Registry rows are now matched through `scaling` and
+  `type` (Scaled + EN -> `scaled_diff_EN_tAge`), labelled from the registry
+  fields when there is no `name` column, and the registry's "Normalized age"
+  outcome is recognised. Two rows landing on one column is an error with an
+  explanation.
+
+* `tage_adjust_covariates()` with a Bayesian ridge `se_column` and no
+  `split_by` returned zero-centred residuals; the values are now put back on
+  the tAge scale like every other branch.
+
+* `tage_compare_groups()`, `tage_regress_continuous()`,
+  `tage_module_stats()` and `tage_adjust_covariates()` no longer drop a
+  stratum in silence. Every skipped clock/stratum is reported with a
+  warning naming it and the reason (reference group absent, fewer than two
+  groups, collinear covariates, a failed `lm` / `rma.uni` fit, ...).
+
+* `download_clocks()` raises R's download timeout while it runs (new
+  `timeout` argument, default 3600 s; the default 60 s aborted every
+  Bayesian ridge model, 0.9-2.4 GB each), removes partial files instead of
+  leaving them to be reported as "already present", and rejects files that
+  are not pickles (Zenodo error pages).
+
+* Normalized-age panels of `tage_clock_forest()` are labelled "fraction of
+  maximum lifespan", the scale the package actually returns.
+
 # tAge 1.3.0
 
 ## New features
