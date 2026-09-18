@@ -9,7 +9,8 @@ download_clocks(
   dest_dir = "clocks",
   record = .TAGE_ZENODO_RECORD,
   overwrite = FALSE,
-  quiet = FALSE
+  quiet = FALSE,
+  timeout = 3600
 )
 }
 \arguments{
@@ -24,6 +25,10 @@ Default "clocks".}
 \item{overwrite}{Logical. Re-download files that already exist. Default FALSE.}
 
 \item{quiet}{Logical. Suppress progress messages. Default FALSE.}
+
+\item{timeout}{Seconds allowed per file. R's default of 60 s aborts the
+Bayesian ridge models, which are 0.9-2.4 GB each; elastic net models are
+about 1 MB. Default 3600.}
 }
 \value{
 The \code{clocks} data frame with an added \code{path} column.
@@ -31,6 +36,11 @@ The \code{clocks} data frame with an added \code{path} column.
 \description{
 Downloads the given clock model files from the Zenodo record and returns the
 input augmented with a \code{path} column pointing to the local files.
+}
+\details{
+A partial or failed download is removed rather than left on disk,
+  and every file is checked to be a pickle (Zenodo answers some errors with
+  an HTML page, which would otherwise be saved under the model's name).
 }
 \examples{
 \dontrun{

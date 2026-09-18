@@ -79,7 +79,13 @@ list_clocks <- function(type = NULL, outcome = NULL, species = NULL,
 #' @param record Character Zenodo record id. Defaults to the published record.
 #' @param overwrite Logical. Re-download files that already exist. Default FALSE.
 #' @param quiet Logical. Suppress progress messages. Default FALSE.
+#' @param timeout Seconds allowed per file. R's default of 60 s aborts the
+#'   Bayesian ridge models, which are 0.9-2.4 GB each; elastic net models are
+#'   about 1 MB. Default 3600.
 #' @return The \code{clocks} data frame with an added \code{path} column.
+#' @details A partial or failed download is removed rather than left on disk,
+#'   and every file is checked to be a pickle (Zenodo answers some errors with
+#'   an HTML page, which would otherwise be saved under the model's name).
 #' @export
 #' @examples
 #' \dontrun{
@@ -93,7 +99,8 @@ list_clocks <- function(type = NULL, outcome = NULL, species = NULL,
 #' }
 download_clocks <- function(clocks, dest_dir = "clocks",
                             record = .TAGE_ZENODO_RECORD,
-                            overwrite = FALSE, quiet = FALSE) {
+                            overwrite = FALSE, quiet = FALSE,
+                            timeout = 3600) {
   if (is.data.frame(clocks)) {
     if (!"filename" %in% colnames(clocks)) {
       stop("`clocks` data frame must have a 'filename' column (use list_clocks()).")
@@ -108,20 +115,58 @@ download_clocks <- function(clocks, dest_dir = "clocks",
   dir.create(dest_dir, showWarnings = FALSE, recursive = TRUE)
   paths <- character(length(files))
 
+  old_timeout <- getOption("timeout", 60)
+  on.exit(options(timeout = old_timeout), add = TRUE)
+  options(timeout = max(old_timeout, timeout))
+
   for (i in seq_along(files)) {
     fn   <- files[i]
     dest <- file.path(dest_dir, fn)
     if (file.exists(dest) && !overwrite) {
-      if (!quiet) message(sprintf("✓ Already present: %s", fn))
+      if (!quiet) message(sprintf("\u2713 Already present: %s", fn))
     } else {
       url <- sprintf("https://zenodo.org/records/%s/files/%s?download=1",
                      record, utils::URLencode(fn, reserved = TRUE))
       if (!quiet) message(sprintf("Downloading %s ...", fn))
-      utils::download.file(url, dest, mode = "wb", quiet = quiet)
+      .tage_download_file(url, dest, quiet = quiet)
     }
     paths[i] <- dest
   }
 
   clocks$path <- paths
   clocks
+}
+
+# download.file() leaves a truncated file behind when it fails or times out,
+# and a later call would then report it as "already present".
+.tage_download_file <- function(url, dest, quiet = FALSE) {
+  status <- tryCatch(
+    utils::download.file(url, dest, mode = "wb", quiet = quiet),
+    error = function(e) e, warning = function(w) w
+  )
+  if (inherits(status, "condition") || !identical(as.integer(status), 0L)) {
+    unlink(dest)
+    msg <- if (inherits(status, "condition")) conditionMessage(status) else "non-zero exit status"
+    stop(sprintf("Download of %s failed (%s). The partial file was removed.", basename(dest), msg),
+         call. = FALSE)
+  }
+  .tage_check_download(dest)
+  invisible(dest)
+}
+
+# joblib pickles start with the pickle PROTO opcode (0x80); an HTML error page
+# starts with "<". Anything else that is empty is an aborted transfer.
+.tage_check_download <- function(dest) {
+  size <- file.info(dest)$size
+  first <- if (isTRUE(size > 0)) readBin(dest, "raw", n = 1L) else raw(0)
+  ok <- length(first) == 1L && first == as.raw(0x80)
+  if (!ok) {
+    head <- if (length(first)) rawToChar(readBin(dest, "raw", n = min(size, 200L))) else ""
+    unlink(dest)
+    stop(sprintf("%s is not a model file (%s bytes%s); it was removed. Check the record id and the file name.",
+                 basename(dest), format(size),
+                 if (grepl("<", head, fixed = TRUE)) ", looks like an HTML page" else ""),
+         call. = FALSE)
+  }
+  invisible(TRUE)
 }
