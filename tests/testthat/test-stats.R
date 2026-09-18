@@ -340,3 +340,50 @@ test_that("a categorical predictor is rejected rather than coerced to codes", {
     tage_regress_continuous(d, "tAge", "Sex"), "not numeric"
   )
 })
+
+test_that("strata that cannot be tested are reported, not dropped in silence", {
+  d <- .stats_fixture()
+  # No WT in Muscle: that stratum has no reference group.
+  d <- d[!(d$Tissue == "Muscle" & d$Genotype == "WT"), ]
+
+  expect_warning(
+    res <- tage_compare_groups(d, "tAge", "Genotype", "WT", split_by = "Tissue"),
+    "Skipping tAge \\[Muscle\\]: reference group 'WT' absent"
+  )
+  expect_setequal(unique(res$split), "Kidney")
+})
+
+test_that("a collinear covariate is reported with the stratum it broke", {
+  d <- .stats_fixture()
+  d$Age2 <- d$Age * 2
+  expect_warning(
+    res <- tage_compare_groups(d, "tAge", "Genotype", "WT", covariates = c("Age", "Age2")),
+    "Skipping tAge: redundant predictor"
+  )
+  expect_equal(nrow(res), 0L)
+})
+
+test_that("regress_continuous reports strata that are too small", {
+  d <- .stats_fixture()
+  d <- d[c(which(d$Tissue == "Kidney"), which(d$Tissue == "Muscle")[1:2]), ]
+  expect_warning(
+    res <- tage_regress_continuous(d, "tAge", "Age", split_by = "Tissue"),
+    "Skipping tAge \\[Muscle\\]: only 2 sample"
+  )
+  expect_setequal(unique(res$split), "Kidney")
+})
+
+test_that("Bayesian ridge covariate adjustment keeps the tAge scale without split_by", {
+  skip_if_not_installed("metafor")
+  d <- .stats_fixture()
+  adj_all   <- tage_adjust_covariates(d, "tAge", covariates = "Age", se_column = "tAge_sd")
+  adj_split <- tage_adjust_covariates(d, "tAge", covariates = "Age", se_column = "tAge_sd",
+                                      split_by = "Tissue")
+  adj_lm    <- tage_adjust_covariates(d, "tAge", covariates = "Age")
+  # Residuals alone are centred on zero; the adjusted values must sit where the
+  # data sit, as the lm and per-stratum branches already did.
+  # rma.uni residuals are weighted, so they only average out to ~zero.
+  expect_equal(mean(adj_all), mean(d$tAge), tolerance = 1e-3)
+  expect_equal(mean(adj_split), mean(d$tAge), tolerance = 0.05)
+  expect_equal(mean(adj_lm), mean(d$tAge), tolerance = 1e-8)
+})

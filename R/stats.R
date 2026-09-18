@@ -177,24 +177,35 @@ tage_significance_stars <- function(p) {
   )
 }
 
+# A stratum that cannot be tested is reported, never dropped in silence: the
+# caller sees which clock and stratum are missing from the table and why.
+.tage_skip <- function(value_column, split, reason) {
+  where <- if (is.null(split) || is.na(split)) value_column else sprintf("%s [%s]", value_column, split)
+  warning(sprintf("Skipping %s: %s", where, reason), call. = FALSE)
+  invisible(NULL)
+}
+
+.tage_try_reason <- function(x) {
+  conditionMessage(attr(x, "condition"))
+}
+
 # Fit the group model and return emmeans for the grouping factor. Elastic net
 # clocks go through lm(); Bayesian ridge clocks go through a REML
 # meta-regression weighted by 1 / (sd^2 + tau^2), read back into emmeans with
 # qdrg() on z-tests -- exactly what the reference application does.
+# Returns the emmeans object, or a character string saying why the fit failed.
 .tage_fit_emm <- function(df, response, group_column, covariates, se_column) {
   rhs <- .tage_rhs(c(group_column, covariates))
 
   if (is.na(se_column)) {
     fml <- stats::as.formula(paste(response, "~", rhs))
     model <- try(stats::lm(fml, data = df), silent = TRUE)
-    if (inherits(model, "try-error")) return(NULL)
+    if (inherits(model, "try-error")) return(paste("lm failed:", .tage_try_reason(model)))
     if (any(is.na(stats::coef(model)))) {
-      warning("Redundant predictor(s) dropped from the linear model - check for collinear covariates.",
-              call. = FALSE)
-      return(NULL)
+      return("redundant predictor(s) dropped from the linear model - check for collinear covariates")
     }
     emm <- try(emmeans::emmeans(model, specs = group_column), silent = TRUE)
-    if (inherits(emm, "try-error")) return(NULL)
+    if (inherits(emm, "try-error")) return(paste("emmeans failed:", .tage_try_reason(emm)))
     return(emm)
   }
 
@@ -207,7 +218,7 @@ tage_significance_stars <- function(p) {
     ),
     silent = TRUE
   )
-  if (inherits(model, "try-error")) return(NULL)
+  if (inherits(model, "try-error")) return(paste("rma.uni failed:", .tage_try_reason(model)))
 
   qrg <- try(
     emmeans::qdrg(formula = mods, data = df,
@@ -215,10 +226,10 @@ tage_significance_stars <- function(p) {
                   df = Inf),
     silent = TRUE
   )
-  if (inherits(qrg, "try-error")) return(NULL)
+  if (inherits(qrg, "try-error")) return(paste("qdrg failed:", .tage_try_reason(qrg)))
 
   emm <- try(emmeans::emmeans(qrg, specs = group_column), silent = TRUE)
-  if (inherits(emm, "try-error")) return(NULL)
+  if (inherits(emm, "try-error")) return(paste("emmeans failed:", .tage_try_reason(emm)))
   emm
 }
 
@@ -405,7 +416,10 @@ tage_compare_groups <- function(data,
     keep_cols <- c(vc, group_column, covariates, split_by)
     if (!is.na(se_col)) keep_cols <- c(keep_cols, se_col)
     work <- data[stats::complete.cases(data[, keep_cols, drop = FALSE]), , drop = FALSE]
-    if (nrow(work) == 0L) next
+    if (nrow(work) == 0L) {
+      .tage_skip(vc, NA, "no complete cases (missing values in the value, group, covariate or split columns)")
+      next
+    }
 
     for (stratum in .tage_split(work, split_by)) {
       df <- stratum$data
@@ -414,15 +428,27 @@ tage_compare_groups <- function(data,
         df <- df[as.character(df[[group_column]]) %in% requested, , drop = FALSE]
       }
       df[[group_column]] <- droplevels(df[[group_column]])
-      if (nlevels(df[[group_column]]) < 2L) next
-      if (!reference_group %in% levels(df[[group_column]])) next
+      if (nlevels(df[[group_column]]) < 2L) {
+        .tage_skip(vc, stratum$label, "fewer than two groups present")
+        next
+      }
+      if (!reference_group %in% levels(df[[group_column]])) {
+        .tage_skip(vc, stratum$label, sprintf("reference group '%s' absent", reference_group))
+        next
+      }
 
       emm <- .tage_fit_emm(df, vc, group_column, covariates, se_col)
-      if (is.null(emm)) next
+      if (is.character(emm)) {
+        .tage_skip(vc, stratum$label, emm)
+        next
+      }
 
       cont_df <- .tage_contrast_df(emm, group_column, reference_group, method,
                                    conf_level = conf_level)
-      if (is.null(cont_df) || nrow(cont_df) == 0L) next
+      if (is.null(cont_df) || nrow(cont_df) == 0L) {
+        .tage_skip(vc, stratum$label, "no contrast could be formed")
+        next
+      }
 
       # as.integer() strips the 1-d array structure that table() arithmetic
       # would otherwise carry into the result column.
@@ -541,20 +567,32 @@ tage_regress_continuous <- function(data,
     keep_cols <- c(vc, predictor, covariates, split_by)
     if (!is.na(se_col)) keep_cols <- c(keep_cols, se_col)
     work <- data[stats::complete.cases(data[, keep_cols, drop = FALSE]), , drop = FALSE]
-    if (nrow(work) == 0L) next
+    if (nrow(work) == 0L) {
+      .tage_skip(vc, NA, "no complete cases (missing values in the value, predictor, covariate or split columns)")
+      next
+    }
 
     for (stratum in .tage_split(work, split_by)) {
       df <- stratum$data
-      if (nrow(df) < 3L) next
+      if (nrow(df) < 3L) {
+        .tage_skip(vc, stratum$label, sprintf("only %d sample(s), need at least 3", nrow(df)))
+        next
+      }
 
       rhs <- .tage_rhs(c(predictor, covariates))
 
       if (is.na(se_col)) {
         fml <- stats::as.formula(paste(vc, "~", rhs))
         model <- try(stats::lm(fml, data = df), silent = TRUE)
-        if (inherits(model, "try-error")) next
+        if (inherits(model, "try-error")) {
+          .tage_skip(vc, stratum$label, paste("lm failed:", .tage_try_reason(model)))
+          next
+        }
         coefs <- stats::coef(summary(model))
-        if (!predictor %in% rownames(coefs)) next
+        if (!predictor %in% rownames(coefs)) {
+          .tage_skip(vc, stratum$label, sprintf("'%s' is not estimable (constant or collinear)", predictor))
+          next
+        }
         est <- coefs[predictor, "Estimate"]
         se  <- coefs[predictor, "Std. Error"]
         st  <- coefs[predictor, "t value"]
@@ -570,9 +608,15 @@ tage_regress_continuous <- function(data,
           ),
           silent = TRUE
         )
-        if (inherits(model, "try-error")) next
+        if (inherits(model, "try-error")) {
+          .tage_skip(vc, stratum$label, paste("rma.uni failed:", .tage_try_reason(model)))
+          next
+        }
         nm <- rownames(model$beta)
-        if (!predictor %in% nm) next
+        if (!predictor %in% nm) {
+          .tage_skip(vc, stratum$label, sprintf("'%s' is not estimable (constant or collinear)", predictor))
+          next
+        }
         j   <- which(nm == predictor)
         est <- as.numeric(model$beta)[j]
         se  <- model$se[j]
@@ -714,7 +758,10 @@ tage_module_stats <- function(data,
         df <- df[as.character(df[[split_by]]) == base$split[i], , drop = FALSE]
       }
       df <- df[as.character(df[[group_column]]) %in% c(reference_group, g2), , drop = FALSE]
-      if (nrow(df) < 3L) next
+      if (nrow(df) < 3L) {
+        .tage_skip(mc, base$split[i], "standardised effect not computed: fewer than 3 samples in the two groups")
+        next
+      }
 
       df$.tage_group <- factor(as.character(df[[group_column]]),
                                levels = c(reference_group, g2))
@@ -723,19 +770,31 @@ tage_module_stats <- function(data,
       if (!is.null(covariates)) {
         cov_fml <- stats::as.formula(paste(mc, "~", .tage_rhs(covariates)))
         cov_model <- try(stats::lm(cov_fml, data = df), silent = TRUE)
-        if (inherits(cov_model, "try-error")) next
+        if (inherits(cov_model, "try-error")) {
+          .tage_skip(mc, base$split[i], paste("standardised effect not computed:", .tage_try_reason(cov_model)))
+          next
+        }
         y <- stats::resid(cov_model)
       }
 
       sd_y <- stats::sd(y)
-      if (!is.finite(sd_y) || sd_y <= 0) next
+      if (!is.finite(sd_y) || sd_y <= 0) {
+        .tage_skip(mc, base$split[i], "standardised effect not computed: values are constant")
+        next
+      }
       df$.tage_std <- (y - mean(y)) / sd_y
 
       slope_model <- try(stats::lm(.tage_std ~ .tage_group, data = df), silent = TRUE)
-      if (inherits(slope_model, "try-error")) next
+      if (inherits(slope_model, "try-error")) {
+        .tage_skip(mc, base$split[i], paste("standardised effect not computed:", .tage_try_reason(slope_model)))
+        next
+      }
       coefs <- stats::coef(summary(slope_model))
       row <- paste0(".tage_group", g2)
-      if (!row %in% rownames(coefs)) next
+      if (!row %in% rownames(coefs)) {
+        .tage_skip(mc, base$split[i], "standardised effect not computed: group effect not estimable")
+        next
+      }
 
       base$estimate[i] <- coefs[row, "Estimate"]
       base$se[i]       <- coefs[row, "Std. Error"]
@@ -835,7 +894,9 @@ tage_adjust_covariates <- function(data,
   if (is.null(split_by)) {
     model <- metafor::rma.uni(yi = sub[[value_column]], sei = sub[[se_column]],
                               mods = mods, data = sub, method = "REML")
-    out[ok] <- as.numeric(stats::resid(model))
+    # Residuals are centred on zero; add the mean back so the adjusted values
+    # stay on the tAge scale, as the lm branch and the per-stratum branch do.
+    out[ok] <- as.numeric(stats::resid(model)) + mean(sub[[value_column]], na.rm = TRUE)
     return(out)
   }
 
@@ -848,7 +909,10 @@ tage_adjust_covariates <- function(data,
                        mods = mods, data = part, method = "REML"),
       silent = TRUE
     )
-    if (inherits(model, "try-error")) next
+    if (inherits(model, "try-error")) {
+      .tage_skip(value_column, lev, paste("rma.uni failed:", .tage_try_reason(model)))
+      next
+    }
     out[idx[sel]] <- as.numeric(stats::resid(model)) + mean(part[[value_column]], na.rm = TRUE)
   }
   out
