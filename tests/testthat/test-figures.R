@@ -218,3 +218,47 @@ test_that("tage_save_plot uses the recorded size and honours overrides", {
   expect_equal(dim(png::readPNG(f2))[2] / 72, 4, tolerance = 0.02)
   unlink(c(f, f2))
 })
+
+test_that("the forest plot accepts the clock registry as clocks_meta", {
+  skip_if_not_installed("ggplot2")
+  # predict_tAge() names its columns <normalisation>_<mode>_tAge, so a
+  # list_clocks() table has to be matched through scaling + type.
+  set.seed(3)
+  n <- 60
+  d <- data.frame(Genotype = factor(rep(c("WT", "KO"), each = n / 2), levels = c("WT", "KO")))
+  d$scaled_diff_EN_tAge <- 0.5 * (d$Genotype == "KO") + stats::rnorm(n, sd = 0.4)
+  d$yugene_diff_EN_tAge <- 0.6 * (d$Genotype == "KO") + stats::rnorm(n, sd = 0.4)
+
+  clocks <- list_clocks(type = "EN", outcome = "Mortality",
+                        species = "Multispecies", tissue = "Multi-Tissue")
+  expect_false(any(clocks$filename %in% names(d)))
+
+  p <- tage_clock_forest(d, clocks_meta = clocks, group_column = "Genotype",
+                         reference_group = "WT")
+  st <- attr(p, "tage_stats")
+  expect_setequal(st$value_column, c("scaled_diff_EN_tAge", "yugene_diff_EN_tAge"))
+  # Labels come from the registry fields, and the outcome drives the panel.
+  labs <- levels(ggplot2::layer_data(p)$group |> factor())
+  expect_true(all(grepl("Multispecies", .tage_clock_labels(clocks, clocks$filename))))
+  expect_true(all(st$value_column %in% names(d)))
+  .render(p)
+})
+
+test_that("registry outcomes are canonicalised to the figure keys", {
+  expect_equal(.tage_canonical_outcome(c("Normalized age", "Mortality", "chronological", "other")),
+               c("NormalizedAge", "Mortality", "Chronological", "other"))
+})
+
+test_that("two registry rows on one prediction column is an error", {
+  skip_if_not_installed("ggplot2")
+  set.seed(4)
+  d <- data.frame(Genotype = factor(rep(c("WT", "KO"), each = 10), levels = c("WT", "KO")))
+  d$scaled_diff_EN_tAge <- stats::rnorm(20)
+  clocks <- list_clocks(type = "EN", scaling = "Scaled", species = "Multispecies",
+                        tissue = "Multi-Tissue")   # Chronological + Mortality + Normalized age
+  expect_gt(nrow(clocks), 1)
+  expect_error(
+    tage_clock_forest(d, clocks_meta = clocks, group_column = "Genotype", reference_group = "WT"),
+    "same prediction column"
+  )
+})

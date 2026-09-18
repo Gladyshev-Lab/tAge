@@ -18,9 +18,75 @@ TAGE_OUTCOME_ORDER <- c("Chronological", "NormalizedAge", "Lifespan", "Mortality
 TAGE_OUTCOME_UNITS <- c(
   "Chronological" = "months",
   "Mortality"     = "log10 hazard ratio",
-  "Lifespan"      = "% of maximum lifespan",
-  "NormalizedAge" = "% of maximum lifespan"
+  "Lifespan"      = "fraction of maximum lifespan",
+  "NormalizedAge" = "fraction of maximum lifespan"
 )
+
+# The registry writes "Normalized age"; the figures key panels by the
+# one-word form. Anything unknown is passed through unchanged.
+.tage_canonical_outcome <- function(x) {
+  x <- as.character(x)
+  key <- gsub("[^a-z]", "", tolower(x))
+  known <- stats::setNames(TAGE_OUTCOME_ORDER, gsub("[^a-z]", "", tolower(TAGE_OUTCOME_ORDER)))
+  hit <- unname(known[key])
+  ifelse(is.na(hit), x, hit)
+}
+
+# Map a clock table (list_clocks() output, or any table with a `filename`
+# column) onto the prediction columns of `data`. predict_tAge() names its
+# output <normalisation>_<mode>_tAge, never by the model file, so a registry
+# row whose `filename` is not a column of `data` is matched through its
+# `scaling` and `type` instead: Scaled + EN -> scaled_diff_EN_tAge.
+.tage_resolve_clock_columns <- function(clocks_meta, data, value_columns,
+                                        label_column, outcome_column) {
+  clocks_meta <- as.data.frame(clocks_meta, stringsAsFactors = FALSE)
+  if (!"filename" %in% names(clocks_meta)) {
+    stop("`clocks_meta` needs a 'filename' column naming the prediction columns.",
+         call. = FALSE)
+  }
+  cols   <- as.character(clocks_meta$filename)
+  direct <- cols %in% colnames(data)
+
+  if (!all(direct) && all(c("scaling", "type") %in% names(clocks_meta))) {
+    norm <- c(Scaled = "scaled_diff", YuGene = "yugene_diff")[as.character(clocks_meta$scaling)]
+    derived <- paste0(norm, "_", as.character(clocks_meta$type), "_tAge")
+    use <- !direct & !is.na(norm) & derived %in% colnames(data)
+    cols[use] <- derived[use]
+  }
+
+  keep <- cols %in% colnames(data)
+  if (!is.null(value_columns)) keep <- keep & cols %in% value_columns
+  clocks_meta <- clocks_meta[keep, , drop = FALSE]
+  cols <- cols[keep]
+
+  if (anyDuplicated(cols)) {
+    stop("Several rows of `clocks_meta` map onto the same prediction column (",
+         paste(unique(cols[duplicated(cols)]), collapse = ", "), "). predict_tAge() ",
+         "names its columns by normalisation and model type only, so keep one clock ",
+         "outcome per results table, or rename the columns and put the new names in ",
+         "`filename`.", call. = FALSE)
+  }
+
+  labels <- if (label_column %in% names(clocks_meta)) {
+    as.character(clocks_meta[[label_column]])
+  } else {
+    .tage_clock_labels(clocks_meta, cols)
+  }
+  outcomes <- if (outcome_column %in% names(clocks_meta)) {
+    .tage_canonical_outcome(clocks_meta[[outcome_column]])
+  } else {
+    rep(NA_character_, length(cols))
+  }
+  list(cols = cols, labels = labels, outcomes = outcomes)
+}
+
+# Row label built from the registry fields when no `name` column exists.
+.tage_clock_labels <- function(meta, fallback) {
+  parts <- intersect(c("type", "species", "tissue", "scaling"), names(meta))
+  if (length(parts) == 0L || nrow(meta) == 0L) return(fallback)
+  lab <- do.call(paste, c(lapply(parts, function(p) as.character(meta[[p]])), sep = " \u00b7 "))
+  ifelse(is.na(lab) | !nzchar(lab), fallback, lab)
+}
 
 .tage_gg_require <- function() {
   if (!requireNamespace("ggplot2", quietly = TRUE)) {
@@ -228,21 +294,11 @@ tage_clock_forest <- function(data,
 
   # ---- resolve which columns to show, and how to label them ----
   if (!is.null(clocks_meta)) {
-    clocks_meta <- as.data.frame(clocks_meta)
-    if (!"filename" %in% names(clocks_meta)) {
-      stop("`clocks_meta` needs a 'filename' column naming the prediction columns.",
-           call. = FALSE)
-    }
-    keep <- clocks_meta$filename %in% colnames(data)
-    if (!is.null(value_columns)) keep <- keep & clocks_meta$filename %in% value_columns
-    clocks_meta <- clocks_meta[keep, , drop = FALSE]
-    cols <- as.character(clocks_meta$filename)
-    labels <- if (label_column %in% names(clocks_meta)) {
-      as.character(clocks_meta[[label_column]])
-    } else cols
-    outcomes <- if (outcome_column %in% names(clocks_meta)) {
-      as.character(clocks_meta[[outcome_column]])
-    } else rep(NA_character_, length(cols))
+    resolved <- .tage_resolve_clock_columns(clocks_meta, data, value_columns,
+                                            label_column, outcome_column)
+    cols     <- resolved$cols
+    labels   <- resolved$labels
+    outcomes <- resolved$outcomes
   } else {
     if (is.null(value_columns)) stop("Pass `value_columns`, `clocks_meta`, or both.", call. = FALSE)
     cols <- intersect(as.character(value_columns), colnames(data))
