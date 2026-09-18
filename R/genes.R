@@ -69,16 +69,14 @@ map_genes <- function(eset,
   orthologs      <- orthologs[!is.na(orthologs[["Entrez.mouse"]]), ]
   ortholog_map   <- setNames(orthologs[["Entrez.mouse"]], orthologs[["Ensembl.macaca"]])
 
-  # Chain: original ID -> Ensembl -> mouse Entrez
-  gene_map <- list()
-  for (orig_name in names(monkey_ens_map)) {
-    mouse_entrez <- ortholog_map[[ monkey_ens_map[[orig_name]] ]]
-    if (!is.null(mouse_entrez) && !is.na(mouse_entrez)) {
-      gene_map[[orig_name]] <- mouse_entrez
-    }
-  }
+  # Chain: original ID -> Ensembl -> mouse Entrez. Indexing with `[` returns
+  # NA for macaque genes without a mouse ortholog; `[[` errored on them
+  # ("subscript out of bounds"), which made every monkey mapping fail.
+  ens   <- as.character(unname(monkey_ens_map))
+  mouse <- unname(ortholog_map[ens])
+  keep  <- !is.na(names(monkey_ens_map)) & !is.na(ens) & !is.na(mouse)
 
-  unlist(gene_map)
+  stats::setNames(mouse[keep], names(monkey_ens_map)[keep])
 }
 
 
