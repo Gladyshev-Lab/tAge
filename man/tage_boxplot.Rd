@@ -13,7 +13,13 @@ tage_boxplot(
   point_size = 2,
   point_alpha = 0.7,
   box_width = 0.5,
-  stat_method = "t.test",
+  stat_method = "emmeans",
+  reference_group = NULL,
+  covariates = NULL,
+  se_column = NULL,
+  variance_strata = c("subset", "all_data"),
+  p_adjust = "BH",
+  p_adjust_scope = "within_column",
   comparisons = NULL,
   p_label = "p.signif",
   p_threshold = NULL,
@@ -52,11 +58,33 @@ column.}
 
 \item{box_width}{Width of the boxes.}
 
-\item{stat_method}{Test used for the pairwise comparisons, passed to
-\code{ggpubr::stat_compare_means}. Default \code{"t.test"}.}
+\item{stat_method}{Test used for the comparisons. \code{"emmeans"} (default)
+uses \code{\link{tage_compare_groups}}, i.e. the estimated marginal-mean
+contrasts of the reference application, which support covariates,
+stratum-wise models and Bayesian ridge weighting. Any other value is
+passed straight to \code{ggpubr::stat_compare_means} as before, e.g.
+\code{"t.test"} or \code{"wilcox.test"}.}
+
+\item{reference_group}{Reference level for \code{stat_method = "emmeans"}.
+Default \code{NULL} uses the first level of \code{x_var}.}
+
+\item{covariates}{Covariate columns adjusted for when
+\code{stat_method = "emmeans"}. Supplying them also switches the plotted
+values to covariate-adjusted ones, matching the reference application.}
+
+\item{se_column}{Column of per-sample prediction standard deviations for a
+Bayesian ridge clock, enabling the meta-regression test. Default
+\code{NULL}.}
+
+\item{variance_strata}{Passed to \code{\link{tage_compare_groups}}.}
+
+\item{p_adjust, p_adjust_scope}{Multiplicity correction passed to
+\code{\link{tage_compare_groups}}.}
 
 \item{comparisons}{List of length-2 character vectors giving the pairs to
-test. Default \code{NULL} tests all pairs of \code{x_var} levels.}
+test. Default \code{NULL} compares every level against
+\code{reference_group} for \code{stat_method = "emmeans"}, and tests all
+pairs of \code{x_var} levels otherwise.}
 
 \item{p_label}{Label style for the annotations, e.g. \code{"p.signif"} for
 stars or \code{"p.format"} for numeric p-values.}

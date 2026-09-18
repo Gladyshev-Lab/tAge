@@ -112,6 +112,84 @@ results <- tAge_by_group(
 )
 ```
 
+## Statistics
+
+`tage_compare_groups()` and friends implement the same models as the TACO /
+tClock reference application, so R, Python and the app agree numerically.
+Elastic net clocks are compared with estimated marginal-mean contrasts of
+`value ~ group + covariates` (`emmeans` on an `lm`); Bayesian ridge clocks go
+through a REML meta-regression (`metafor::rma.uni`) that weights each sample by
+its own prediction standard deviation and reports z-tests.
+
+```r
+# BR predictions carry a matching <normalisation>_BR_tAge_sd column.
+results <- predict_tAge(tAge_eset, model_paths, species = "mouse", mode = "BR")
+
+tage_compare_groups(
+  results,
+  value_columns   = "yugene_diff_BR_tAge",
+  group_column    = "Genotype",
+  reference_group = "WT",
+  covariates      = "Sex",
+  split_by        = "Tissue",
+  se_columns      = "yugene_diff_BR_tAge_sd",   # BR clocks only
+  p_adjust        = "BH"
+)
+```
+
+One row per contrast, with `estimate` always meaning `group2 - group1`, plus
+`se`, a 95% interval in `ci_low` / `ci_high`, `statistic`, `df`, `p_value`,
+`p_adjusted` and a `label` holding the usual `*** ** * ^` stars.
+
+| Function | Description |
+|---|---|
+| `tage_compare_groups()` | marginal-mean contrasts between groups |
+| `tage_regress_continuous()` | slope of tAge against a numeric predictor |
+| `tage_module_stats()` | per-module effect sizes and p-values for module clocks |
+| `tage_adjust_covariates()` | covariate-adjusted values matching what the model tested |
+| `tage_significance_stars()` | `*** ** * ^` labels |
+
+Two figures are built directly on those tests, and return the statistics as the
+`"tage_stats"` attribute:
+
+| Function | Description |
+|---|---|
+| `tage_clock_forest()` | one clock per row, effect with 95% CI, filled = survives the correction |
+| `tage_module_heatmap()` | module effects as a heatmap, modules × strata |
+
+```r
+p <- tage_clock_forest(
+  results, clocks_meta = clocks,
+  group_column = "Genotype", reference_group = "WT", split_by = "Tissue"
+)
+```
+
+A `ggplot` carries no size of its own, so the figure functions record the size
+they were designed for and grow it with the number of clocks, modules and
+panels. `tage_save_plot()` uses that size; `tage_fig_size()` reads it back for a
+knitr chunk:
+
+```r
+tage_fig_size(p)                       # width and height in inches
+tage_save_plot(p, "forest.png")        # saved at the recorded size
+tage_save_plot(p, "forest.pdf", width = 7)   # override just the width
+
+# or fix the size up front
+tage_clock_forest(..., width = 7, height = 4.5)
+tage_clock_forest(..., row_height = 0.22, panel_width = 4.0)
+tage_module_heatmap(..., cell_height = 0.28, cell_width = 0.9)
+```
+
+`variance_strata` chooses whether the residual variance comes from the two
+compared groups (`"subset"`) or from every group in the stratum
+(`"all_data"`); `p_adjust_scope` chooses the correction family —
+`"within_column"` across comparisons and strata of one clock,
+`"across_columns"` across clocks or modules within a comparison and stratum, or
+`"global"`.
+
+`tage_boxplot()` uses this engine by default (`stat_method = "emmeans"`); pass
+`stat_method = "t.test"` for the previous `ggpubr` behaviour.
+
 ## Interpreting the output
 
 The units of the prediction depend on the clock **outcome**:

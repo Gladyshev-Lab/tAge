@@ -4,7 +4,13 @@
 \alias{predict_tAge}
 \title{Predict transcriptomic age for multiple processed ExpressionSet objects}
 \usage{
-predict_tAge(tAge_eset, model_paths, species, mode)
+predict_tAge(
+  tAge_eset,
+  model_paths,
+  species,
+  mode,
+  return_std = identical(mode, "BR")
+)
 }
 \arguments{
 \item{tAge_eset}{A named list of ExpressionSet objects, each representing a different
@@ -16,6 +22,13 @@ normalization method (e.g., "scaled", "scaled_diff", "yugene", "yugene_diff").}
 
 \item{mode}{Character string specifying the model type. Must be either "EN" for
 Elastic Net or "BR" for Bayesian Ridge.}
+
+\item{return_std}{Logical. Whether to keep the per-sample predictive standard
+deviation of Bayesian Ridge clocks. Defaults to \code{TRUE} for
+\code{mode = "BR"}, adding one \code{<normalisation>_BR_tAge_sd} column per
+clock. Pass these to the \code{se_columns} argument of
+\code{\link{tage_compare_groups}} to reproduce the reference application's
+Bayesian ridge statistics.}
 }
 \value{
 A data frame containing the predicted transcriptomic age results for all

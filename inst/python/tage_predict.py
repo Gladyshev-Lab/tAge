@@ -191,6 +191,13 @@ def predict_tAge(
     # registry); otherwise fall back to detecting the type from the file name.
     do_adjust = adjust_lifespan if adjust_lifespan is not None else _is_chronological_clock(model_path)
     if do_adjust and species in PREDICTIONS_SPECIES_ADJ:
-        ann.loc[:, f"{pfx}tAge"] = ann.loc[:, f"{pfx}tAge"] * PREDICTIONS_SPECIES_ADJ[species]
+        factor = PREDICTIONS_SPECIES_ADJ[species]
+        ann.loc[:, f"{pfx}tAge"] = ann.loc[:, f"{pfx}tAge"] * factor
+        # The predictive standard deviation lives on the same scale as the
+        # prediction, so it has to follow the same rescaling. Downstream
+        # meta-regression weights samples by 1/sd^2 and would otherwise be
+        # wrong by factor^2.
+        if std is not None:
+            ann.loc[:, f"{pfx}tAge_std"] = ann.loc[:, f"{pfx}tAge_std"] * factor
 
     return ann

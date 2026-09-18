@@ -28,18 +28,18 @@ library(tAge)
              reticulate::py_module_available, logical(1))),
   error = function(e) FALSE)
 
-.model_path <- NULL
+# Four clocks: both outcomes x both normalisations, so the figures below have
+# something to compare.
+.clocks <- NULL
 if (.py_ok) {
-  .model_path <- tryCatch({
-    cl <- list_clocks(type = "EN", outcome = "Mortality",
-                      species = "Multispecies", tissue = "Multi-Tissue",
-                      scaling = "Scaled")
-    download_clocks(cl, dest_dir = file.path(tempdir(), "tage-clocks"),
-                    quiet = TRUE)$path[1]
+  .clocks <- tryCatch({
+    cl <- list_clocks(type = "EN", species = "Multispecies", tissue = "Multi-Tissue")
+    cl <- cl[cl$outcome %in% c("Chronological", "Mortality"), ]
+    download_clocks(cl, dest_dir = file.path(tempdir(), "tage-clocks"), quiet = TRUE)
   }, error = function(e) NULL)
 }
 
-RUN_MODELS <- .py_ok && !is.null(.model_path) && file.exists(.model_path)
+RUN_MODELS <- .py_ok && !is.null(.clocks) && all(file.exists(.clocks$path))
 ```
 
 # Overview
@@ -106,28 +106,126 @@ model_paths <- list(
 
 # 4. Predict
 
+`predict_tAge()` takes one model per normalisation, so applying several clocks
+means one call per outcome. Renaming the columns as we go keeps them apart and
+builds the clock table the figures use.
+
 ```{r predict, eval = RUN_MODELS}
 Sys.setenv(RETICULATE_PYTHON = Sys.getenv("RETICULATE_PYTHON"))  # use your env
 
-results <- predict_tAge(
-  tAge_eset,
-  model_paths = list(scaled_diff = .model_path),
-  species = "mouse",
-  mode = "EN"
+predict_one_outcome <- function(outcome) {
+  cl <- .clocks[.clocks$outcome == outcome, ]
+  res <- predict_tAge(
+    tAge_eset,
+    model_paths = list(scaled_diff = cl$path[cl$scaling == "Scaled"],
+                       yugene_diff = cl$path[cl$scaling == "YuGene"]),
+    species = "mouse",
+    mode = "EN"
+  )
+  out <- res[, c("scaled_diff_EN_tAge", "yugene_diff_EN_tAge"), drop = FALSE]
+  names(out) <- paste0(outcome, c("_Scaled", "_YuGene"))
+  out
+}
+
+results <- cbind(
+  Biobase::pData(tAge_eset$scaled_diff),
+  predict_one_outcome("Chronological"),
+  predict_one_outcome("Mortality")
 )
-head(results[, c("Genotype", "Tissue", "scaled_diff_EN_tAge")])
+
+# The table the figures use to label rows and pick units per outcome.
+clocks_meta <- data.frame(
+  filename = c("Chronological_Scaled", "Chronological_YuGene",
+               "Mortality_Scaled", "Mortality_YuGene"),
+  name     = c("EN Scaled", "EN YuGene", "EN Scaled", "EN YuGene"),
+  outcome  = rep(c("Chronological", "Mortality"), each = 2),
+  stringsAsFactors = FALSE
+)
+
+head(results[, c("Genotype", "Tissue", "Mortality_Scaled")])
 ```
 
 ```{r predict-skipped, echo = FALSE, results = "asis", eval = !RUN_MODELS}
 cat("> _Prediction skipped: no Python environment (or no internet to fetch the",
-    "model) was available at build time. Set `RETICULATE_PYTHON` and rebuild to",
+    "models) was available at build time. Set `RETICULATE_PYTHON` and rebuild to",
     "run this step._\n")
 ```
 
-These mortality values are `log10(hazard ratio)` — small numbers centred near
+The mortality values are `log10(hazard ratio)` — small numbers centred near
 zero, **not** ages. See below.
 
-# Interpreting the output
+# 5. Compare groups
+
+`tage_compare_groups()` is the test behind every figure in the package, and the
+same one the TACO web app runs: estimated marginal-mean contrasts of
+`tAge ~ group + covariates`, one model per stratum.
+
+```{r stats, eval = RUN_MODELS}
+stats <- tage_compare_groups(
+  results,
+  value_columns   = clocks_meta$filename,
+  group_column    = "Genotype",
+  reference_group = "WT",
+  split_by        = "Tissue",
+  p_adjust        = "BH",
+  p_adjust_scope  = "across_columns"   # correct across the clocks in one panel
+)
+
+stats[, c("value_column", "split", "group2", "estimate",
+          "ci_low", "ci_high", "p_adjusted", "label")]
+```
+
+`estimate` is always `group2 - group1`, in the clock's own units, and
+`ci_low`/`ci_high` are the 95% interval. A few arguments are worth knowing:
+
+- `covariates` puts nuisance variables in the model instead of ignoring them.
+- `se_columns` switches to the weighted meta-regression for Bayesian ridge
+  clocks — pass the `_sd` columns that `predict_tAge(mode = "BR")` returns.
+- `variance_strata` chooses whether the residual variance comes from the two
+  compared groups or from every group present.
+- `p_adjust_scope` chooses the correction family: `"within_column"` across the
+  comparisons of one clock, `"across_columns"` across clocks within a
+  comparison, or `"global"`.
+
+# 6. Figures
+
+`tage_clock_forest()` shows every clock at once with its uncertainty. Filled
+markers cleared the correction; hollow ones did not.
+
+```{r forest, eval = RUN_MODELS, fig.width = 9, fig.height = 4.5}
+tage_clock_forest(
+  results,
+  clocks_meta     = clocks_meta,
+  group_column    = "Genotype",
+  reference_group = "WT",
+  compare_groups  = "Klotho KO",
+  split_by        = "Tissue",
+  title           = "Klotho KO vs WT"
+)
+```
+
+For a single clock, `tage_boxplot()` shows the samples themselves. It annotates
+the brackets from the same engine, so the stars agree with the table above.
+
+```{r boxplot, eval = RUN_MODELS, fig.width = 8, fig.height = 4.5}
+tage_boxplot(
+  results,
+  x_var        = "Genotype",
+  y_var        = "Mortality_Scaled",
+  subgroup_var = "Tissue",
+  x_order      = c("WT", "Klotho KO"),
+  ylab         = "Mortality tAge, log10 HR"
+)
+```
+
+```{r figures-skipped, echo = FALSE, results = "asis", eval = !RUN_MODELS}
+cat("> _Figures skipped along with the prediction step._\n")
+```
+
+When the clocks are module clocks, `tage_module_heatmap()` is the equivalent
+figure: modules on the rows, strata on the columns, effects in the cells.
+
+# 7. Interpreting the output
 
 | Outcome | Units | Notes |
 |---|---|---|
@@ -138,7 +236,7 @@ zero, **not** ages. See below.
 `tAge` looks up each clock in the registry and rescales **only** chronological
 clocks to age units.
 
-# Reference groups (centring)
+# 8. Reference groups (centring)
 
 All distributed clocks are *relative*: they operate on expression centred
 against a reference group.

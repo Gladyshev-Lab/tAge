@@ -11,10 +11,17 @@
 #'   match the species the model was trained on.
 #' @param mode Character string specifying the model type. Must be either "EN" for
 #'   Elastic Net or "BR" for Bayesian Ridge.
+#' @param return_std Logical. Whether to also return the per-sample predictive
+#'   standard deviation, which only Bayesian Ridge models provide. Defaults to
+#'   \code{TRUE} for \code{mode = "BR"}. The standard deviations are what
+#'   \code{\link{tage_compare_groups}} weights samples by, so keep them if you
+#'   intend to run statistics on BR predictions.
 #' @return A data frame containing the predicted transcriptomic age results with
-#'   sample information and predicted ages.
+#'   sample information and predicted ages, plus a \code{BR_tAge_std} column
+#'   when \code{return_std} is \code{TRUE}.
 #' @export
-predict_tAge_one <- function(eset, model_path, species, mode) {
+predict_tAge_one <- function(eset, model_path, species, mode,
+                             return_std = identical(mode, "BR")) {
   if (missing(model_path) || !file.exists(model_path)) {
     stop("Model path is missing or the file does not exist.")
   }
@@ -51,13 +58,18 @@ predict_tAge_one <- function(eset, model_path, species, mode) {
   adjust <- .clock_lifespan_scaled(model_path)
   adjust_arg <- if (is.na(adjust)) NULL else adjust
 
-  if (mode == "EN") {
-    sample_result <- mod$predict_tAge(model_path, expr_df, meta_df, species = species, return_std = FALSE, prefix = "EN_", adjust_lifespan = adjust_arg)
-  } else if (mode == "BR") {
-    sample_result <- mod$predict_tAge(model_path, expr_df, meta_df, species = species, return_std = FALSE, prefix = "BR_", adjust_lifespan = adjust_arg)
-  } else {
-    stop("Unsupported mode. Use 'EN' or 'BR'.")
+  if (mode == "EN" && isTRUE(return_std)) {
+    warning("Elastic net models do not provide predictive standard deviations; ignoring return_std.")
+    return_std <- FALSE
   }
+
+  sample_result <- mod$predict_tAge(
+    model_path, expr_df, meta_df,
+    species = species,
+    return_std = isTRUE(return_std),
+    prefix = paste0(mode, "_"),
+    adjust_lifespan = adjust_arg
+  )
   return(sample_result)
 }
 
@@ -71,10 +83,17 @@ predict_tAge_one <- function(eset, model_path, species, mode) {
 #' @param species Character string specifying the species for the models.
 #' @param mode Character string specifying the model type. Must be either "EN" for
 #'   Elastic Net or "BR" for Bayesian Ridge.
+#' @param return_std Logical. Whether to keep the per-sample predictive standard
+#'   deviation of Bayesian Ridge clocks. Defaults to \code{TRUE} for
+#'   \code{mode = "BR"}, adding one \code{<normalisation>_BR_tAge_sd} column per
+#'   clock. Pass these to the \code{se_columns} argument of
+#'   \code{\link{tage_compare_groups}} to reproduce the reference application's
+#'   Bayesian ridge statistics.
 #' @return A data frame containing the predicted transcriptomic age results for all
 #'   provided ExpressionSet objects, with appropriately named columns.
 #' @export
-predict_tAge <- function(tAge_eset, model_paths, species, mode) {
+predict_tAge <- function(tAge_eset, model_paths, species, mode,
+                         return_std = identical(mode, "BR")) {
   if (!is.list(tAge_eset) || length(tAge_eset) == 0) {
     stop("tAge_eset must be a non-empty list of ExpressionSet objects.")
   }
@@ -104,22 +123,32 @@ predict_tAge <- function(tAge_eset, model_paths, species, mode) {
     }
   
     model_path <- model_paths[[name]]
-    res <- predict_tAge_one(eset, model_path, species, mode)
+    res <- predict_tAge_one(eset, model_path, species, mode, return_std = return_std)
 
     # Ensure a 2D data.frame regardless of how reticulate converts the Python
     # result (some reticulate/pandas versions can return a bare vector for a
     # single column, which breaks the colnames<- below).
     res <- as.data.frame(res, check.names = FALSE)
 
-    # Rename 'EN_tAge' or 'BR_tAge' to name + mode + '_tAge'
-    tAge_col <- if (mode == "EN") "EN_tAge" else "BR_tAge"
+    # Rename 'EN_tAge' or 'BR_tAge' to name + mode + '_tAge', and the matching
+    # predictive standard deviation to '<name>_<mode>_tAge_sd'.
+    tAge_col <- paste0(mode, "_tAge")
     new_tAge_col <- paste0(name, "_", mode, "_tAge")
     colnames(res)[colnames(res) == tAge_col] <- new_tAge_col
+
+    new_cols <- new_tAge_col
+    std_col <- paste0(mode, "_tAge_std")
+    if (std_col %in% colnames(res)) {
+      new_sd_col <- paste0(new_tAge_col, "_sd")
+      colnames(res)[colnames(res) == std_col] <- new_sd_col
+      new_cols <- c(new_cols, new_sd_col)
+    }
+
     if (is.null(results)) {
       results <- res
     } else {
-      # Add new columns to results, only the tAge column at a time
-      results <- cbind(results, res[, new_tAge_col, drop = FALSE])
+      # Add new columns to results, only the prediction columns at a time
+      results <- cbind(results, res[, new_cols, drop = FALSE])
     }
   }
   return(results)

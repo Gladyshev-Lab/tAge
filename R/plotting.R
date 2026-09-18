@@ -111,10 +111,27 @@ plot_eset_density <- function(
 #'   \code{x_var}.
 #' @param point_size,point_alpha Size and opacity of the jittered points.
 #' @param box_width Width of the boxes.
-#' @param stat_method Test used for the pairwise comparisons, passed to
-#'   \code{ggpubr::stat_compare_means}. Default \code{"t.test"}.
+#' @param stat_method Test used for the comparisons. \code{"emmeans"} (default)
+#'   uses \code{\link{tage_compare_groups}}, i.e. the estimated marginal-mean
+#'   contrasts of the reference application, which support covariates,
+#'   stratum-wise models and Bayesian ridge weighting. Any other value is
+#'   passed straight to \code{ggpubr::stat_compare_means} as before, e.g.
+#'   \code{"t.test"} or \code{"wilcox.test"}.
+#' @param reference_group Reference level for \code{stat_method = "emmeans"}.
+#'   Default \code{NULL} uses the first level of \code{x_var}.
+#' @param covariates Covariate columns adjusted for when
+#'   \code{stat_method = "emmeans"}. Supplying them also switches the plotted
+#'   values to covariate-adjusted ones, matching the reference application.
+#' @param se_column Column of per-sample prediction standard deviations for a
+#'   Bayesian ridge clock, enabling the meta-regression test. Default
+#'   \code{NULL}.
+#' @param variance_strata Passed to \code{\link{tage_compare_groups}}.
+#' @param p_adjust,p_adjust_scope Multiplicity correction passed to
+#'   \code{\link{tage_compare_groups}}.
 #' @param comparisons List of length-2 character vectors giving the pairs to
-#'   test. Default \code{NULL} tests all pairs of \code{x_var} levels.
+#'   test. Default \code{NULL} compares every level against
+#'   \code{reference_group} for \code{stat_method = "emmeans"}, and tests all
+#'   pairs of \code{x_var} levels otherwise.
 #' @param p_label Label style for the annotations, e.g. \code{"p.signif"} for
 #'   stars or \code{"p.format"} for numeric p-values.
 #' @param p_threshold If supplied, comparisons whose p-value is not below this
@@ -161,7 +178,13 @@ tage_boxplot <- function(
   point_size = 2,
   point_alpha = 0.7,
   box_width = 0.5,
-  stat_method = "t.test",
+  stat_method = "emmeans",
+  reference_group = NULL,
+  covariates = NULL,
+  se_column = NULL,
+  variance_strata = c("subset", "all_data"),
+  p_adjust = "BH",
+  p_adjust_scope = "within_column",
   comparisons = NULL,
   p_label = "p.signif",
   p_threshold = NULL,
@@ -199,9 +222,47 @@ tage_boxplot <- function(
   }
   x_levels <- levels(data[[x_var]])
 
+  variance_strata <- match.arg(variance_strata)
+  use_emmeans <- identical(stat_method, "emmeans")
+
+  stat_table <- NULL
+  if (use_emmeans) {
+    if (is.null(reference_group)) reference_group <- x_levels[1]
+    if (!reference_group %in% x_levels) {
+      stop("reference_group '", reference_group, "' is not a level of x_var")
+    }
+
+    stat_table <- tage_compare_groups(
+      data            = data,
+      value_columns   = y_var,
+      group_column    = x_var,
+      reference_group = reference_group,
+      covariates      = covariates,
+      split_by        = subgroup_var,
+      se_columns      = se_column,
+      method          = "trt.vs.ctrl",
+      variance_strata = variance_strata,
+      p_adjust        = p_adjust,
+      p_adjust_scope  = p_adjust_scope
+    )
+
+    # Plot what the model tested: with covariates the reference application
+    # shows partial residuals rather than raw predictions.
+    if (!is.null(covariates)) {
+      data[[".tage_adjusted"]] <- tage_adjust_covariates(
+        data, y_var, covariates, split_by = subgroup_var, se_column = se_column
+      )
+      y_var <- ".tage_adjusted"
+    }
+  }
+
   # Filter comparisons to groups with enough observations
   if (is.null(comparisons)) {
-    comparisons <- combn(x_levels, 2, simplify = FALSE)
+    comparisons <- if (use_emmeans) {
+      lapply(setdiff(x_levels, reference_group), function(g) c(reference_group, g))
+    } else {
+      combn(x_levels, 2, simplify = FALSE)
+    }
   }
 
   # If faceting, filter comparisons per facet; otherwise filter globally
@@ -224,7 +285,13 @@ tage_boxplot <- function(
   }
 
   # If p_threshold set, pre-compute and keep only significant comparisons
-  if (!is.null(p_threshold) && length(valid_comparisons) > 0) {
+  if (!is.null(p_threshold) && length(valid_comparisons) > 0 && use_emmeans) {
+    # Keep a comparison if it clears the threshold in at least one stratum.
+    valid_comparisons <- Filter(function(comp) {
+      hit <- stat_table$group1 == comp[1] & stat_table$group2 == comp[2]
+      any(hit) && any(stat_table$p_adjusted[hit] < p_threshold, na.rm = TRUE)
+    }, valid_comparisons)
+  } else if (!is.null(p_threshold) && length(valid_comparisons) > 0) {
     if (!is.null(subgroup_var)) {
       # Keep if significant in at least one facet
       valid_comparisons <- Filter(function(comp) {
@@ -261,7 +328,57 @@ tage_boxplot <- function(
   }
 
   # Add stat comparisons only if there are valid ones
-  if (length(valid_comparisons) > 0) {
+  if (length(valid_comparisons) > 0 && use_emmeans) {
+    keep <- mapply(
+      function(g1, g2) any(vapply(valid_comparisons,
+                                  function(cp) cp[1] == g1 && cp[2] == g2, logical(1))),
+      stat_table$group1, stat_table$group2
+    )
+    ann <- stat_table[keep, , drop = FALSE]
+
+    y_range_vals <- range(data[[y_var]], na.rm = TRUE)
+    y_range_size <- diff(y_range_vals)
+
+    if (nrow(ann) > 0) {
+      # Stack brackets per stratum, above that stratum's own data.
+      step <- 0.10 * y_range_size
+      ann$y.position <- NA_real_
+
+      if (is.null(subgroup_var)) {
+        ann$y.position <- y_range_vals[2] + step * seq_len(nrow(ann))
+      } else {
+        tops <- tapply(data[[y_var]], as.character(data[[subgroup_var]]),
+                       max, na.rm = TRUE)
+        for (k in unique(as.character(ann$split))) {
+          idx <- which(as.character(ann$split) == k)
+          base_top <- if (k %in% names(tops)) tops[[k]] else y_range_vals[2]
+          ann$y.position[idx] <- base_top + step * seq_along(idx)
+        }
+      }
+
+      ann$label <- switch(
+        p_label,
+        "p.signif" = ifelse(nzchar(ann$label), ann$label, "ns"),
+        "p.format" = format.pval(ann$p_adjusted, digits = 2, eps = 1e-16),
+        format.pval(ann$p_adjusted, digits = 2, eps = 1e-16)
+      )
+      if (!is.null(subgroup_var)) ann[[subgroup_var]] <- ann$split
+
+      y_max_needed <- max(ann$y.position, na.rm = TRUE) + y_range_size * 0.08
+
+      p <- p + ggpubr::stat_pvalue_manual(
+        ann,
+        label      = "label",
+        y.position = "y.position",
+        xmin       = "group1",
+        xmax       = "group2",
+        tip.length = 0.01,
+        size       = font_size / 3
+      )
+    } else {
+      y_max_needed <- y_range_vals[2] + y_range_size * 0.05
+    }
+  } else if (length(valid_comparisons) > 0) {
     y_range_vals  <- range(data[[y_var]], na.rm = TRUE)
     y_range_size  <- diff(y_range_vals)
     y_start       <- y_range_vals[2] + y_range_size * 0.05

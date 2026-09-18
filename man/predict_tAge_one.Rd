@@ -4,7 +4,13 @@
 \alias{predict_tAge_one}
 \title{Predict transcriptomic age using pre-trained models}
 \usage{
-predict_tAge_one(eset, model_path, species, mode)
+predict_tAge_one(
+  eset,
+  model_path,
+  species,
+  mode,
+  return_std = identical(mode, "BR")
+)
 }
 \arguments{
 \item{eset}{An ExpressionSet object containing processed expression data.}
@@ -17,10 +23,17 @@ match the species the model was trained on.}
 
 \item{mode}{Character string specifying the model type. Must be either "EN" for
 Elastic Net or "BR" for Bayesian Ridge.}
+
+\item{return_std}{Logical. Whether to also return the per-sample predictive
+standard deviation, which only Bayesian Ridge models provide. Defaults to
+\code{TRUE} for \code{mode = "BR"}. The standard deviations are what
+\code{\link{tage_compare_groups}} weights samples by, so keep them if you
+intend to run statistics on BR predictions.}
 }
 \value{
 A data frame containing the predicted transcriptomic age results with
-  sample information and predicted ages.
+  sample information and predicted ages, plus a \code{BR_tAge_std} column
+  when \code{return_std} is \code{TRUE}.
 }
 \description{
 This function predicts transcriptomic age using pre-trained Elastic Net (EN) or

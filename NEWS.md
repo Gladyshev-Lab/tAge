@@ -1,3 +1,45 @@
+# tAge 1.3.0
+
+## New features
+
+* Two publication-style figures built directly on the statistics, so a figure
+  and the table behind it cannot drift apart: `tage_clock_forest()` draws one
+  clock per row with its confidence interval, filled when it survives the
+  multiplicity correction; `tage_module_heatmap()` draws module effects as
+  modules × strata with a star per significant cell. Both return the statistics
+  as the `"tage_stats"` attribute, and both accept a precomputed table via
+  `stats =`. `load_module_functions()` reads the bundled module-to-function
+  annotation used for the row labels.
+
+* The statistics gain `ci_low` / `ci_high` and a `conf_level` argument. The
+  critical value follows the test: normal for the Bayesian ridge
+  meta-regression, t otherwise.
+
+* Statistical tests matching the TACO / tClock reference application:
+  `tage_compare_groups()` for marginal-mean contrasts between groups,
+  `tage_regress_continuous()` for slopes against a numeric predictor,
+  `tage_module_stats()` for module-clock heatmaps, `tage_adjust_covariates()`
+  for the matching plotting values, and `tage_significance_stars()` for the
+  `*** ** * ^` labels. Elastic net clocks use `lm` + `emmeans`; Bayesian ridge
+  clocks use `metafor::rma.uni` weighted by the per-sample prediction standard
+  deviation, reporting z-tests. `emmeans` and `metafor` are new imports.
+
+* `predict_tAge()` and `predict_tAge_one()` gain `return_std`, on by default for
+  `mode = "BR"`, adding a `<normalisation>_BR_tAge_sd` column. These are the
+  weights the Bayesian ridge tests need, and were previously discarded.
+
+* `tage_boxplot()` defaults to `stat_method = "emmeans"`, annotating brackets
+  from `tage_compare_groups()` and supporting covariates, per-stratum models and
+  Bayesian ridge weighting. Passing any other `stat_method` keeps the previous
+  `ggpubr::stat_compare_means()` behaviour.
+
+## Bug fixes
+
+* The predictive standard deviation of chronological-age clocks is now rescaled
+  by the species maximum lifespan along with the prediction itself. It was left
+  on the normalised scale, which would have made meta-regression weights wrong
+  by the square of the species factor.
+
 # tAge 1.1.0
 
 Corrects three bugs that produced **wrong predictions** in 1.0.0 / 1.0.1.
