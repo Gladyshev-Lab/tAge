@@ -75,9 +75,11 @@ dropped before plotting so the panel stays readable.</p>
 <span>  p_label <span class="op">=</span> <span class="st">"p.signif"</span>,</span>
 <span>  p_threshold <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  min_group_n <span class="op">=</span> <span class="fl">2</span>,</span>
-<span>  font_size <span class="op">=</span> <span class="fl">12</span>,</span>
-<span>  theme_type <span class="op">=</span> <span class="st">"classic"</span>,</span>
+<span>  font_size <span class="op">=</span> <span class="fl">10</span>,</span>
+<span>  theme_type <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  title <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  subtitle <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  caption <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  xlab <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ylab <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  legend_position <span class="op">=</span> <span class="st">"right"</span>,</span>
@@ -115,8 +117,9 @@ column.</p></dd>
 
 
 <dt id="arg-colors">colors<a class="anchor" aria-label="anchor" href="#arg-colors"></a></dt>
-<dd><p>Optional named vector of fill colours, keyed by the levels of
-<code>x_var</code>.</p></dd>
+<dd><p>Optional colours keyed by the levels of <code>x_var</code>, overriding
+the default in which the reference group is grey and the other groups take
+the categorical slots of <code><a href="tage_series_colors.html">tage_series_colors</a></code> in order.</p></dd>
 
 
 <dt id="arg-point-size-point-alpha">point_size, point_alpha<a class="anchor" aria-label="anchor" href="#arg-point-size-point-alpha"></a></dt>
@@ -190,8 +193,7 @@ groups for a comparison to be shown. When faceting, every facet must meet it.</p
 
 
 <dt id="arg-theme-type">theme_type<a class="anchor" aria-label="anchor" href="#arg-theme-type"></a></dt>
-<dd><p>ggplot2 theme to apply, e.g. <code>"classic"</code> or
-<code>"minimal"</code>.</p></dd>
+<dd><p>Deprecated; figures follow <code><a href="theme_tage.html">theme_tage</a></code>.</p></dd>
 
 
 <dt id="arg-title-xlab-ylab">title, xlab, ylab<a class="anchor" aria-label="anchor" href="#arg-title-xlab-ylab"></a></dt>

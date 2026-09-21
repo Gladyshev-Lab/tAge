@@ -187,6 +187,19 @@ p <- tage_clock_forest(
 )
 ```
 
+Every figure is drawn with
+[`theme_tage()`](https://gladyshev-lab.github.io/tAge/reference/theme_tage.md)
+from one set of colour tokens
+([`tage_colors()`](https://gladyshev-lab.github.io/tAge/reference/tage_colors.md)),
+the same as the Python package: groups take colour-vision-safe
+categorical slots in a fixed order with the reference group in grey
+([`tage_series_colors()`](https://gladyshev-lab.github.io/tAge/reference/tage_series_colors.md)),
+each clock outcome keeps its colour across figures, signed effects use
+one blue–grey–red scale centred on zero, and text never wears a data
+colour. Add
+[`theme_tage()`](https://gladyshev-lab.github.io/tAge/reference/theme_tage.md)
+to your own ggplots to match.
+
 A `ggplot` carries no size of its own, so the figure functions record
 the size they were designed for and grow it with the number of clocks,
 modules and panels.

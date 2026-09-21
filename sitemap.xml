@@ -34,6 +34,7 @@
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/pseudobulk_summary.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/remove_outliers.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/scale_eset.html</loc></url>
+<url><loc>https://gladyshev-lab.github.io/tAge/reference/scale_fill_tage_diverging.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/subset_seurat_by_metadata.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tAge-package.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tAge_by_group.html</loc></url>
@@ -41,13 +42,16 @@
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_adjust_covariates.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_boxplot.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_clock_forest.html</loc></url>
+<url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_colors.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_compare_groups.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_fig_size.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_module_heatmap.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_module_stats.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_regress_continuous.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_save_plot.html</loc></url>
+<url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_series_colors.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_significance_stars.html</loc></url>
 <url><loc>https://gladyshev-lab.github.io/tAge/reference/tage_species.html</loc></url>
+<url><loc>https://gladyshev-lab.github.io/tAge/reference/theme_tage.html</loc></url>
 </urlset>
 

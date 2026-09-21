@@ -15,7 +15,7 @@ plot_eset_density(
   width = 8,
   height = 6,
   error_message = "Error: No data available",
-  palette = "viridis",
+  palette = NULL,
   legend_position = "topright"
 )
 ```
@@ -55,14 +55,20 @@ plot_eset_density(
 
 - palette:
 
-  Character string specifying the color palette. See ?hcl.colors for
-  available options. Default is "viridis".
+  `NULL` (default) draws every sample in muted grey, the shape of the
+  distributions being the point; a `hcl.colors` palette name colours the
+  samples and adds a legend when there are at most 20.
 
 - legend_position:
 
   Character string specifying legend position. Options include
   "topright", "topleft", "bottomright", "bottomleft", etc. Default is
   "topright".
+
+- subtitle, caption:
+
+  Subtitle (secondary ink) and a provenance caption (muted ink) under
+  the plot.
 
 ## Value
 

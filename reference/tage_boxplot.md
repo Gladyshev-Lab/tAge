@@ -30,9 +30,11 @@ tage_boxplot(
   p_label = "p.signif",
   p_threshold = NULL,
   min_group_n = 2,
-  font_size = 12,
-  theme_type = "classic",
+  font_size = 10,
+  theme_type = NULL,
   title = NULL,
+  subtitle = NULL,
+  caption = NULL,
   xlab = NULL,
   ylab = NULL,
   legend_position = "right",
@@ -68,7 +70,11 @@ tage_boxplot(
 
 - colors:
 
-  Optional named vector of fill colours, keyed by the levels of `x_var`.
+  Optional colours keyed by the levels of `x_var`, overriding the
+  default in which the reference group is grey and the other groups take
+  the categorical slots of
+  [`tage_series_colors`](https://gladyshev-lab.github.io/tAge/reference/tage_series_colors.md)
+  in order.
 
 - point_size, point_alpha:
 
@@ -144,7 +150,8 @@ tage_boxplot(
 
 - theme_type:
 
-  ggplot2 theme to apply, e.g. `"classic"` or `"minimal"`.
+  Deprecated; figures follow
+  [`theme_tage`](https://gladyshev-lab.github.io/tAge/reference/theme_tage.md).
 
 - title, xlab, ylab:
 

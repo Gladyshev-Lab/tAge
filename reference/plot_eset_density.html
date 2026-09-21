@@ -57,7 +57,7 @@ customizable styling options.</p>
 <span>  width <span class="op">=</span> <span class="fl">8</span>,</span>
 <span>  height <span class="op">=</span> <span class="fl">6</span>,</span>
 <span>  error_message <span class="op">=</span> <span class="st">"Error: No data available"</span>,</span>
-<span>  palette <span class="op">=</span> <span class="st">"viridis"</span>,</span>
+<span>  palette <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  legend_position <span class="op">=</span> <span class="st">"topright"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -98,13 +98,19 @@ Default is TRUE.</p></dd>
 
 
 <dt id="arg-palette">palette<a class="anchor" aria-label="anchor" href="#arg-palette"></a></dt>
-<dd><p>Character string specifying the color palette. See ?hcl.colors for
-available options. Default is "viridis".</p></dd>
+<dd><p><code>NULL</code> (default) draws every sample in muted grey, the
+shape of the distributions being the point; a <code>hcl.colors</code> palette
+name colours the samples and adds a legend when there are at most 20.</p></dd>
 
 
 <dt id="arg-legend-position">legend_position<a class="anchor" aria-label="anchor" href="#arg-legend-position"></a></dt>
 <dd><p>Character string specifying legend position. Options include
 "topright", "topleft", "bottomright", "bottomleft", etc. Default is "topright".</p></dd>
+
+
+<dt id="arg-subtitle-caption">subtitle, caption<a class="anchor" aria-label="anchor" href="#arg-subtitle-caption"></a></dt>
+<dd><p>Subtitle (secondary ink) and a provenance caption
+(muted ink) under the plot.</p></dd>
 
 </dl></div>
     <div class="section level2">

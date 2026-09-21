@@ -4,6 +4,26 @@
 
 ### New features
 
+- One figure style, shared with the Python package:
+  [`theme_tage()`](https://gladyshev-lab.github.io/tAge/reference/theme_tage.md),
+  the colour tokens in
+  [`tage_colors()`](https://gladyshev-lab.github.io/tAge/reference/tage_colors.md),
+  [`tage_series_colors()`](https://gladyshev-lab.github.io/tAge/reference/tage_series_colors.md)
+  for group colours (the reference group in neutral grey, comparisons in
+  colour-vision-safe slots) and
+  [`scale_fill_tage_diverging()`](https://gladyshev-lab.github.io/tAge/reference/scale_fill_tage_diverging.md)
+  for signed effects.
+  [`tage_boxplot()`](https://gladyshev-lab.github.io/tAge/reference/tage_boxplot.md),
+  [`tage_clock_forest()`](https://gladyshev-lab.github.io/tAge/reference/tage_clock_forest.md),
+  [`tage_module_heatmap()`](https://gladyshev-lab.github.io/tAge/reference/tage_module_heatmap.md),
+  the outlier PCA plot and
+  [`plot_eset_density()`](https://gladyshev-lab.github.io/tAge/reference/plot_eset_density.md)
+  all draw with it: left-aligned title with subtitle and caption,
+  recessive axes, one colour per clock outcome, blue-grey-red scale
+  centred on zero.
+  [`tage_boxplot()`](https://gladyshev-lab.github.io/tAge/reference/tage_boxplot.md)
+  gains `subtitle` and `caption`; its `theme_type` is deprecated.
+
 - `tAge_preprocessing(split_by = )` preprocesses each level of a
   phenoData column (tissue, dataset, cell type) on its own – gene
   filtering, normalisation and reference centring within the stratum, on

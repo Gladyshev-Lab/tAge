@@ -109,6 +109,14 @@ Figures built directly on the statistics, plus QC plots.
   : Size a tAge figure was designed for
 - [`tage_save_plot()`](https://gladyshev-lab.github.io/tAge/reference/tage_save_plot.md)
   : Save a tAge figure at the size it was designed for
+- [`theme_tage()`](https://gladyshev-lab.github.io/tAge/reference/theme_tage.md)
+  : The tAge ggplot2 theme
+- [`tage_colors()`](https://gladyshev-lab.github.io/tAge/reference/tage_colors.md)
+  : The tAge colour tokens
+- [`tage_series_colors()`](https://gladyshev-lab.github.io/tAge/reference/tage_series_colors.md)
+  : Colour per group level
+- [`scale_fill_tage_diverging()`](https://gladyshev-lab.github.io/tAge/reference/scale_fill_tage_diverging.md)
+  : Diverging fill scale for signed effects
 
 ## Data and helpers
 
