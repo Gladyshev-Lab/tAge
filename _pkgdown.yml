@@ -69,10 +69,28 @@ reference:
   - load_h5ad_to_seurat
   - subset_seurat_by_metadata
 
-- title: Plotting
+- title: Statistics
+  desc: >
+    The group comparisons of the TACO / tClock application: marginal-mean
+    contrasts for elastic net clocks, REML meta-regression for Bayesian ridge
+    clocks, module-clock effect sizes.
   contents:
+  - tage_compare_groups
+  - tage_regress_continuous
+  - tage_module_stats
+  - tage_adjust_covariates
+  - tage_significance_stars
+
+- title: Plotting
+  desc: Figures built directly on the statistics, plus QC plots.
+  contents:
+  - tage_clock_forest
+  - tage_module_heatmap
   - tage_boxplot
   - plot_eset_density
+  - load_module_functions
+  - tage_fig_size
+  - tage_save_plot
 
 - title: Data and helpers
   desc: Build an ExpressionSet and reach the example data shipped with the package.
