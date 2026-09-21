@@ -4,6 +4,12 @@
 
 ### New features
 
+- Species maximum lifespans are the values the clocks were trained with
+  (AnAge): rat 3.8 years (was 4.2) and human 122 years (was 122.5);
+  mouse 4 and macaque 39 years are unchanged. Chronological-age
+  predictions for rat samples are therefore ~10% lower than before,
+  human ones ~0.4%.
+
 - One figure style, shared with the Python package:
   [`theme_tage()`](https://gladyshev-lab.github.io/tAge/reference/theme_tage.md),
   the colour tokens in

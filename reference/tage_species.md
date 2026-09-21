@@ -25,7 +25,7 @@ A data frame with columns `species`, `max_lifespan_years` and
 tage_species()
 #>   species max_lifespan_years default_units
 #> 1   mouse                4.0        months
-#> 2     rat                4.2        months
-#> 3   human              122.5         years
+#> 2     rat                3.8        months
+#> 3   human              122.0         years
 #> 4  monkey               39.0         years
 ```
