@@ -83,8 +83,15 @@ tage_significance_stars <- function(p) {
   out
 }
 
+# Column names go into model formulas, so anything that is not a syntactic
+# name ("Normalized age", "EN clock (Scaled)") has to be backtick-quoted.
+.tage_bt <- function(x) {
+  x <- as.character(x)
+  ifelse(make.names(x) == x, x, paste0("`", gsub("`", "\\`", x), "`"))
+}
+
 .tage_rhs <- function(terms) {
-  paste(terms, collapse = " + ")
+  paste(.tage_bt(terms), collapse = " + ")
 }
 
 # Split a data frame by a stratifying column. Always returns a list of
@@ -196,7 +203,7 @@ tage_significance_stars <- function(p) {
   rhs <- .tage_rhs(c(group_column, covariates))
 
   if (is.na(se_column)) {
-    fml <- stats::as.formula(paste(response, "~", rhs))
+    fml <- stats::as.formula(paste(.tage_bt(response), "~", rhs))
     model <- try(stats::lm(fml, data = df), silent = TRUE)
     if (inherits(model, "try-error")) return(paste("lm failed:", .tage_try_reason(model)))
     if (any(is.na(stats::coef(model)))) {
@@ -576,23 +583,24 @@ tage_regress_continuous <- function(data,
       }
 
       rhs <- .tage_rhs(c(predictor, covariates))
+      term <- .tage_bt(predictor)   # coefficient names keep the backticks
 
       if (is.na(se_col)) {
-        fml <- stats::as.formula(paste(vc, "~", rhs))
+        fml <- stats::as.formula(paste(.tage_bt(vc), "~", rhs))
         model <- try(stats::lm(fml, data = df), silent = TRUE)
         if (inherits(model, "try-error")) {
           .tage_skip(vc, stratum$label, paste("lm failed:", .tage_try_reason(model)))
           next
         }
         coefs <- stats::coef(summary(model))
-        if (!predictor %in% rownames(coefs)) {
+        if (!term %in% rownames(coefs)) {
           .tage_skip(vc, stratum$label, sprintf("'%s' is not estimable (constant or collinear)", predictor))
           next
         }
-        est <- coefs[predictor, "Estimate"]
-        se  <- coefs[predictor, "Std. Error"]
-        st  <- coefs[predictor, "t value"]
-        pv  <- coefs[predictor, "Pr(>|t|)"]
+        est <- coefs[term, "Estimate"]
+        se  <- coefs[term, "Std. Error"]
+        st  <- coefs[term, "t value"]
+        pv  <- coefs[term, "Pr(>|t|)"]
         dfr <- stats::df.residual(model)
       } else {
         .tage_require("metafor")
@@ -609,11 +617,11 @@ tage_regress_continuous <- function(data,
           next
         }
         nm <- rownames(model$beta)
-        if (!predictor %in% nm) {
+        if (!term %in% nm) {
           .tage_skip(vc, stratum$label, sprintf("'%s' is not estimable (constant or collinear)", predictor))
           next
         }
-        j   <- which(nm == predictor)
+        j   <- which(nm == term)
         est <- as.numeric(model$beta)[j]
         se  <- model$se[j]
         st  <- model$zval[j]
@@ -764,7 +772,7 @@ tage_module_stats <- function(data,
       y <- df[[mc]]
 
       if (!is.null(covariates)) {
-        cov_fml <- stats::as.formula(paste(mc, "~", .tage_rhs(covariates)))
+        cov_fml <- stats::as.formula(paste(.tage_bt(mc), "~", .tage_rhs(covariates)))
         cov_model <- try(stats::lm(cov_fml, data = df), silent = TRUE)
         if (inherits(cov_model, "try-error")) {
           .tage_skip(mc, base$split[i], paste("standardised effect not computed:", .tage_try_reason(cov_model)))
@@ -860,7 +868,7 @@ tage_adjust_covariates <- function(data,
 
   if (is.null(se_column)) {
     rhs <- .tage_rhs(c(split_by, covariates))
-    fml <- stats::as.formula(paste(value_column, "~", rhs))
+    fml <- stats::as.formula(paste(.tage_bt(value_column), "~", rhs))
     model <- stats::lm(fml, data = data[ok, , drop = FALSE])
 
     mm <- stats::model.matrix(model)

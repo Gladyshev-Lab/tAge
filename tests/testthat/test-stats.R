@@ -388,3 +388,20 @@ test_that("Bayesian ridge covariate adjustment keeps the tAge scale without spli
   expect_equal(mean(adj_split), mean(d$tAge), tolerance = 0.05)
   expect_equal(mean(adj_lm), mean(d$tAge), tolerance = 1e-8)
 })
+
+test_that("column names that are not syntactic work in every model", {
+  d <- .stats_fixture()
+  d[["Normalized age"]] <- d$tAge
+  d[["Age (months)"]] <- d$Age
+  res <- tage_compare_groups(d, "Normalized age", "Genotype", "WT", covariates = "Age (months)")
+  ref <- tage_compare_groups(d, "tAge", "Genotype", "WT", covariates = "Age")
+  expect_equal(res$estimate, ref$estimate)
+  expect_equal(res$p_value, ref$p_value)
+  br <- tage_compare_groups(d, "Normalized age", "Genotype", "WT", covariates = "Age (months)",
+                            se_columns = "tAge_sd")
+  expect_gt(nrow(br), 0)
+  adj <- tage_adjust_covariates(d, "Normalized age", covariates = "Age (months)")
+  expect_equal(adj, tage_adjust_covariates(d, "tAge", covariates = "Age"))
+  cont <- tage_regress_continuous(d, "Normalized age", "Age (months)")
+  expect_equal(cont$estimate, tage_regress_continuous(d, "tAge", "Age")$estimate)
+})
