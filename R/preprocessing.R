@@ -309,6 +309,10 @@ control_subtraction <- function(eset, column_name = NULL, control_label = NULL, 
   }
 
   if (length(control_idx) == 0) {
+    if (!is.null(column_name) && !is.null(control_label)) {
+      warning("No sample has ", column_name, " == '", control_label,
+              "'; centring on all samples instead.", call. = FALSE)
+    }
     Xc <- apply(X, 1, median, na.rm = TRUE)
   } else {
     Xc <- apply(X[, control_idx, drop = FALSE], 1, median, na.rm = TRUE)
@@ -381,19 +385,35 @@ control_subtraction <- function(eset, column_name = NULL, control_label = NULL, 
 #' and gene ID conversion. It returns multiple versions of the processed data suitable
 #' for different analysis approaches.
 #'
+#' The clocks were trained on expression centred within each dataset and
+#' tissue against matched controls, and that is how they should be applied:
+#' with several tissues (or datasets, cell types) in one ExpressionSet, pass
+#' \code{split_by} so that gene filtering, normalisation and reference
+#' centring all happen within each stratum, and the results are combined
+#' afterwards. Without \code{split_by} the whole object is one stratum.
+#'
+#' The species is recorded in every returned ExpressionSet, so
+#' \code{\link{predict_tAge}} does not need it again.
+#'
 #' @param eset An ExpressionSet object containing raw expression data.
-#' @param species Character string specifying the species. Options: "mouse", "rat", "human",
-#'   "monkey", "rhesus". Default is "mouse".
-#' @param gene_mapping_type Gene mapping type. Options: "Gene.Symbol", "Ensembl"
+#' @param species Species of the samples: "mouse", "rat", "human" or "monkey"
+#'   (see \code{\link{tage_species}}). Default is "mouse".
+#' @param gene_mapping_type Identifier type of the row names: "Ensembl",
+#'   "Gene.Symbol", "Entrez" or "auto" (default, detected from the gene table;
+#'   see \code{\link{map_genes}}).
 #' @param verbose Logical indicating whether to print progress messages. Default is TRUE.
 #' @param control_group_column Character string specifying the column name in phenoData
 #'   that contains control group labels. Default is NULL.
 #' @param control_group_label Character string specifying the label for control samples.
-#'   Default is NULL.
+#'   Default is NULL. With \code{split_by}, the controls of each stratum are
+#'   its reference; a stratum without controls is centred on all of its
+#'   samples, with a warning.
 #' @param count_threshold Numeric threshold for minimum expression count in gene filtering.
 #'   Default is 10.
 #' @param percent_threshold Numeric threshold for minimum percentage of samples that must
 #'   have expression above count_threshold. Default is 20.
+#' @param split_by Character or NULL. Column of the phenoData whose levels
+#'   (tissues, datasets, cell types) are preprocessed separately. Default NULL.
 #' @return A list containing six processed ExpressionSet objects:
 #'   \item{RLE_normalized}{RLE-normalized data}
 #'   \item{log_transformed}{Log-transformed data}
@@ -410,16 +430,48 @@ control_subtraction <- function(eset, column_name = NULL, control_label = NULL, 
 #' 
 #' # Run complete preprocessing pipeline
 #' processed_data <- tAge_preprocessing(eset, species = "mouse")
+#'
+#' # Two tissues: filter, normalise and centre each on its own wild-type samples
+#' processed_data <- tAge_preprocessing(
+#'   eset, species = "mouse", split_by = "Tissue",
+#'   control_group_column = "Genotype", control_group_label = "WT"
+#' )
 tAge_preprocessing <- function(
   eset,
   species = "mouse",
-  gene_mapping_type = "Gene.Symbol",
+  gene_mapping_type = "auto",
   verbose = TRUE,
   control_group_column = NULL,
   control_group_label = NULL,
   count_threshold = 10,
-  percent_threshold = 20
+  percent_threshold = 20,
+  split_by = NULL
 ) {
+  species <- .tage_species_row(species)$species
+
+  if (!is.null(split_by)) {
+    if (length(split_by) != 1L || !split_by %in% colnames(Biobase::pData(eset))) {
+      stop("`split_by` must name one column of the phenoData.", call. = FALSE)
+    }
+    strata <- as.character(Biobase::pData(eset)[[split_by]])
+    if (anyNA(strata)) stop("`split_by` column contains missing values.", call. = FALSE)
+    per_stratum <- lapply(unique(strata), function(level) {
+      if (verbose) cat(sprintf("\n=== %s = %s (%d samples) ===\n", split_by, level, sum(strata == level)))
+      tAge_preprocessing(
+        eset[, strata == level],
+        species = species, gene_mapping_type = gene_mapping_type, verbose = verbose,
+        control_group_column = control_group_column, control_group_label = control_group_label,
+        count_threshold = count_threshold, percent_threshold = percent_threshold,
+        split_by = NULL
+      )
+    })
+    combined <- lapply(names(per_stratum[[1]]), function(element) {
+      .tage_cbind_esets(lapply(per_stratum, `[[`, element), sample_order = colnames(eset))
+    })
+    names(combined) <- names(per_stratum[[1]])
+    return(lapply(combined, .tage_set_species, species = species))
+  }
+
   gene_list <- load_gene_list()
 
   eset_filtered         <- filter_genes(eset, count_threshold = count_threshold, percent_threshold = percent_threshold, verbose = verbose)
@@ -436,12 +488,39 @@ tAge_preprocessing <- function(
   eset_scaled_diff <- control_subtraction(eset_scaled_aligned, column_name = control_group_column, control_label = control_group_label, verbose = verbose)
   eset_yugene_diff <- control_subtraction(eset_yugene_aligned, column_name = control_group_column, control_label = control_group_label, verbose = verbose)
 
-  return(list(
+  out <- list(
     RLE_normalized = eset_RLE,
     log_transformed = eset_log_transformed,
     scaled = eset_scaled_aligned,
     scaled_diff = eset_scaled_diff,
     yugene = eset_yugene_aligned,
     yugene_diff = eset_yugene_diff
-  ))
+  )
+  lapply(out, .tage_set_species, species = species)
+}
+
+# Column-bind ExpressionSets that were processed separately. Genes are taken
+# as the union (a gene filtered out in one stratum is NA there, which the
+# clocks' imputer handles); samples are put back in `sample_order`.
+.tage_cbind_esets <- function(esets, sample_order = NULL) {
+  genes <- Reduce(union, lapply(esets, rownames))
+  mats <- lapply(esets, function(e) {
+    m <- matrix(NA_real_, nrow = length(genes), ncol = ncol(e),
+                dimnames = list(genes, colnames(e)))
+    m[rownames(e), ] <- Biobase::exprs(e)
+    m
+  })
+  expr  <- do.call(cbind, mats)
+  pheno <- do.call(rbind, lapply(esets, Biobase::pData))
+  rownames(pheno) <- colnames(expr)
+  if (!is.null(sample_order)) {
+    keep <- sample_order[sample_order %in% colnames(expr)]
+    expr  <- expr[, keep, drop = FALSE]
+    pheno <- pheno[keep, , drop = FALSE]
+  }
+  Biobase::ExpressionSet(
+    assayData = expr,
+    phenoData = Biobase::AnnotatedDataFrame(pheno),
+    experimentData = Biobase::experimentData(esets[[1]])
+  )
 }

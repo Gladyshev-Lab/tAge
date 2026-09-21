@@ -7,18 +7,28 @@
 predict_tAge(
   tAge_eset,
   model_paths,
-  species,
+  species = NULL,
   mode,
-  return_std = identical(mode, "BR")
+  return_std = identical(mode, "BR"),
+  age_units = c("auto", "months", "years"),
+  normalized_age = c("fraction", "percent")
 )
 }
 \arguments{
 \item{tAge_eset}{A named list of ExpressionSet objects, each representing a different
-normalization method (e.g., "scaled", "scaled_diff", "yugene", "yugene_diff").}
+normalization method (e.g., "scaled", "scaled_diff", "yugene", "yugene_diff"),
+as returned by \code{\link{tAge_preprocessing}}.}
 
 \item{model_paths}{A named list of model paths corresponding to each normalization method.}
 
-\item{species}{Character string specifying the species for the models.}
+\item{species}{Species of the \emph{samples}: \code{"mouse"}, \code{"rat"},
+\code{"human"} or \code{"monkey"} (see \code{\link{tage_species}}). Its
+only effect is the rescaling of chronological-age clocks to age units by
+the species maximum lifespan; mortality and normalized-age clocks ignore
+it. It is \emph{not} the species group the model was trained on
+("Mouse" / "Rodents" / "Multispecies" in \code{\link{list_clocks}}).
+Default \code{NULL} takes the species recorded by
+\code{\link{tAge_preprocessing}}.}
 
 \item{mode}{Character string specifying the model type. Must be either "EN" for
 Elastic Net or "BR" for Bayesian Ridge.}
@@ -29,12 +39,23 @@ deviation of Bayesian Ridge clocks. Defaults to \code{TRUE} for
 clock. Pass these to the \code{se_columns} argument of
 \code{\link{tage_compare_groups}} to reproduce the reference application's
 Bayesian ridge statistics.}
+
+\item{age_units}{Units of chronological-age predictions: \code{"auto"}
+(default; months for rodents, years for primates), \code{"months"} or
+\code{"years"}.}
+
+\item{normalized_age}{Scale of normalized-age clocks: \code{"fraction"} of
+the expected maximum lifespan (default) or \code{"percent"} (x100, as in
+the paper and the TACO application).}
 }
 \value{
 A data frame containing the predicted transcriptomic age results for all
-  provided ExpressionSet objects, with appropriately named columns.
+  provided ExpressionSet objects, with appropriately named columns. The
+  attribute \code{"tage_units"} is a named character vector giving the unit of
+  every prediction column (e.g. \code{"months"}, \code{"log10 hazard ratio"}).
 }
 \description{
-This function predicts transcriptomic age for multiple processed ExpressionSet objects
-using pre-trained models. It supports different normalization methods and model types.
+Applies one model per normalisation (\code{scaled_diff}, \code{yugene_diff},
+...) and returns the sample metadata with one prediction column per
+normalisation, named \code{<normalisation>_<mode>_tAge}.
 }

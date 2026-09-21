@@ -123,6 +123,7 @@ def predict_tAge(
     return_std: bool = False,
     prefix: Optional[str] = None,
     adjust_lifespan: Optional[bool] = None,
+    output_factor: Optional[float] = None,
 ) -> pd.DataFrame:
     """Apply clock model to expression matrix and append predictions to annotation.
 
@@ -143,7 +144,14 @@ def predict_tAge(
     adjust_lifespan : bool | None
         Whether to rescale the prediction to age units by the species maximum
         lifespan. Only meaningful for chronological-age clocks. If None, fall
-        back to detecting the clock type from the model file name.
+        back to detecting the clock type from the model file name. Ignored
+        when ``output_factor`` is given.
+    output_factor : float | None
+        Multiplier applied to the prediction (and its standard deviation) by
+        the R side, which knows the clock outcome, the species and the units
+        requested: species maximum lifespan in months or years for
+        chronological clocks, 100 for normalized age in percent, 1 otherwise.
+        When given, ``species`` and ``adjust_lifespan`` are not consulted.
 
     Returns
     -------
@@ -189,9 +197,12 @@ def predict_tAge(
     # (log10HR) and normalised-age clocks are reported on their native scale.
     # The caller may pass adjust_lifespan explicitly (e.g. from the clock
     # registry); otherwise fall back to detecting the type from the file name.
-    do_adjust = adjust_lifespan if adjust_lifespan is not None else _is_chronological_clock(model_path)
-    if do_adjust and species in PREDICTIONS_SPECIES_ADJ:
-        factor = PREDICTIONS_SPECIES_ADJ[species]
+    if output_factor is not None:
+        factor = float(output_factor)
+    else:
+        do_adjust = adjust_lifespan if adjust_lifespan is not None else _is_chronological_clock(model_path)
+        factor = PREDICTIONS_SPECIES_ADJ[species] if (do_adjust and species in PREDICTIONS_SPECIES_ADJ) else 1.0
+    if factor != 1.0:
         ann.loc[:, f"{pfx}tAge"] = ann.loc[:, f"{pfx}tAge"] * factor
         # The predictive standard deviation lives on the same scale as the
         # prediction, so it has to follow the same rescaling. Downstream

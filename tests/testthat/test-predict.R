@@ -105,3 +105,57 @@ test_that("elastic net clocks refuse return_std instead of silently ignoring it"
   )
   expect_false("scaled_diff_EN_tAge_sd" %in% colnames(res))
 })
+
+test_that("species comes from the preprocessed object, and units can be chosen", {
+  skip_on_cran()
+  skip_if_offline()
+  skip_if_no_python()
+  model <- .tage_test_model("EN_Chronoage_Multispecies_Multitissue_scaleddiff.pkl")
+  skip_if(is.null(model), "chronological clock model could not be downloaded")
+
+  processed <- tAge_preprocessing(.tage_example_eset(), species = "mouse", verbose = FALSE)
+
+  implicit <- predict_tAge(processed, list(scaled_diff = model), mode = "EN")
+  explicit <- predict_tAge(processed, list(scaled_diff = model), species = "mouse", mode = "EN")
+  expect_equal(implicit$scaled_diff_EN_tAge, explicit$scaled_diff_EN_tAge)
+  expect_equal(attr(implicit, "tage_units"), c(scaled_diff_EN_tAge = "months"))
+
+  years <- predict_tAge(processed, list(scaled_diff = model), mode = "EN", age_units = "years")
+  expect_equal(years$scaled_diff_EN_tAge * 12, implicit$scaled_diff_EN_tAge)
+  expect_equal(attr(years, "tage_units"), c(scaled_diff_EN_tAge = "years"))
+
+  expect_error(predict_tAge(processed, list(scaled_diff = model), species = "rhesus", mode = "EN"),
+               "Unknown species")
+})
+
+test_that("normalized-age clocks can be reported in percent", {
+  skip_on_cran()
+  skip_if_offline()
+  skip_if_no_python()
+  model <- .tage_test_model("EN_NormalizedAge_Multispecies_Multitissue_scaleddiff.pkl")
+  skip_if(is.null(model), "normalized-age clock model could not be downloaded")
+
+  processed <- tAge_preprocessing(.tage_example_eset(), species = "mouse", verbose = FALSE)
+  frac <- predict_tAge(processed, list(scaled_diff = model), mode = "EN")
+  pct  <- predict_tAge(processed, list(scaled_diff = model), mode = "EN", normalized_age = "percent")
+  expect_equal(pct$scaled_diff_EN_tAge, frac$scaled_diff_EN_tAge * 100)
+  expect_true(all(abs(frac$scaled_diff_EN_tAge) < 2))
+  expect_equal(unname(attr(frac, "tage_units")), "fraction of maximum lifespan")
+  expect_equal(unname(attr(pct, "tage_units")), "% of maximum lifespan")
+})
+
+test_that("tAge_by_group predicts per-tissue preprocessed data", {
+  skip_on_cran()
+  skip_if_offline()
+  skip_if_no_python()
+  model <- .tage_test_model("EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl")
+  skip_if(is.null(model), "mortality clock model could not be downloaded")
+
+  res <- tAge_by_group(.tage_example_eset(), split_by = "Tissue",
+                       model_paths = list(scaled_diff = model), species = "mouse", mode = "EN",
+                       control_group_column = "Genotype", control_group_label = "WT",
+                       verbose = FALSE)
+  expect_equal(nrow(res), 24)
+  expect_true(all(c("Tissue", "scaled_diff_EN_tAge") %in% names(res)))
+  expect_true(all(is.finite(res$scaled_diff_EN_tAge)))
+})

@@ -15,35 +15,71 @@ tAge_by_group(
   count_threshold = 10,
   percent_threshold = 20,
   min_samples = 5,
-  verbose = TRUE
+  verbose = TRUE,
+  gene_mapping_type = "auto",
+  return_std = identical(mode, "BR"),
+  age_units = c("auto", "months", "years"),
+  normalized_age = c("fraction", "percent")
 )
 }
 \arguments{
-\item{eset}{An ExpressionSet from pseudobulk aggregation.}
+\item{eset}{An ExpressionSet, e.g. from pseudobulk aggregation.}
 
 \item{split_by}{Character. Column in pData to split by (e.g., "tissue").}
 
 \item{model_paths}{Named list of model paths.}
 
-\item{species}{Character. Species name.}
+\item{species}{Species of the samples: "mouse", "rat", "human" or "monkey"
+(see \code{\link{tage_species}}). Default is "mouse".}
 
-\item{mode}{Character. "EN" or "BR".}
+\item{mode}{Character string specifying the model type. Must be either "EN" for
+Elastic Net or "BR" for Bayesian Ridge.}
 
-\item{control_group_column}{Character or NULL. Column for control subtraction.}
+\item{control_group_column}{Character string specifying the column name in phenoData
+that contains control group labels. Default is NULL.}
 
-\item{control_group_label}{Character or NULL. Label for control group.}
+\item{control_group_label}{Character string specifying the label for control samples.
+Default is NULL. With \code{split_by}, the controls of each stratum are
+its reference; a stratum without controls is centred on all of its
+samples, with a warning.}
 
-\item{count_threshold}{Integer. Gene filtering threshold.}
+\item{count_threshold}{Numeric threshold for minimum expression count in gene filtering.
+Default is 10.}
 
-\item{percent_threshold}{Numeric. Gene filtering percent.}
+\item{percent_threshold}{Numeric threshold for minimum percentage of samples that must
+have expression above count_threshold. Default is 20.}
 
-\item{min_samples}{Integer. Minimum samples per group to run tAge. Default 5.}
+\item{min_samples}{Integer. Strata with fewer samples are left out, with a
+warning. Default 5.}
 
-\item{verbose}{Logical.}
+\item{verbose}{Logical indicating whether to print progress messages. Default is TRUE.}
+
+\item{gene_mapping_type}{Identifier type of the row names: "Ensembl",
+"Gene.Symbol", "Entrez" or "auto" (default, detected from the gene table;
+see \code{\link{map_genes}}).}
+
+\item{return_std}{Logical. Whether to also return the per-sample predictive
+standard deviation, which only Bayesian Ridge models provide. Defaults to
+\code{TRUE} for \code{mode = "BR"}. The standard deviations are what
+\code{\link{tage_compare_groups}} weights samples by, so keep them if you
+intend to run statistics on BR predictions.}
+
+\item{age_units}{Units of chronological-age predictions: \code{"auto"}
+(default; months for rodents, years for primates), \code{"months"} or
+\code{"years"}.}
+
+\item{normalized_age}{Scale of normalized-age clocks: \code{"fraction"} of
+the expected maximum lifespan (default) or \code{"percent"} (x100, as in
+the paper and the TACO application).}
 }
 \value{
-Data frame with predictions from all groups combined.
+Data frame with predictions for all strata combined (the
+  \code{split_by} column is part of the sample metadata).
 }
 \description{
-Run tAge pipeline separately per group factor (e.g., "tissue")
+Preprocesses every level of \code{split_by} on its own -- gene filtering,
+normalisation and reference centring all happen within the stratum, as the
+clocks were trained and applied in the paper -- and predicts on the
+combined data. This is \code{\link{tAge_preprocessing}} with
+\code{split_by} followed by \code{\link{predict_tAge}}.
 }

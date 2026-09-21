@@ -7,21 +7,24 @@
 tAge_preprocessing(
   eset,
   species = "mouse",
-  gene_mapping_type = "Gene.Symbol",
+  gene_mapping_type = "auto",
   verbose = TRUE,
   control_group_column = NULL,
   control_group_label = NULL,
   count_threshold = 10,
-  percent_threshold = 20
+  percent_threshold = 20,
+  split_by = NULL
 )
 }
 \arguments{
 \item{eset}{An ExpressionSet object containing raw expression data.}
 
-\item{species}{Character string specifying the species. Options: "mouse", "rat", "human",
-"monkey", "rhesus". Default is "mouse".}
+\item{species}{Species of the samples: "mouse", "rat", "human" or "monkey"
+(see \code{\link{tage_species}}). Default is "mouse".}
 
-\item{gene_mapping_type}{Gene mapping type. Options: "Gene.Symbol", "Ensembl"}
+\item{gene_mapping_type}{Identifier type of the row names: "Ensembl",
+"Gene.Symbol", "Entrez" or "auto" (default, detected from the gene table;
+see \code{\link{map_genes}}).}
 
 \item{verbose}{Logical indicating whether to print progress messages. Default is TRUE.}
 
@@ -29,13 +32,18 @@ tAge_preprocessing(
 that contains control group labels. Default is NULL.}
 
 \item{control_group_label}{Character string specifying the label for control samples.
-Default is NULL.}
+Default is NULL. With \code{split_by}, the controls of each stratum are
+its reference; a stratum without controls is centred on all of its
+samples, with a warning.}
 
 \item{count_threshold}{Numeric threshold for minimum expression count in gene filtering.
 Default is 10.}
 
 \item{percent_threshold}{Numeric threshold for minimum percentage of samples that must
 have expression above count_threshold. Default is 20.}
+
+\item{split_by}{Character or NULL. Column of the phenoData whose levels
+(tissues, datasets, cell types) are preprocessed separately. Default NULL.}
 }
 \value{
 A list containing six processed ExpressionSet objects:
@@ -52,6 +60,17 @@ including gene filtering, normalization, transformation, scaling, control subtra
 and gene ID conversion. It returns multiple versions of the processed data suitable
 for different analysis approaches.
 }
+\details{
+The clocks were trained on expression centred within each dataset and
+tissue against matched controls, and that is how they should be applied:
+with several tissues (or datasets, cell types) in one ExpressionSet, pass
+\code{split_by} so that gene filtering, normalisation and reference
+centring all happen within each stratum, and the results are combined
+afterwards. Without \code{split_by} the whole object is one stratum.
+
+The species is recorded in every returned ExpressionSet, so
+\code{\link{predict_tAge}} does not need it again.
+}
 \examples{
 # Load example data
 expr_data <- load_example_expression_data()
@@ -60,4 +79,10 @@ eset <- make_ExpressionSet(expr_data, meta_data)
 
 # Run complete preprocessing pipeline
 processed_data <- tAge_preprocessing(eset, species = "mouse")
+
+# Two tissues: filter, normalise and centre each on its own wild-type samples
+processed_data <- tAge_preprocessing(
+  eset, species = "mouse", split_by = "Tissue",
+  control_group_column = "Genotype", control_group_label = "WT"
+)
 }
