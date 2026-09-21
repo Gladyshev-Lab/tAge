@@ -1,3 +1,49 @@
+# tAge 1.4.0
+
+## New features
+
+* `tAge_preprocessing(split_by = )` preprocesses each level of a phenoData
+  column (tissue, dataset, cell type) on its own -- gene filtering,
+  normalisation and reference centring within the stratum, on the stratum's
+  own controls -- and combines the results. This is how the clocks were
+  trained and applied in the paper; a single reference pooled across tissues
+  mixes tissue differences into the signal. `tAge_by_group()` is now this
+  plus `predict_tAge()`, and no longer swallows errors per stratum. The
+  bulk vignette preprocesses the two-tissue Klotho example this way, with
+  the paper's 25% gene-detection threshold.
+
+* Gene identifiers are detected: `gene_mapping_type = "auto"` (the new
+  default of `map_genes()` and `tAge_preprocessing()`) picks Ensembl, gene
+  symbol or Entrez as the type with the most matches in the species' gene
+  table; Ensembl version suffixes are stripped when that is what makes the
+  IDs match. Entrez input is new. Nothing matching is an error that lists the
+  match counts.
+
+* The species is recorded in the ExpressionSets returned by
+  `tAge_preprocessing()`; `predict_tAge()` / `predict_tAge_one()` take it
+  from there (`species = NULL`). `species` is documented as the species of
+  the samples, used only to rescale chronological-age clocks; an unknown
+  species is an error instead of a silent factor of 1. `tage_species()`
+  lists the supported species with their maximum lifespans and default units.
+
+* `predict_tAge()` gains `age_units` ("auto": months for rodents, years for
+  primates; or "months" / "years") and `normalized_age` ("fraction", the
+  default, or "percent" as in the paper and TACO). The result carries a
+  `"tage_units"` attribute naming the unit of every prediction column. Clocks
+  outside the registry are recognised from their file names (Chronoage,
+  Hazard / Mortality, Relage / NormalizedAge); unknown names are left on the
+  native scale with a warning.
+
+* `remove_outliers(method = )` adds the paper's two rules next to the
+  Mahalanobis default: `"pca_iqr"` (PC1 or PC2 beyond 1.5 IQR, bulk data) and
+  `"spearman_median"` (Spearman correlation with the group's median profile
+  below 0.5, meta-dataset).
+
+## Bug fixes
+
+* `control_subtraction()` warns when the requested control label matches no
+  sample (it used to fall back to all samples silently unless `verbose`).
+
 # tAge 1.3.1
 
 ## Bug fixes

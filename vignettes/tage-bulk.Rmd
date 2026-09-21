@@ -67,20 +67,30 @@ eset
 # 2. Preprocess
 
 `tAge_preprocessing()` filters low-expressed genes, maps them to the mouse
-Entrez gene space, RLE-normalises, log-transforms, scales (per sample), applies
-the YuGene transform, aligns to the clock gene list, and centres the data.
+Entrez gene space (the identifier type is detected), RLE-normalises,
+log-transforms, scales (per sample), applies the YuGene transform, aligns to
+the clock gene list, and centres the data.
+
+The example holds two tissues. The clocks were trained on expression centred
+within each dataset and tissue against matched controls, so we preprocess and
+centre each tissue on its own wild-type samples (`split_by`), and keep genes
+seen in at least 25% of samples, as the paper did for this dataset.
 
 ```{r preprocess}
 tAge_eset <- tAge_preprocessing(
   eset,
   species = "mouse",
-  gene_mapping_type = "Ensembl",
+  split_by = "Tissue",
+  control_group_column = "Genotype",
+  control_group_label  = "WT",
+  percent_threshold = 25,
   verbose = FALSE
 )
 names(tAge_eset)
 ```
 
-Prediction uses the `scaled_diff` and `yugene_diff` representations.
+Prediction uses the `scaled_diff` and `yugene_diff` representations. The
+species is recorded in these objects, so `predict_tAge()` does not need it.
 
 # 3. Browse and download clocks
 
@@ -119,7 +129,6 @@ predict_one_outcome <- function(outcome) {
     tAge_eset,
     model_paths = list(scaled_diff = cl$path[cl$scaling == "Scaled"],
                        yugene_diff = cl$path[cl$scaling == "YuGene"]),
-    species = "mouse",
     mode = "EN"
   )
   out <- res[, c("scaled_diff_EN_tAge", "yugene_diff_EN_tAge"), drop = FALSE]
@@ -229,12 +238,14 @@ figure: modules on the rows, strata on the columns, effects in the cells.
 
 | Outcome | Units | Notes |
 |---|---|---|
-| Chronological | age (years / months) | normalised age rescaled by species max lifespan |
+| Chronological | months (rodents) / years (primates) | normalised age rescaled by species max lifespan; `age_units` overrides |
 | Mortality | `log10(hazard ratio)` | **not** an age; higher = higher expected mortality |
-| Normalized age | fraction of max lifespan | native scale |
+| Normalized age | fraction of max lifespan | `normalized_age = "percent"` for the paper's percent scale |
 
 `tAge` looks up each clock in the registry and rescales **only** chronological
-clocks to age units.
+clocks to age units; `attr(results, "tage_units")` records the unit of every
+column. The example's KO effect is partly driven by the *Klotho* gene itself,
+which the distributed clocks contain and the paper's Klotho analysis excluded.
 
 # 8. Reference groups (centring)
 
@@ -247,6 +258,9 @@ against a reference group.
   to `tAge_preprocessing()` to centre on matched controls (recommended for
   treatment-vs-control designs), e.g. `control_group_column = "Genotype",
   control_group_label = "WT"`.
+- **Several tissues / datasets:** add `split_by` so that every stratum is
+  filtered, normalised and centred on its own controls, as the clocks were
+  trained. That is what section 2 does with `split_by = "Tissue"`.
 
 # Session info
 

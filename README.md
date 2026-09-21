@@ -77,17 +77,27 @@ exprs_data <- read.csv("expression_matrix.csv", row.names = 1)
 metadata   <- read.csv("metadata.csv", row.names = 1)
 eset <- make_ExpressionSet(exprs_data, metadata)
 
-# 2. Preprocess: filter, map genes, RLE-normalise, log, scale, YuGene, centre
+# 2. Preprocess: filter, map genes, RLE-normalise, log, scale, YuGene, centre.
+#    Gene identifiers (Ensembl / Gene.Symbol / Entrez) are detected automatically.
+#    With several tissues, preprocess and centre each on its own controls:
 tAge_eset <- tAge_preprocessing(
   eset,
   species = "mouse",
-  gene_mapping_type = "Gene.Symbol"    # or "Ensembl"
+  split_by = "Tissue",
+  control_group_column = "Genotype", control_group_label = "WT"
 )
 
-# 3. Predict
-results <- predict_tAge(tAge_eset, model_paths, species = "mouse", mode = "EN")
+# 3. Predict (the species was recorded by tAge_preprocessing)
+results <- predict_tAge(tAge_eset, model_paths, mode = "EN")
 head(results)
+attr(results, "tage_units")   # unit of every prediction column
 ```
+
+`species` is the species of the *samples* and only sets the maximum lifespan
+used to express chronological-age clocks in months (rodents) or years
+(primates); it is not the species group a clock was trained on. `age_units`
+forces months or years, and `normalized_age = "percent"` reports normalized-age
+clocks as a percentage of the expected maximum lifespan, as the paper does.
 
 ### Single-cell (pseudobulk)
 
@@ -196,13 +206,15 @@ The units of the prediction depend on the clock **outcome**:
 
 | Outcome | Column | Units | Notes |
 |---|---|---|---|
-| Chronological | `*_tAge` | age (years for human, months for rodents) | normalised age rescaled by species max lifespan |
+| Chronological | `*_tAge` | months (rodents) or years (primates); `age_units` overrides | normalised age rescaled by species max lifespan (`tage_species()`) |
 | Mortality | `*_tAge` | `log10(hazard ratio)` | **not** an age; higher = higher expected mortality |
-| Normalized age | `*_tAge` | fraction of max lifespan | reported on its native scale |
+| Normalized age | `*_tAge` | fraction of max lifespan, or `%` with `normalized_age = "percent"` | age / expected maximum lifespan of the experimental model |
 
 Only **chronological** clocks are rescaled to age units. Mortality clocks
 output a `log10` hazard ratio and must **not** be interpreted in years —
-tAge derives this automatically from the clock registry.
+tAge derives this automatically from the clock registry (and from the file
+name for models outside it). The `"tage_units"` attribute of the result
+records the unit of every column.
 
 ## Relative (differential) clocks and centring
 
@@ -215,11 +227,23 @@ models: they operate on expression *centred against a reference group*.
 - **Reference group given:** pass `control_group_column` and
   `control_group_label` to centre on age-/sex-matched controls within your
   design (recommended when comparing treatment vs control).
+- **Several tissues, datasets or cell types:** pass `split_by`. The clocks
+  were trained on expression centred *within each dataset and tissue*, so
+  filtering, normalisation and centring must happen per stratum; a single
+  reference pooled across tissues mixes tissue differences into the signal.
+  `tAge_by_group()` does the same and predicts in one call.
+
+The bundled example is the Klotho-knockout dataset of the paper (kidney and
+skeletal muscle, WT vs KO). Note that the distributed clocks contain the
+*Klotho* gene itself, whereas the paper's Klotho analysis used clocks
+retrained without it; expect the KO effect here to be somewhat larger.
 
 ## Supported species
 
-Mouse, human, rat, monkey. Non-mouse species are mapped to mouse orthologs
-internally, so all clocks operate in the mouse Entrez gene space.
+Mouse, human, rat, monkey (`tage_species()`). Non-mouse species are mapped to
+mouse orthologs internally, so all clocks operate in the mouse Entrez gene
+space. Input identifiers may be Ensembl (with or without version suffix), gene
+symbols or Entrez IDs; `map_genes()` detects which.
 
 ## Citation
 
