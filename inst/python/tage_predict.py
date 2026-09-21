@@ -12,8 +12,9 @@ from sklearn.exceptions import InconsistentVersionWarning
 from sklearn.impute import SimpleImputer
 import numpy as np
 
-warnings.filterwarnings("ignore", category=InconsistentVersionWarning)
-warnings.filterwarnings("ignore", category=UserWarning)
+# The models were pickled with scikit-learn 1.3.2; loading them on a newer
+# release warns once per estimator. Silenced around the load only (see
+# _load_clock), not process-wide.
 
 
 PREDICTIONS_SPECIES_ADJ = {"human": 122.5, "mouse": 48, "rat": 50.4, "monkey": 39}
@@ -71,8 +72,9 @@ def _load_clock(model_path: Union[str, Path]) -> tuple:
     if not model_path.exists():
         raise FileNotFoundError(f"Model not found: {model_path}")
 
-    with model_path.open("rb") as f:
-        clock_model = joblib.load(f)
+    with warnings.catch_warnings():
+        warnings.simplefilter("ignore", category=InconsistentVersionWarning)
+        clock_model = joblib.load(model_path)
 
     if isinstance(clock_model, sklearn.pipeline.Pipeline):
         for name, step in clock_model.steps:

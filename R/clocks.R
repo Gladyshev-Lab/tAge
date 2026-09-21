@@ -149,24 +149,33 @@ download_clocks <- function(clocks, dest_dir = "clocks",
 
 # download.file() leaves a truncated file behind when it fails or times out,
 # and a later call would then report it as "already present".
+# The transfer goes to `<dest>.part` and is renamed only once it is complete
+# and checked, so an interrupted R session cannot leave a truncated model
+# under the real name (which the next call would trust as "already present").
 .tage_download_file <- function(url, dest, quiet = FALSE) {
+  part <- paste0(dest, ".part")
+  unlink(part)
   status <- tryCatch(
-    utils::download.file(url, dest, mode = "wb", quiet = quiet),
+    utils::download.file(url, part, mode = "wb", quiet = quiet),
     error = function(e) e, warning = function(w) w
   )
   if (inherits(status, "condition") || !identical(as.integer(status), 0L)) {
-    unlink(dest)
+    unlink(part)
     msg <- if (inherits(status, "condition")) conditionMessage(status) else "non-zero exit status"
     stop(sprintf("Download of %s failed (%s). The partial file was removed.", basename(dest), msg),
          call. = FALSE)
   }
-  .tage_check_download(dest)
+  .tage_check_download(part, shown_as = basename(dest))
+  if (!file.rename(part, dest)) {
+    unlink(part)
+    stop(sprintf("Could not move the downloaded file into place: %s", dest), call. = FALSE)
+  }
   invisible(dest)
 }
 
 # joblib pickles start with the pickle PROTO opcode (0x80); an HTML error page
 # starts with "<". Anything else that is empty is an aborted transfer.
-.tage_check_download <- function(dest) {
+.tage_check_download <- function(dest, shown_as = basename(dest)) {
   size <- file.info(dest)$size
   first <- if (isTRUE(size > 0)) readBin(dest, "raw", n = 1L) else raw(0)
   ok <- length(first) == 1L && first == as.raw(0x80)
@@ -174,7 +183,7 @@ download_clocks <- function(clocks, dest_dir = "clocks",
     head <- if (length(first)) rawToChar(readBin(dest, "raw", n = min(size, 200L))) else ""
     unlink(dest)
     stop(sprintf("%s is not a model file (%s bytes%s); it was removed. Check the record id and the file name.",
-                 basename(dest), format(size),
+                 shown_as, format(size),
                  if (grepl("<", head, fixed = TRUE)) ", looks like an HTML page" else ""),
          call. = FALSE)
   }

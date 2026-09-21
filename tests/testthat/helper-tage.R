@@ -20,13 +20,13 @@ suppressMessages(requireNamespace("Biobase", quietly = TRUE))
   dir.create(cache, showWarnings = FALSE, recursive = TRUE)
   dest <- file.path(cache, filename)
   if (!file.exists(dest)) {
-    url <- sprintf("https://zenodo.org/records/%s/files/%s?download=1",
-                   record, filename)
-    ok <- tryCatch(
-      utils::download.file(url, dest, mode = "wb", quiet = TRUE) == 0,
-      error = function(e) FALSE, warning = function(e) FALSE
+    # download_clocks() raises the timeout for the gigabyte Bayesian ridge
+    # models and removes partial or non-pickle files itself.
+    tryCatch(
+      download_clocks(filename, dest_dir = cache, record = record, quiet = TRUE,
+                      timeout = 120),   # enough for the ~1 MB elastic net models; BR models are skipped
+      error = function(e) NULL, warning = function(w) NULL
     )
-    if (!isTRUE(ok) && file.exists(dest)) unlink(dest)
   }
   if (file.exists(dest) && file.info(dest)$size > 0) dest else NULL
 }

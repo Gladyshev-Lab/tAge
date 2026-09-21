@@ -104,3 +104,13 @@ test_that("tage_species lists the four species with lifespans and units", {
   expect_equal(sp$default_units[sp$species == "mouse"], "months")
   expect_equal(sp$default_units[sp$species == "human"], "years")
 })
+
+test_that("a download lands under its final name only once complete", {
+  # A local file:// URL stands in for Zenodo.
+  src <- tempfile(fileext = ".pkl"); writeBin(as.raw(c(0x80, 0x05, 0x95, 0x00)), src)
+  dest <- tempfile(fileext = ".pkl")
+  .tage_download_file(paste0("file://", src), dest, quiet = TRUE)
+  expect_true(file.exists(dest))
+  expect_false(file.exists(paste0(dest, ".part")))
+  expect_equal(readBin(dest, "raw", 4), as.raw(c(0x80, 0x05, 0x95, 0x00)))
+})
