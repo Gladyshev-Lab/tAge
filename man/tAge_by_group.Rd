@@ -70,7 +70,7 @@ intend to run statistics on BR predictions.}
 
 \item{normalized_age}{Scale of normalized-age clocks: \code{"fraction"} of
 the expected maximum lifespan (default) or \code{"percent"} (x100, as in
-the paper and the TACO application).}
+the paper).}
 }
 \value{
 Data frame with predictions for all strata combined (the

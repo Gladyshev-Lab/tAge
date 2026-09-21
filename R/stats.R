@@ -1,8 +1,7 @@
 # Statistical tests for tAge predictions.
 #
-# The models implemented here mirror the TACO / tClock reference application
-# (FUN.plotting_nov_42.R): group comparisons are estimated marginal-mean
-# contrasts from a linear model (elastic net clocks) or from a meta-regression
+# Group comparisons are estimated marginal-mean contrasts from a linear model
+# (elastic net clocks) or from a meta-regression
 # weighted by the per-sample prediction standard deviation (Bayesian ridge
 # clocks). Continuous predictors are single coefficients from the same models.
 # Nothing here rescales tAge -- predict_tAge() has already put predictions on
@@ -13,8 +12,7 @@ TAGE_P_ADJUST_METHODS <- c("BH", "fdr", "bonferroni", "holm", "hochberg",
 
 #' Significance stars for tAge statistics
 #'
-#' Maps p-values onto the label set used throughout the reference application
-#' and the published figures: \code{***} below 0.001, \code{**} below 0.01,
+#' Maps p-values onto the label set of the published figures: \code{***} below 0.001, \code{**} below 0.01,
 #' \code{*} below 0.05 and \code{^} below 0.1.
 #'
 #' @param p Numeric vector of p-values.
@@ -192,7 +190,7 @@ tage_significance_stars <- function(p) {
 # Fit the group model and return emmeans for the grouping factor. Elastic net
 # clocks go through lm(); Bayesian ridge clocks go through a REML
 # meta-regression weighted by 1 / (sd^2 + tau^2), read back into emmeans with
-# qdrg() on z-tests -- exactly what the reference application does.
+# qdrg() on z-tests.
 # Returns the emmeans object, or a character string saying why the fit failed.
 .tage_fit_emm <- function(df, response, group_column, covariates, se_column) {
   rhs <- .tage_rhs(c(group_column, covariates))
@@ -277,8 +275,8 @@ tage_significance_stars <- function(p) {
 #' Compare tAge between experimental groups
 #'
 #' Estimated marginal-mean contrasts of predicted tAge between a reference
-#' group and one or more comparison groups, reproducing the statistics of the
-#' TACO / tClock reference application.
+#' group and one or more comparison groups, as used for the clock analyses in
+#' the paper.
 #'
 #' For elastic net clocks the model is \code{value ~ group + covariates} fitted
 #' with \code{\link[stats]{lm}}. For Bayesian ridge clocks -- signalled by
@@ -317,9 +315,8 @@ tage_significance_stars <- function(p) {
 #'   by default.
 #' @param p_adjust_scope Family over which p-values are corrected.
 #'   \code{"within_column"} (default) corrects across all comparisons and
-#'   strata of one clock -- the reference application's box-plot behaviour.
-#'   \code{"across_columns"} corrects across clocks within each comparison and
-#'   stratum, which is how the application corrects across module clocks.
+#'   strata of one clock. \code{"across_columns"} corrects across clocks within
+#'   each comparison and stratum (the family used for module clocks).
 #'   \code{"global"} corrects everything together, \code{"none"} disables it.
 #' @param conf_level Two-sided confidence level for \code{ci_low} /
 #'   \code{ci_high}. The critical value follows the test: normal for the
@@ -492,8 +489,7 @@ tage_compare_groups <- function(data,
 #' Regress tAge on a continuous predictor
 #'
 #' Slope of predicted tAge against a numeric predictor such as chronological
-#' age, dose or time in culture, matching the reference application's "lm"
-#' mode. Elastic net clocks use \code{\link[stats]{lm}}; Bayesian ridge clocks
+#' age, dose or time in culture. Elastic net clocks use \code{\link[stats]{lm}}; Bayesian ridge clocks
 #' use a REML meta-regression weighted by the per-sample prediction standard
 #' deviation and report z-tests.
 #'
@@ -662,9 +658,9 @@ tage_regress_continuous <- function(data,
 
 #' Module-clock effect sizes and p-values
 #'
-#' Per-module statistics for the module-clock heatmaps, following the reference
-#' application's \code{Plot_module_heatmap}. With \code{standardize = TRUE}
-#' (the application's default) the two quantities come from different models:
+#' Per-module statistics for the module-clock heatmaps. With
+#' \code{standardize = TRUE} (the default) the two quantities come from
+#' different models:
 #' the p-value is the estimated marginal-mean contrast of the full model fitted
 #' on the stratum, while the effect size is the coefficient of a separate
 #' two-group model fitted on values standardised to unit variance, which makes
@@ -819,9 +815,8 @@ tage_module_stats <- function(data,
 #' Covariate-adjusted tAge values for plotting
 #'
 #' Removes the fitted covariate effects from a tAge column while keeping the
-#' group effect, so that box plots show what the model tested. This reproduces
-#' the reference application's partial-plot values: the covariate model is
-#' fitted without the grouping variable, and the mean covariate effect is added
+#' group effect, so that box plots show what the model tested: the covariate
+#' model is fitted without the grouping variable, and the mean covariate effect is added
 #' back so the adjusted values stay on the original scale.
 #'
 #' @param data Data frame of per-sample predictions.
@@ -829,7 +824,7 @@ tage_module_stats <- function(data,
 #' @param covariates Covariate columns to regress out.
 #' @param split_by Optional stratifying column, included as a fixed effect for
 #'   elastic net clocks and used to fit one model per stratum for Bayesian
-#'   ridge clocks -- again matching the application.
+#'   ridge clocks.
 #' @param se_column Per-sample standard deviations for a Bayesian ridge clock.
 #'   Default \code{NULL} uses \code{\link[stats]{lm}}.
 #'

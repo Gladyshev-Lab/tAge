@@ -60,9 +60,8 @@ by default.}
 
 \item{p_adjust_scope}{Family over which p-values are corrected.
 \code{"within_column"} (default) corrects across all comparisons and
-strata of one clock -- the reference application's box-plot behaviour.
-\code{"across_columns"} corrects across clocks within each comparison and
-stratum, which is how the application corrects across module clocks.
+strata of one clock. \code{"across_columns"} corrects across clocks within
+each comparison and stratum (the family used for module clocks).
 \code{"global"} corrects everything together, \code{"none"} disables it.}
 
 \item{conf_level}{Two-sided confidence level for \code{ci_low} /
@@ -78,8 +77,8 @@ A data frame with one row per contrast and the columns
 }
 \description{
 Estimated marginal-mean contrasts of predicted tAge between a reference
-group and one or more comparison groups, reproducing the statistics of the
-TACO / tClock reference application.
+group and one or more comparison groups, as used for the clock analyses in
+the paper.
 }
 \details{
 For elastic net clocks the model is \code{value ~ group + covariates} fitted

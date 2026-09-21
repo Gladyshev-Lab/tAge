@@ -1,7 +1,7 @@
-# Statistics tests. The reference values are computed inline with the same
-# engine the TACO / tClock application uses (lm + emmeans for elastic net,
-# metafor::rma.uni + qdrg for Bayesian ridge), so these lock the package to the
-# application rather than to hand-copied numbers.
+# Statistics tests. The reference values are computed inline with the engine
+# itself (lm + emmeans for elastic net, metafor::rma.uni + qdrg for Bayesian
+# ridge), transcribed independently below, so these lock the package to the
+# models rather than to hand-copied numbers.
 
 .stats_fixture <- function(seed = 42, n = 90) {
   set.seed(seed)
@@ -18,7 +18,7 @@
   d
 }
 
-# Reference implementation: the application's contrast code, transcribed.
+# Independent transcription of the contrast computation.
 .app_contrasts <- function(df, group1, Group_col, covariates = NULL,
                            split_group = NULL, use_br = FALSE,
                            variance_strata = "subset") {
@@ -87,13 +87,13 @@ test_that("significance stars follow the reference thresholds", {
   expect_equal(tage_significance_stars(c(1e-4, 0.005, 0.03, 0.08, 0.5)),
                c("***", "**", "*", "^", ""))
   expect_true(is.na(tage_significance_stars(NA_real_)))
-  # Thresholds are strict "<", as in the application: exactly 0.05 is only a
+  # Thresholds are strict "<": exactly 0.05 is only a
   # trend, and exactly 0.1 is nothing.
   expect_equal(tage_significance_stars(0.05), "^")
   expect_equal(tage_significance_stars(0.1), "")
 })
 
-test_that("elastic net contrasts match the application", {
+test_that("elastic net contrasts match the transcribed engine", {
   d <- .stats_fixture()
 
   res <- .sorted(tage_compare_groups(d, "tAge", "Genotype", "WT", p_adjust = "none"))
@@ -105,7 +105,7 @@ test_that("elastic net contrasts match the application", {
   expect_equal(as.character(res$group1), rep("WT", nrow(res)))
 })
 
-test_that("covariates and stratification match the application", {
+test_that("covariates and stratification match the transcribed engine", {
   d <- .stats_fixture()
 
   res <- .sorted(tage_compare_groups(d, "tAge", "Genotype", "WT",
@@ -161,8 +161,8 @@ test_that("estimate is always group2 minus group1", {
   raw_diff <- mean(d$tAge[d$Genotype == "KO"]) - mean(d$tAge[d$Genotype == "WT"])
   expect_equal(res$estimate, raw_diff)
 
-  # Same for the Bayesian ridge path, which the application reports with the
-  # opposite sign to its own elastic net output.
+  # Same for the Bayesian ridge path: the sign convention is group2 - group1
+  # for every model type.
   res_br <- tage_compare_groups(d, "tAge", "Genotype", "WT", compare_groups = "KO",
                                 se_columns = "tAge_sd", p_adjust = "none")
   expect_gt(res_br$estimate, 0)
@@ -299,7 +299,7 @@ test_that("missing values and bad arguments are handled", {
   d <- .stats_fixture()
   d$Age[1:5] <- NA
 
-  # Rows missing a covariate are dropped, matching complete.cases in the app.
+  # Rows missing a covariate are dropped (complete.cases).
   # n counts the two groups entering each contrast, not the whole table.
   res <- tage_compare_groups(d, "tAge", "Genotype", "WT", covariates = "Age",
                              p_adjust = "none")
@@ -319,8 +319,9 @@ test_that("missing values and bad arguments are handled", {
 })
 
 test_that("a factor level starting with the column name is parsed correctly", {
-  # The application derives group labels by stripping the column name off the
-  # emmeans contrast string, which mangles levels like "GenotypeKO".
+  # Deriving group labels by stripping the column name off the emmeans
+  # contrast string would mangle levels like "GenotypeKO"; the weights are
+  # built explicitly instead.
   d <- .stats_fixture()
   levels(d$Genotype) <- c("WT", "GenotypeKO", "HET")
 

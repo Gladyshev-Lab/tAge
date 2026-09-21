@@ -28,9 +28,6 @@ def _is_chronological_clock(model_path: Union[str, Path]) -> bool:
     converts it back to age units (years for human, months for rodents).
     Mortality clocks output log10(hazard ratio) and normalised-age clocks
     output the normalised fraction directly, so neither must be rescaled.
-
-    This mirrors the TACO reference application, which applies the
-    species factor only to chronological clocks (``grepl("chronological")``).
     Detection is based on the model file name, following the released
     naming convention (``EN_Chronoage_...`` / ``EN_Mortality_...``).
     """

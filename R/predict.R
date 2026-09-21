@@ -26,7 +26,7 @@
 #'   \code{"years"}.
 #' @param normalized_age Scale of normalized-age clocks: \code{"fraction"} of
 #'   the expected maximum lifespan (default) or \code{"percent"} (x100, as in
-#'   the paper and the TACO application).
+#'   the paper).
 #' @return A data frame containing the predicted transcriptomic age results with
 #'   sample information and predicted ages, plus a \code{BR_tAge_std} column
 #'   when \code{return_std} is \code{TRUE}. The attribute \code{"tage_units"}
@@ -130,8 +130,7 @@ predict_tAge_one <- function(eset, model_path, species = NULL, mode,
 #'   deviation of Bayesian Ridge clocks. Defaults to \code{TRUE} for
 #'   \code{mode = "BR"}, adding one \code{<normalisation>_BR_tAge_sd} column per
 #'   clock. Pass these to the \code{se_columns} argument of
-#'   \code{\link{tage_compare_groups}} to reproduce the reference application's
-#'   Bayesian ridge statistics.
+#'   \code{\link{tage_compare_groups}} for the Bayesian ridge statistics.
 #' @return A data frame containing the predicted transcriptomic age results for all
 #'   provided ExpressionSet objects, with appropriately named columns. The
 #'   attribute \code{"tage_units"} is a named character vector giving the unit of

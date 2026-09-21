@@ -147,11 +147,9 @@ download_clocks <- function(clocks, dest_dir = "clocks",
   clocks
 }
 
-# download.file() leaves a truncated file behind when it fails or times out,
-# and a later call would then report it as "already present".
 # The transfer goes to `<dest>.part` and is renamed only once it is complete
-# and checked, so an interrupted R session cannot leave a truncated model
-# under the real name (which the next call would trust as "already present").
+# and checked: a failed or interrupted download never leaves a file under the
+# model's name.
 .tage_download_file <- function(url, dest, quiet = FALSE) {
   part <- paste0(dest, ".part")
   unlink(part)

@@ -1,7 +1,7 @@
 # Prediction tests — require Python modules and download clock models from
 # Zenodo. They skip gracefully when either is unavailable (e.g. on CRAN or
-# offline). Golden values come from a bit-for-bit head-to-head against the
-# TACO reference application on the shipped mouse example data.
+# offline). Golden values were cross-checked bit-for-bit against an independent
+# implementation of the same models on the shipped mouse example data.
 
 test_that("mortality clock returns log10(HR), not lifespan-scaled values", {
   skip_on_cran()
@@ -21,7 +21,7 @@ test_that("mortality clock returns log10(HR), not lifespan-scaled values", {
   # small; multiplying by 48 (mouse) would push them well outside this range.
   expect_true(all(abs(vals) < 5))
 
-  # Golden values (match TACO exactly).
+  # Golden values (cross-checked against an independent implementation).
   expect_equal(head(vals, 3),
                c(-0.593993, -0.668232, -0.530628),
                tolerance = 1e-3)

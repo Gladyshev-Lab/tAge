@@ -234,7 +234,7 @@ log_transform <- function(eset, verbose = TRUE) {
 #' It calls \code{\link[base]{scale}}, which operates column-wise, so scaling is
 #' performed \emph{per sample} (each sample/column is scaled to zero mean and unit
 #' variance across genes). This is the "Scaling" normalisation strategy from the
-#' paper and matches the TACO reference application. Per-gene standardisation is
+#' paper. Per-gene standardisation is
 #' handled separately inside the trained clock model (its \code{StandardScaler}
 #' step), using training-set statistics.
 #'
@@ -274,9 +274,8 @@ scale_eset <- function(eset, verbose = TRUE) {
 #'
 #' If no reference group is specified (both \code{column_name} and
 #' \code{control_label} are \code{NULL}), or no matching control samples are
-#' found, all samples are used as the reference (per-gene overall median). This
-#' matches the default behaviour of the TACO reference application, which always
-#' centres and defaults the reference group to all samples.
+#' found, all samples are used as the reference (per-gene overall median).
+#' Centring itself is never skipped.
 #'
 #' @param eset An ExpressionSet object containing expression data.
 #' @param column_name Character string specifying the column name in phenoData that
@@ -299,8 +298,8 @@ control_subtraction <- function(eset, column_name = NULL, control_label = NULL, 
   X <- Biobase::exprs(eset)
 
   # No reference group specified: centre on all samples (overall per-gene
-  # median), matching the TACO default. Centring is never skipped, because the
-  # _diff clocks require reference-centred input.
+  # median). Centring is never skipped, because the _diff clocks require
+  # reference-centred input.
   if (is.null(column_name) || is.null(control_label)) {
     control_idx <- integer(0)
   } else {
@@ -345,8 +344,7 @@ control_subtraction <- function(eset, column_name = NULL, control_label = NULL, 
 #' Genes missing from the ExpressionSet are padded with \code{NA}. This is
 #' intentional: at prediction time the trained clock model's imputer fills
 #' these with the training-set median for each gene, which is the correct
-#' neutral value (padding with zeros would not be). This matches the TACO
-#' reference application, where absent genes remain \code{NA}.
+#' neutral value (padding with zeros would not be).
 #'
 #' @param eset An ExpressionSet object.
 #' @param gene_list Character vector of reference gene identifiers.

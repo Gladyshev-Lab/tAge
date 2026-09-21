@@ -67,7 +67,7 @@ map_genes <- function(eset,
 .strip_ensembl_version <- function(x) sub("\\.[0-9]+$", "", x)
 
 # Which identifier type the row names are, as the type with the most matches
-# in the gene table -- the TACO application's rule. Returns the type, the
+# in the gene table. Returns the type, the
 # keys to look up (row names, or Ensembl IDs with their version suffix
 # removed when that is what makes them match) and the match count.
 .detect_gene_mapping_type <- function(genes, gene_table, requested = "auto") {
@@ -137,9 +137,8 @@ map_genes <- function(eset,
   orthologs      <- orthologs[!is.na(orthologs[["Entrez.mouse"]]), ]
   ortholog_map   <- setNames(orthologs[["Entrez.mouse"]], orthologs[["Ensembl.macaca"]])
 
-  # Chain: original ID -> Ensembl -> mouse Entrez. Indexing with `[` returns
-  # NA for macaque genes without a mouse ortholog; `[[` errored on them
-  # ("subscript out of bounds"), which made every monkey mapping fail.
+  # Chain: original ID -> Ensembl -> mouse Entrez. `[` returns NA for macaque
+  # genes without a mouse ortholog; those are dropped.
   ens   <- as.character(unname(monkey_ens_map))
   mouse <- unname(ortholog_map[ens])
   keep  <- !is.na(names(monkey_ens_map)) & !is.na(ens) & !is.na(mouse)

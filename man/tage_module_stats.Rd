@@ -58,9 +58,9 @@ A data frame with \code{module}, \code{split}, \code{group1},
   \code{p_adjusted} and \code{label}.
 }
 \description{
-Per-module statistics for the module-clock heatmaps, following the reference
-application's \code{Plot_module_heatmap}. With \code{standardize = TRUE}
-(the application's default) the two quantities come from different models:
+Per-module statistics for the module-clock heatmaps. With
+\code{standardize = TRUE} (the default) the two quantities come from
+different models:
 the p-value is the estimated marginal-mean contrast of the full model fitted
 on the stratum, while the effect size is the coefficient of a separate
 two-group model fitted on values standardised to unit variance, which makes

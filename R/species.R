@@ -1,8 +1,6 @@
-# Species maximum lifespans used to turn the clocks' normalised age back into
-# age units, and the units each species is reported in. The values are those
-# of the TACO reference application (AnAge maximum longevity); the paper text
-# quotes 3.8 y for rat and 122 y for human, so check with the authors before
-# relying on rat ages to better than ~10%.
+# Species maximum lifespans (AnAge maximum longevity) that turn the clocks'
+# normalised age back into age units, and the units each species is reported
+# in. The paper text quotes 3.8 y for rat and 122 y for human.
 .TAGE_SPECIES <- data.frame(
   species            = c("mouse", "rat", "human", "monkey"),
   max_lifespan_years = c(4, 4.2, 122.5, 39),

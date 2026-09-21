@@ -14,8 +14,7 @@ Character vector of labels; \code{""} where nothing is significant
   and \code{NA} stays \code{NA}.
 }
 \description{
-Maps p-values onto the label set used throughout the reference application
-and the published figures: \code{***} below 0.001, \code{**} below 0.01,
+Maps p-values onto the label set of the published figures: \code{***} below 0.001, \code{**} below 0.01,
 \code{*} below 0.05 and \code{^} below 0.1.
 }
 \examples{

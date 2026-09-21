@@ -124,8 +124,8 @@ results <- tAge_by_group(
 
 ## Statistics
 
-`tage_compare_groups()` and friends implement the same models as the TACO /
-tClock reference application, so R, Python and the app agree numerically.
+`tage_compare_groups()` and friends implement the statistical models of the
+paper's clock analyses; the R and Python packages agree numerically.
 Elastic net clocks are compared with estimated marginal-mean contrasts of
 `value ~ group + covariates` (`emmeans` on an `lm`); Bayesian ridge clocks go
 through a REML meta-regression (`metafor::rma.uni`) that weights each sample by
@@ -198,7 +198,8 @@ compared groups (`"subset"`) or from every group in the stratum
 `"global"`.
 
 `tage_boxplot()` uses this engine by default (`stat_method = "emmeans"`); pass
-`stat_method = "t.test"` for the previous `ggpubr` behaviour.
+`stat_method = "t.test"` (or another `ggpubr::stat_compare_means` method) for a
+plain two-sample test.
 
 ## Interpreting the output
 

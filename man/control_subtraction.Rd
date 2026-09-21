@@ -36,9 +36,8 @@ predicting with them.
 \details{
 If no reference group is specified (both \code{column_name} and
 \code{control_label} are \code{NULL}), or no matching control samples are
-found, all samples are used as the reference (per-gene overall median). This
-matches the default behaviour of the TACO reference application, which always
-centres and defaults the reference group to all samples.
+found, all samples are used as the reference (per-gene overall median).
+Centring itself is never skipped.
 }
 \examples{
 # Load example data and create ExpressionSet

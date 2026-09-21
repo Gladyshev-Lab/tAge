@@ -165,9 +165,9 @@ zero, **not** ages. See below.
 
 # 5. Compare groups
 
-`tage_compare_groups()` is the test behind every figure in the package, and the
-same one the TACO web app runs: estimated marginal-mean contrasts of
-`tAge ~ group + covariates`, one model per stratum.
+`tage_compare_groups()` is the test behind every figure in the package:
+estimated marginal-mean contrasts of `tAge ~ group + covariates`, one model
+per stratum, as in the paper's clock analyses.
 
 ```{r stats, eval = RUN_MODELS}
 stats <- tage_compare_groups(

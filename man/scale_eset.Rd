@@ -20,7 +20,7 @@ This function applies z-score scaling to the expression data in an ExpressionSet
 It calls \code{\link[base]{scale}}, which operates column-wise, so scaling is
 performed \emph{per sample} (each sample/column is scaled to zero mean and unit
 variance across genes). This is the "Scaling" normalisation strategy from the
-paper and matches the TACO reference application. Per-gene standardisation is
+paper. Per-gene standardisation is
 handled separately inside the trained clock model (its \code{StandardScaler}
 step), using training-set statistics.
 }

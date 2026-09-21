@@ -46,8 +46,7 @@ A data frame with \code{value_column}, \code{split}, \code{term},
 }
 \description{
 Slope of predicted tAge against a numeric predictor such as chronological
-age, dose or time in culture, matching the reference application's "lm"
-mode. Elastic net clocks use \code{\link[stats]{lm}}; Bayesian ridge clocks
+age, dose or time in culture. Elastic net clocks use \code{\link[stats]{lm}}; Bayesian ridge clocks
 use a REML meta-regression weighted by the per-sample prediction standard
 deviation and report z-tests.
 }

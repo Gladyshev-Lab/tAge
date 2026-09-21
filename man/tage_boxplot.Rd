@@ -59,10 +59,10 @@ column.}
 \item{box_width}{Width of the boxes.}
 
 \item{stat_method}{Test used for the comparisons. \code{"emmeans"} (default)
-uses \code{\link{tage_compare_groups}}, i.e. the estimated marginal-mean
-contrasts of the reference application, which support covariates,
-stratum-wise models and Bayesian ridge weighting. Any other value is
-passed straight to \code{ggpubr::stat_compare_means} as before, e.g.
+uses \code{\link{tage_compare_groups}}: estimated marginal-mean
+contrasts, which support covariates, stratum-wise models and Bayesian
+ridge weighting. Any other value is passed to
+\code{ggpubr::stat_compare_means}, e.g.
 \code{"t.test"} or \code{"wilcox.test"}.}
 
 \item{reference_group}{Reference level for \code{stat_method = "emmeans"}.
@@ -70,7 +70,7 @@ Default \code{NULL} uses the first level of \code{x_var}.}
 
 \item{covariates}{Covariate columns adjusted for when
 \code{stat_method = "emmeans"}. Supplying them also switches the plotted
-values to covariate-adjusted ones, matching the reference application.}
+values to covariate-adjusted ones (\code{\link{tage_adjust_covariates}}).}
 
 \item{se_column}{Column of per-sample prediction standard deviations for a
 Bayesian ridge clock, enabling the meta-regression test. Default

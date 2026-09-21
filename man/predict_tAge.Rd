@@ -37,8 +37,7 @@ Elastic Net or "BR" for Bayesian Ridge.}
 deviation of Bayesian Ridge clocks. Defaults to \code{TRUE} for
 \code{mode = "BR"}, adding one \code{<normalisation>_BR_tAge_sd} column per
 clock. Pass these to the \code{se_columns} argument of
-\code{\link{tage_compare_groups}} to reproduce the reference application's
-Bayesian ridge statistics.}
+\code{\link{tage_compare_groups}} for the Bayesian ridge statistics.}
 
 \item{age_units}{Units of chronological-age predictions: \code{"auto"}
 (default; months for rodents, years for primates), \code{"months"} or
@@ -46,7 +45,7 @@ Bayesian ridge statistics.}
 
 \item{normalized_age}{Scale of normalized-age clocks: \code{"fraction"} of
 the expected maximum lifespan (default) or \code{"percent"} (x100, as in
-the paper and the TACO application).}
+the paper).}
 }
 \value{
 A data frame containing the predicted transcriptomic age results for all

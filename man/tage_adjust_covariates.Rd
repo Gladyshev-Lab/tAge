@@ -21,7 +21,7 @@ tage_adjust_covariates(
 
 \item{split_by}{Optional stratifying column, included as a fixed effect for
 elastic net clocks and used to fit one model per stratum for Bayesian
-ridge clocks -- again matching the application.}
+ridge clocks.}
 
 \item{se_column}{Per-sample standard deviations for a Bayesian ridge clock.
 Default \code{NULL} uses \code{\link[stats]{lm}}.}
@@ -32,9 +32,8 @@ Numeric vector of adjusted values, in the row order of \code{data};
 }
 \description{
 Removes the fitted covariate effects from a tAge column while keeping the
-group effect, so that box plots show what the model tested. This reproduces
-the reference application's partial-plot values: the covariate model is
-fitted without the grouping variable, and the mean covariate effect is added
+group effect, so that box plots show what the model tested: the covariate
+model is fitted without the grouping variable, and the mean covariate effect is added
 back so the adjusted values stay on the original scale.
 }
 \examples{
