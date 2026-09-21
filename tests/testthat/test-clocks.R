@@ -68,3 +68,39 @@ test_that("download_clocks raises the timeout only while it runs", {
   expect_equal(basename(res$path), fn)
   expect_equal(getOption("timeout"), 60)
 })
+
+test_that("clock outcomes are recognised from registry and internal names", {
+  co <- tAge:::.clock_outcome
+  expect_equal(co("EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl"), "Mortality")
+  expect_equal(co("BR_NormalizedAge_Rodents_Liver_yugenediff.pkl"), "Normalized age")
+  expect_equal(co("/x/EN_Hazard_All_All_All_scaleddiff.pkl"), "Mortality")
+  expect_equal(co("EN_Relage999_Mouse_All_All_yugenediff.pkl"), "Normalized age")
+  expect_equal(co("EN_Chronoage_blue_Rodents_All_WT_scaleddiff.pkl"), "Chronological")
+  expect_equal(co("EN_Lifespan_Rodents_All_All_scaleddiff.pkl"), "Lifespan")
+  expect_true(is.na(co("Ovarian_clock_scaleddiff_EN.pkl")))
+})
+
+test_that("output scaling follows outcome, species and units", {
+  sc <- tAge:::.tage_output_scaling
+  chrono <- "EN_Chronoage_Mouse_Multitissue_scaleddiff.pkl"
+  expect_equal(sc(chrono, "mouse", "auto", "fraction"), list(factor = 48, units = "months"))
+  expect_equal(sc(chrono, "mouse", "years", "fraction"), list(factor = 4, units = "years"))
+  expect_equal(sc(chrono, "human", "auto", "fraction"), list(factor = 122.5, units = "years"))
+  expect_equal(sc(chrono, "human", "months", "fraction")$factor, 122.5 * 12)
+  na <- "EN_NormalizedAge_Mouse_Multitissue_scaleddiff.pkl"
+  expect_equal(sc(na, "mouse", "auto", "fraction")$factor, 1)
+  expect_equal(sc(na, "mouse", "auto", "percent"), list(factor = 100, units = "% of maximum lifespan"))
+  expect_equal(sc("EN_Mortality_Mouse_Multitissue_scaleddiff.pkl", "rat", "auto", "fraction"),
+               list(factor = 1, units = "log10 hazard ratio"))
+  expect_warning(res <- sc("Ovarian_clock_scaleddiff_EN.pkl", "mouse", "auto", "fraction"),
+                 "Could not tell")
+  expect_equal(res$factor, 1)
+  expect_error(sc(chrono, "rhesus", "auto", "fraction"), "Unknown species")
+})
+
+test_that("tage_species lists the four species with lifespans and units", {
+  sp <- tage_species()
+  expect_setequal(sp$species, c("mouse", "rat", "human", "monkey"))
+  expect_equal(sp$default_units[sp$species == "mouse"], "months")
+  expect_equal(sp$default_units[sp$species == "human"], "years")
+})

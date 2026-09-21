@@ -16,19 +16,29 @@
   df
 }
 
-# Should a clock's output be multiplied by species maximum lifespan?
-# Looks the model up in the registry by file name; falls back to a name-based
-# heuristic, and returns NA if the type cannot be determined.
-.clock_lifespan_scaled <- function(model_path) {
+# What a clock predicts, from the registry or -- for models that are not in
+# it, such as the lab's internal and module clocks -- from the file name:
+# "Chronological", "Mortality", "Normalized age", "Lifespan" or NA.
+.clock_outcome <- function(model_path) {
   fn  <- basename(as.character(model_path))
   reg <- tryCatch(.clock_registry(), error = function(e) NULL)
   if (!is.null(reg)) {
     hit <- reg[reg$filename == fn, , drop = FALSE]
-    if (nrow(hit) == 1) return(isTRUE(hit$lifespan_scaled))
+    if (nrow(hit) == 1) return(as.character(hit$outcome))
   }
-  if (grepl("chronoage", fn, ignore.case = TRUE)) return(TRUE)
-  if (grepl("mortality|normalizedage", fn, ignore.case = TRUE)) return(FALSE)
-  NA
+  key <- tolower(fn)
+  if (grepl("chronoage|chronological", key)) return("Chronological")
+  if (grepl("hazard|mortality", key))        return("Mortality")
+  if (grepl("relage|normalizedage", key))    return("Normalized age")
+  if (grepl("lifespan", key))                return("Lifespan")
+  NA_character_
+}
+
+# Should a clock's output be multiplied by species maximum lifespan?
+.clock_lifespan_scaled <- function(model_path) {
+  outcome <- .clock_outcome(model_path)
+  if (is.na(outcome)) return(NA)
+  identical(outcome, "Chronological")
 }
 
 #' List available transcriptomic clock models

@@ -41,6 +41,7 @@ reference:
   contents:
   - list_clocks
   - download_clocks
+  - tage_species
 
 - title: Preprocessing steps
   desc: >
