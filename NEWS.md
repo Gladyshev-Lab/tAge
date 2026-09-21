@@ -2,6 +2,16 @@
 
 ## New features
 
+* One figure style, shared with the Python package: `theme_tage()`, the
+  colour tokens in `tage_colors()`, `tage_series_colors()` for group colours
+  (the reference group in neutral grey, comparisons in colour-vision-safe
+  slots) and `scale_fill_tage_diverging()` for signed effects. `tage_boxplot()`,
+  `tage_clock_forest()`, `tage_module_heatmap()`, the outlier PCA plot and
+  `plot_eset_density()` all draw with it: left-aligned title with subtitle
+  and caption, recessive axes, one colour per clock outcome, blue-grey-red
+  scale centred on zero. `tage_boxplot()` gains `subtitle` and `caption`;
+  its `theme_type` is deprecated.
+
 * `tAge_preprocessing(split_by = )` preprocesses each level of a phenoData
   column (tissue, dataset, cell type) on its own -- gene filtering,
   normalisation and reference centring within the stratum, on the stratum's
