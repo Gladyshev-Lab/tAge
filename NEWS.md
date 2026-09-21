@@ -44,6 +44,20 @@
 * `control_subtraction()` warns when the requested control label matches no
   sample (it used to fall back to all samples silently unless `verbose`).
 
+## Housekeeping
+
+* The Python bridge no longer silences every `UserWarning` for the whole
+  session; the scikit-learn version warning is suppressed around the model
+  load only.
+* Base-package functions are imported explicitly (`R CMD check` NOTEs);
+  `tage_boxplot()` no longer calls `library()`. `png` and `robustbase` are
+  listed in Suggests. The test helper downloads models through
+  `download_clocks()`.
+* `download_clocks()` writes to `<file>.part` and renames only once the
+  transfer is complete and checked, so an interrupted session cannot leave a
+  truncated model under the real name. Non-ASCII characters in R sources are
+  written as `\u` escapes (`R CMD check` warning).
+
 # tAge 1.3.1
 
 ## Bug fixes

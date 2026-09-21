@@ -124,7 +124,7 @@ stats <- tage_compare_groups(
   results,
   value_columns   = c("scaled_diff_EN_tAge", "yugene_diff_EN_tAge"),
   group_column    = "age",
-  reference_group = "3m",           # the youngest group in this dataset
+  reference_group = "3m",           # the reference group (youngest age you kept)
   split_by        = "tissue",
   p_adjust        = "BH",
   p_adjust_scope  = "across_columns"
@@ -193,9 +193,10 @@ With module clocks, `tage_module_heatmap()` shows which cellular subsystems
 carry the signal:
 
 ```{r modules}
+module_cols <- grep("^module_", names(results), value = TRUE)  # one column per module clock
 tage_module_heatmap(
   results,
-  module_columns  = module_cols,     # one column per module clock
+  module_columns  = module_cols,
   group_column    = "age",
   reference_group = "3m",
   split_by        = "tissue"
