@@ -91,6 +91,10 @@ reference:
   - load_module_functions
   - tage_fig_size
   - tage_save_plot
+  - theme_tage
+  - tage_colors
+  - tage_series_colors
+  - scale_fill_tage_diverging
 
 - title: Data and helpers
   desc: Build an ExpressionSet and reach the example data shipped with the package.
