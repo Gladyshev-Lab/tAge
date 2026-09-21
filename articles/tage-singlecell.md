@@ -104,22 +104,102 @@ results <- tAge_by_group(
 )
 ```
 
-## 6. Visualise
+## 6. Compare age groups
+
+The statistics are the same as for bulk data — pseudobulk samples are
+just samples. Here the comparison is old versus young within each
+tissue, so `split_by` fits one model per tissue.
+
+``` r
+
+stats <- tage_compare_groups(
+  results,
+  value_columns   = c("scaled_diff_EN_tAge", "yugene_diff_EN_tAge"),
+  group_column    = "age",
+  reference_group = "3m",           # the reference group (youngest age you kept)
+  split_by        = "tissue",
+  p_adjust        = "BH",
+  p_adjust_scope  = "across_columns"
+)
+
+stats[, c("value_column", "split", "group2", "estimate",
+          "ci_low", "ci_high", "p_adjusted", "label")]
+```
+
+Age is also a number here, so the trend across the whole range is a more
+natural summary than a set of pairwise contrasts:
 
 ``` r
 
 results$age_numeric <- as.numeric(gsub("m", "", results$age))
+
+tage_regress_continuous(
+  results,
+  value_columns = "scaled_diff_EN_tAge",
+  predictor     = "age_numeric",
+  split_by      = "tissue"
+)
+```
+
+A caveat specific to pseudobulk: several metacells from the same animal
+are not independent. Pooling one metacell per (animal × tissue), as in
+step 3, keeps the rows independent. If you build several metacells per
+animal, add the animal as a covariate or aggregate the predictions
+before testing.
+
+## 7. Figures
+
+``` r
+
+clocks_meta <- data.frame(
+  filename = c("scaled_diff_EN_tAge", "yugene_diff_EN_tAge"),
+  name     = c("EN Scaled", "EN YuGene"),
+  outcome  = "Chronological",
+  stringsAsFactors = FALSE
+)
+
+tage_clock_forest(
+  results,
+  clocks_meta     = clocks_meta,
+  group_column    = "age",
+  reference_group = "3m",
+  split_by        = "tissue",
+  title           = "Predicted age vs the 3-month group"
+)
+```
+
+For one clock at a time,
+[`tage_boxplot()`](https://gladyshev-lab.github.io/tAge/reference/tage_boxplot.md)
+shows the pseudobulk samples themselves and annotates the brackets from
+the same engine:
+
+``` r
 
 tage_boxplot(
   results,
   x_var        = "age",
   y_var        = "scaled_diff_EN_tAge",
   subgroup_var = "tissue",
-  stat_method  = "wilcox.test",
   theme_type   = "bw",
   title        = "Predicted tAge by age and tissue",
   xlab         = "Chronological age",
   ylab         = "Predicted tAge (months)"
+)
+```
+
+With module clocks,
+[`tage_module_heatmap()`](https://gladyshev-lab.github.io/tAge/reference/tage_module_heatmap.md)
+shows which cellular subsystems carry the signal:
+
+``` r
+
+module_cols <- grep("^module_", names(results), value = TRUE)  # one column per module clock
+tage_module_heatmap(
+  results,
+  module_columns  = module_cols,
+  group_column    = "age",
+  reference_group = "3m",
+  split_by        = "tissue"
 )
 ```
 

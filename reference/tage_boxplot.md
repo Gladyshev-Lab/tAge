@@ -3,7 +3,7 @@
 Draws a box plot with jittered points for one prediction column, split
 by a grouping variable and optionally faceted by a subgroup. Pairwise
 comparisons are annotated with brackets; comparisons involving groups
-with too few observations, and — when `p_threshold` is set —
+with too few observations, and – when `p_threshold` is set –
 non-significant ones, are dropped before plotting so the panel stays
 readable.
 
@@ -19,7 +19,13 @@ tage_boxplot(
   point_size = 2,
   point_alpha = 0.7,
   box_width = 0.5,
-  stat_method = "t.test",
+  stat_method = "emmeans",
+  reference_group = NULL,
+  covariates = NULL,
+  se_column = NULL,
+  variance_strata = c("subset", "all_data"),
+  p_adjust = "BH",
+  p_adjust_scope = "within_column",
   comparisons = NULL,
   p_label = "p.signif",
   p_threshold = NULL,
@@ -74,13 +80,47 @@ tage_boxplot(
 
 - stat_method:
 
-  Test used for the pairwise comparisons, passed to
-  `ggpubr::stat_compare_means`. Default `"t.test"`.
+  Test used for the comparisons. `"emmeans"` (default) uses
+  [`tage_compare_groups`](https://gladyshev-lab.github.io/tAge/reference/tage_compare_groups.md):
+  estimated marginal-mean contrasts, which support covariates,
+  stratum-wise models and Bayesian ridge weighting. Any other value is
+  passed to
+  [`ggpubr::stat_compare_means`](https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html),
+  e.g. `"t.test"` or `"wilcox.test"`.
+
+- reference_group:
+
+  Reference level for `stat_method = "emmeans"`. Default `NULL` uses the
+  first level of `x_var`.
+
+- covariates:
+
+  Covariate columns adjusted for when `stat_method = "emmeans"`.
+  Supplying them also switches the plotted values to covariate-adjusted
+  ones
+  ([`tage_adjust_covariates`](https://gladyshev-lab.github.io/tAge/reference/tage_adjust_covariates.md)).
+
+- se_column:
+
+  Column of per-sample prediction standard deviations for a Bayesian
+  ridge clock, enabling the meta-regression test. Default `NULL`.
+
+- variance_strata:
+
+  Passed to
+  [`tage_compare_groups`](https://gladyshev-lab.github.io/tAge/reference/tage_compare_groups.md).
+
+- p_adjust, p_adjust_scope:
+
+  Multiplicity correction passed to
+  [`tage_compare_groups`](https://gladyshev-lab.github.io/tAge/reference/tage_compare_groups.md).
 
 - comparisons:
 
   List of length-2 character vectors giving the pairs to test. Default
-  `NULL` tests all pairs of `x_var` levels.
+  `NULL` compares every level against `reference_group` for
+  `stat_method = "emmeans"`, and tests all pairs of `x_var` levels
+  otherwise.
 
 - p_label:
 
@@ -117,7 +157,7 @@ tage_boxplot(
 
 - y_center:
 
-  If given, the y axis is made symmetric around this value — useful for
+  If given, the y axis is made symmetric around this value – useful for
   relative predictions centred on zero.
 
 - y_min, y_max:

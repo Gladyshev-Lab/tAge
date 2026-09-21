@@ -14,7 +14,7 @@ consumes.
   : Predict transcriptomic age for multiple processed ExpressionSet
   objects
 - [`predict_tAge_one()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge_one.md)
-  : Predict transcriptomic age using pre-trained models
+  : Predict transcriptomic age with one pre-trained model
 - [`tAge_by_group()`](https://gladyshev-lab.github.io/tAge/reference/tAge_by_group.md)
   : Run tAge pipeline separately per group factor (e.g., "tissue")
 
@@ -26,6 +26,8 @@ Browse the registry of pre-trained models and fetch them from Zenodo.
   : List available transcriptomic clock models
 - [`download_clocks()`](https://gladyshev-lab.github.io/tAge/reference/download_clocks.md)
   : Download clock models from Zenodo
+- [`tage_species()`](https://gladyshev-lab.github.io/tAge/reference/tage_species.md)
+  : Species supported by the clocks
 
 ## Preprocessing steps
 
@@ -64,8 +66,7 @@ in from Seurat or h5ad.
 - [`pseudobulk_summary()`](https://gladyshev-lab.github.io/tAge/reference/pseudobulk_summary.md)
   : Get summary statistics for pseudobulk samples
 - [`remove_outliers()`](https://gladyshev-lab.github.io/tAge/reference/remove_outliers.md)
-  : Remove outlier pseudobulk samples using PCA-based Mahalanobis
-  distance
+  : Remove outlier samples
 - [`load_h5ad_simple()`](https://gladyshev-lab.github.io/tAge/reference/load_h5ad_simple.md)
   : Load h5ad file using reticulate and anndata
 - [`load_h5ad_to_seurat()`](https://gladyshev-lab.github.io/tAge/reference/load_h5ad_to_seurat.md)
@@ -73,12 +74,41 @@ in from Seurat or h5ad.
 - [`subset_seurat_by_metadata()`](https://gladyshev-lab.github.io/tAge/reference/subset_seurat_by_metadata.md)
   : Subset Seurat object by metadata criteria
 
+## Statistics
+
+The group comparisons of the TACO / tClock application: marginal-mean
+contrasts for elastic net clocks, REML meta-regression for Bayesian
+ridge clocks, module-clock effect sizes.
+
+- [`tage_compare_groups()`](https://gladyshev-lab.github.io/tAge/reference/tage_compare_groups.md)
+  : Compare tAge between experimental groups
+- [`tage_regress_continuous()`](https://gladyshev-lab.github.io/tAge/reference/tage_regress_continuous.md)
+  : Regress tAge on a continuous predictor
+- [`tage_module_stats()`](https://gladyshev-lab.github.io/tAge/reference/tage_module_stats.md)
+  : Module-clock effect sizes and p-values
+- [`tage_adjust_covariates()`](https://gladyshev-lab.github.io/tAge/reference/tage_adjust_covariates.md)
+  : Covariate-adjusted tAge values for plotting
+- [`tage_significance_stars()`](https://gladyshev-lab.github.io/tAge/reference/tage_significance_stars.md)
+  : Significance stars for tAge statistics
+
 ## Plotting
 
+Figures built directly on the statistics, plus QC plots.
+
+- [`tage_clock_forest()`](https://gladyshev-lab.github.io/tAge/reference/tage_clock_forest.md)
+  : Forest plot of clock effects
+- [`tage_module_heatmap()`](https://gladyshev-lab.github.io/tAge/reference/tage_module_heatmap.md)
+  : Heatmap of module-clock effects
 - [`tage_boxplot()`](https://gladyshev-lab.github.io/tAge/reference/tage_boxplot.md)
   : Box plot of tAge predictions with pairwise significance annotation
 - [`plot_eset_density()`](https://gladyshev-lab.github.io/tAge/reference/plot_eset_density.md)
   : Plot density curves for ExpressionSet data
+- [`load_module_functions()`](https://gladyshev-lab.github.io/tAge/reference/load_module_functions.md)
+  : Module colour to biological function map
+- [`tage_fig_size()`](https://gladyshev-lab.github.io/tAge/reference/tage_fig_size.md)
+  : Size a tAge figure was designed for
+- [`tage_save_plot()`](https://gladyshev-lab.github.io/tAge/reference/tage_save_plot.md)
+  : Save a tAge figure at the size it was designed for
 
 ## Data and helpers
 

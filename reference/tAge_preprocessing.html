@@ -13,7 +13,7 @@ for different analysis approaches."><meta property="og:image" content="https://g
 
     <a class="navbar-brand me-2" href="../index.html">tAge</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -55,12 +55,13 @@ for different analysis approaches.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">tAge_preprocessing</span><span class="op">(</span></span>
 <span>  <span class="va">eset</span>,</span>
 <span>  species <span class="op">=</span> <span class="st">"mouse"</span>,</span>
-<span>  gene_mapping_type <span class="op">=</span> <span class="st">"Gene.Symbol"</span>,</span>
+<span>  gene_mapping_type <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  control_group_column <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  control_group_label <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  count_threshold <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  percent_threshold <span class="op">=</span> <span class="fl">20</span></span>
+<span>  percent_threshold <span class="op">=</span> <span class="fl">20</span>,</span>
+<span>  split_by <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -73,12 +74,14 @@ for different analysis approaches.</p>
 
 
 <dt id="arg-species">species<a class="anchor" aria-label="anchor" href="#arg-species"></a></dt>
-<dd><p>Character string specifying the species. Options: "mouse", "rat", "human",
-"monkey", "rhesus". Default is "mouse".</p></dd>
+<dd><p>Species of the samples: "mouse", "rat", "human" or "monkey"
+(see <code><a href="tage_species.html">tage_species</a></code>). Default is "mouse".</p></dd>
 
 
 <dt id="arg-gene-mapping-type">gene_mapping_type<a class="anchor" aria-label="anchor" href="#arg-gene-mapping-type"></a></dt>
-<dd><p>Gene mapping type. Options: "Gene.Symbol", "Ensembl"</p></dd>
+<dd><p>Identifier type of the row names: "Ensembl",
+"Gene.Symbol", "Entrez" or "auto" (default, detected from the gene table;
+see <code><a href="map_genes.html">map_genes</a></code>).</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -92,7 +95,9 @@ that contains control group labels. Default is NULL.</p></dd>
 
 <dt id="arg-control-group-label">control_group_label<a class="anchor" aria-label="anchor" href="#arg-control-group-label"></a></dt>
 <dd><p>Character string specifying the label for control samples.
-Default is NULL.</p></dd>
+Default is NULL. With <code>split_by</code>, the controls of each stratum are
+its reference; a stratum without controls is centred on all of its
+samples, with a warning.</p></dd>
 
 
 <dt id="arg-count-threshold">count_threshold<a class="anchor" aria-label="anchor" href="#arg-count-threshold"></a></dt>
@@ -103,6 +108,11 @@ Default is 10.</p></dd>
 <dt id="arg-percent-threshold">percent_threshold<a class="anchor" aria-label="anchor" href="#arg-percent-threshold"></a></dt>
 <dd><p>Numeric threshold for minimum percentage of samples that must
 have expression above count_threshold. Default is 20.</p></dd>
+
+
+<dt id="arg-split-by">split_by<a class="anchor" aria-label="anchor" href="#arg-split-by"></a></dt>
+<dd><p>Character or NULL. Column of the phenoData whose levels
+(tissues, datasets, cell types) are preprocessed separately. Default NULL.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -127,6 +137,17 @@ have expression above count_threshold. Default is 20.</p></dd>
 <dd><p>YuGene-normalized data with control subtraction and gene ID conversion</p></dd>
 
 </dl></div>
+    <div class="section level2">
+    <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
+    <p>The clocks were trained on expression centred within each dataset and
+tissue against matched controls, and that is how they should be applied:
+with several tissues (or datasets, cell types) in one ExpressionSet, pass
+<code>split_by</code> so that gene filtering, normalisation and reference
+centring all happen within each stratum, and the results are combined
+afterwards. Without <code>split_by</code> the whole object is one stratum.</p>
+<p>The species is recorded in every returned ExpressionSet, so
+<code><a href="predict_tAge.html">predict_tAge</a></code> does not need it again.</p>
+    </div>
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
@@ -145,7 +166,69 @@ have expression above count_threshold. Default is 20.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   - Number of genes before filtering: 57010 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   - Number of genes after filtering: 19550 </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   - Percentage of genes retained: 34.3 %</span>
-<span class="r-err co"><span class="r-pr">#&gt;</span> <span class="error">Error in `sampleNames&lt;-`(`*tmp*`, value = sampleNames(phenoData)):</span> 'value' length (24) must equal sample number in AssayData (1)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Gene identifiers: Ensembl (15996 of 19550 row names found in the mouse gene table)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> calcNormFactors has been renamed to normLibSizes</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ RLE normalization completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-2.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Log transformation completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-3.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Scaling completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-4.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ YuGene normalization completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-5.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Centring on all samples (overall per-gene median; no reference group specified).</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
+<span class="r-plt img"><img src="tAge_preprocessing-6.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Centring on all samples (overall per-gene median; no reference group specified).</span>
+<span class="r-plt img"><img src="tAge_preprocessing-7.png" alt="" width="700" height="433"></span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># Two tissues: filter, normalise and centre each on its own wild-type samples</span></span></span>
+<span class="r-in"><span><span class="va">processed_data</span> <span class="op">&lt;-</span> <span class="fu">tAge_preprocessing</span><span class="op">(</span></span></span>
+<span class="r-in"><span>  <span class="va">eset</span>, species <span class="op">=</span> <span class="st">"mouse"</span>, split_by <span class="op">=</span> <span class="st">"Tissue"</span>,</span></span>
+<span class="r-in"><span>  control_group_column <span class="op">=</span> <span class="st">"Genotype"</span>, control_group_label <span class="op">=</span> <span class="st">"WT"</span></span></span>
+<span class="r-in"><span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> === Tissue = Kidney (12 samples) ===</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Gene filtering completed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   - Number of genes before filtering: 57010 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   - Number of genes after filtering: 19374 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   - Percentage of genes retained: 34 %</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Gene identifiers: Ensembl (15818 of 19374 row names found in the mouse gene table)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> calcNormFactors has been renamed to normLibSizes</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ RLE normalization completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-8.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Log transformation completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-9.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Scaling completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-10.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ YuGene normalization completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-11.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Control samples found for label 'WT'. Using control group median for subtraction.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
+<span class="r-plt img"><img src="tAge_preprocessing-12.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Control samples found for label 'WT'. Using control group median for subtraction.</span>
+<span class="r-plt img"><img src="tAge_preprocessing-13.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> === Tissue = Skeletal muscle (12 samples) ===</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Gene filtering completed</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   - Number of genes before filtering: 57010 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   - Number of genes after filtering: 16423 </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   - Percentage of genes retained: 28.8 %</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Gene identifiers: Ensembl (14100 of 16423 row names found in the mouse gene table)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> calcNormFactors has been renamed to normLibSizes</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ RLE normalization completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-14.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Log transformation completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-15.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Scaling completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-16.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ YuGene normalization completed</span>
+<span class="r-plt img"><img src="tAge_preprocessing-17.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Control samples found for label 'WT'. Using control group median for subtraction.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>NaNs produced</span>
+<span class="r-plt img"><img src="tAge_preprocessing-18.png" alt="" width="700" height="433"></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ✓ Control samples found for label 'WT'. Using control group median for subtraction.</span>
+<span class="r-plt img"><img src="tAge_preprocessing-19.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

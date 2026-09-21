@@ -4,10 +4,9 @@ This function applies z-score scaling to the expression data in an
 ExpressionSet. It calls [`scale`](https://rdrr.io/r/base/scale.html),
 which operates column-wise, so scaling is performed *per sample* (each
 sample/column is scaled to zero mean and unit variance across genes).
-This is the "Scaling" normalisation strategy from the paper and matches
-the TACO reference application. Per-gene standardisation is handled
-separately inside the trained clock model (its `StandardScaler` step),
-using training-set statistics.
+This is the "Scaling" normalisation strategy from the paper. Per-gene
+standardisation is handled separately inside the trained clock model
+(its `StandardScaler` step), using training-set statistics.
 
 ## Usage
 

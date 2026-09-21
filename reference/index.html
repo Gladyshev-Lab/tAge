@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tAge</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -64,7 +64,7 @@
           <code><a href="predict_tAge_one.html">predict_tAge_one()</a></code>
 
         </dt>
-        <dd>Predict transcriptomic age using pre-trained models</dd>
+        <dd>Predict transcriptomic age with one pre-trained model</dd>
 
         <dt>
 
@@ -95,6 +95,13 @@
 
         </dt>
         <dd>Download clock models from Zenodo</dd>
+
+        <dt>
+
+          <code><a href="tage_species.html">tage_species()</a></code>
+
+        </dt>
+        <dd>Species supported by the clocks</dd>
       </dl></div><div class="section level2">
       <h2 id="preprocessing-steps">Preprocessing steps<a class="anchor" aria-label="anchor" href="#preprocessing-steps"></a></h2>
 
@@ -189,7 +196,7 @@
           <code><a href="remove_outliers.html">remove_outliers()</a></code>
 
         </dt>
-        <dd>Remove outlier pseudobulk samples using PCA-based Mahalanobis distance</dd>
+        <dd>Remove outlier samples</dd>
 
         <dt>
 
@@ -212,9 +219,9 @@
         </dt>
         <dd>Subset Seurat object by metadata criteria</dd>
       </dl></div><div class="section level2">
-      <h2 id="plotting">Plotting<a class="anchor" aria-label="anchor" href="#plotting"></a></h2>
+      <h2 id="statistics">Statistics<a class="anchor" aria-label="anchor" href="#statistics"></a></h2>
 
-
+      <div class="section-desc"><p>The group comparisons of the TACO / tClock application: marginal-mean contrasts for elastic net clocks, REML meta-regression for Bayesian ridge clocks, module-clock effect sizes.</p></div>
 
       <dl></dl></div><div class="section level2">
 
@@ -222,6 +229,64 @@
 
 
       <dl><dt>
+
+          <code><a href="tage_compare_groups.html">tage_compare_groups()</a></code>
+
+        </dt>
+        <dd>Compare tAge between experimental groups</dd>
+
+        <dt>
+
+          <code><a href="tage_regress_continuous.html">tage_regress_continuous()</a></code>
+
+        </dt>
+        <dd>Regress tAge on a continuous predictor</dd>
+
+        <dt>
+
+          <code><a href="tage_module_stats.html">tage_module_stats()</a></code>
+
+        </dt>
+        <dd>Module-clock effect sizes and p-values</dd>
+
+        <dt>
+
+          <code><a href="tage_adjust_covariates.html">tage_adjust_covariates()</a></code>
+
+        </dt>
+        <dd>Covariate-adjusted tAge values for plotting</dd>
+
+        <dt>
+
+          <code><a href="tage_significance_stars.html">tage_significance_stars()</a></code>
+
+        </dt>
+        <dd>Significance stars for tAge statistics</dd>
+      </dl></div><div class="section level2">
+      <h2 id="plotting">Plotting<a class="anchor" aria-label="anchor" href="#plotting"></a></h2>
+
+      <div class="section-desc"><p>Figures built directly on the statistics, plus QC plots.</p></div>
+
+      <dl></dl></div><div class="section level2">
+
+
+
+
+      <dl><dt>
+
+          <code><a href="tage_clock_forest.html">tage_clock_forest()</a></code>
+
+        </dt>
+        <dd>Forest plot of clock effects</dd>
+
+        <dt>
+
+          <code><a href="tage_module_heatmap.html">tage_module_heatmap()</a></code>
+
+        </dt>
+        <dd>Heatmap of module-clock effects</dd>
+
+        <dt>
 
           <code><a href="tage_boxplot.html">tage_boxplot()</a></code>
 
@@ -234,6 +299,27 @@
 
         </dt>
         <dd>Plot density curves for ExpressionSet data</dd>
+
+        <dt>
+
+          <code><a href="load_module_functions.html">load_module_functions()</a></code>
+
+        </dt>
+        <dd>Module colour to biological function map</dd>
+
+        <dt>
+
+          <code><a href="tage_fig_size.html">tage_fig_size()</a></code>
+
+        </dt>
+        <dd>Size a tAge figure was designed for</dd>
+
+        <dt>
+
+          <code><a href="tage_save_plot.html">tage_save_plot()</a></code>
+
+        </dt>
+        <dd>Save a tAge figure at the size it was designed for</dd>
       </dl></div><div class="section level2">
       <h2 id="data-and-helpers">Data and helpers<a class="anchor" aria-label="anchor" href="#data-and-helpers"></a></h2>
 

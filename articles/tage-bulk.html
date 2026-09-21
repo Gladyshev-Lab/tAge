@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tAge</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -110,22 +110,32 @@ samples raw counts, plus sample metadata).</p>
 <h2 id="preprocess">2. Preprocess<a class="anchor" aria-label="anchor" href="#preprocess"></a>
 </h2>
 <p><code><a href="../reference/tAge_preprocessing.html">tAge_preprocessing()</a></code> filters low-expressed genes, maps
-them to the mouse Entrez gene space, RLE-normalises, log-transforms,
-scales (per sample), applies the YuGene transform, aligns to the clock
-gene list, and centres the data.</p>
+them to the mouse Entrez gene space (the identifier type is detected),
+RLE-normalises, log-transforms, scales (per sample), applies the YuGene
+transform, aligns to the clock gene list, and centres the data.</p>
+<p>The example holds two tissues. The clocks were trained on expression
+centred within each dataset and tissue against matched controls, so we
+preprocess and centre each tissue on its own wild-type samples
+(<code>split_by</code>), and keep genes seen in at least 25% of samples,
+as the paper did for this dataset.</p>
 <div class="sourceCode" id="cb2"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tAge_eset</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tAge_preprocessing.html">tAge_preprocessing</a></span><span class="op">(</span></span>
 <span>  <span class="va">eset</span>,</span>
 <span>  species <span class="op">=</span> <span class="st">"mouse"</span>,</span>
-<span>  gene_mapping_type <span class="op">=</span> <span class="st">"Ensembl"</span>,</span>
+<span>  split_by <span class="op">=</span> <span class="st">"Tissue"</span>,</span>
+<span>  control_group_column <span class="op">=</span> <span class="st">"Genotype"</span>,</span>
+<span>  control_group_label  <span class="op">=</span> <span class="st">"WT"</span>,</span>
+<span>  percent_threshold <span class="op">=</span> <span class="fl">25</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">FALSE</span></span>
 <span><span class="op">)</span></span>
+<span><span class="co">#&gt; calcNormFactors has been renamed to normLibSizes</span></span>
 <span><span class="co">#&gt; calcNormFactors has been renamed to normLibSizes</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">tAge_eset</span><span class="op">)</span></span>
 <span><span class="co">#&gt; [1] "RLE_normalized"  "log_transformed" "scaled"          "scaled_diff"    </span></span>
 <span><span class="co">#&gt; [5] "yugene"          "yugene_diff"</span></span></code></pre></div>
 <p>Prediction uses the <code>scaled_diff</code> and
-<code>yugene_diff</code> representations.</p>
+<code>yugene_diff</code> representations. The species is recorded in
+these objects, so <code><a href="../reference/predict_tAge.html">predict_tAge()</a></code> does not need it.</p>
 </div>
 <div class="section level2">
 <h2 id="browse-and-download-clocks">3. Browse and download clocks<a class="anchor" aria-label="anchor" href="#browse-and-download-clocks"></a>
@@ -163,28 +173,147 @@ bundled registry):</p>
 <div class="section level2">
 <h2 id="predict">4. Predict<a class="anchor" aria-label="anchor" href="#predict"></a>
 </h2>
+<p><code><a href="../reference/predict_tAge.html">predict_tAge()</a></code> takes one model per normalisation, so
+applying several clocks means one call per outcome. Renaming the columns
+as we go keeps them apart and builds the clock table the figures
+use.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>RETICULATE_PYTHON <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"RETICULATE_PYTHON"</span><span class="op">)</span><span class="op">)</span>  <span class="co"># use your env</span></span>
 <span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict_tAge.html">predict_tAge</a></span><span class="op">(</span></span>
-<span>  <span class="va">tAge_eset</span>,</span>
-<span>  model_paths <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>scaled_diff <span class="op">=</span> <span class="va">.model_path</span><span class="op">)</span>,</span>
-<span>  species <span class="op">=</span> <span class="st">"mouse"</span>,</span>
-<span>  mode <span class="op">=</span> <span class="st">"EN"</span></span>
+<span><span class="va">predict_one_outcome</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">outcome</span><span class="op">)</span> <span class="op">{</span></span>
+<span>  <span class="va">cl</span> <span class="op">&lt;-</span> <span class="va">.clocks</span><span class="op">[</span><span class="va">.clocks</span><span class="op">$</span><span class="va">outcome</span> <span class="op">==</span> <span class="va">outcome</span>, <span class="op">]</span></span>
+<span>  <span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict_tAge.html">predict_tAge</a></span><span class="op">(</span></span>
+<span>    <span class="va">tAge_eset</span>,</span>
+<span>    model_paths <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>scaled_diff <span class="op">=</span> <span class="va">cl</span><span class="op">$</span><span class="va">path</span><span class="op">[</span><span class="va">cl</span><span class="op">$</span><span class="va">scaling</span> <span class="op">==</span> <span class="st">"Scaled"</span><span class="op">]</span>,</span>
+<span>                       yugene_diff <span class="op">=</span> <span class="va">cl</span><span class="op">$</span><span class="va">path</span><span class="op">[</span><span class="va">cl</span><span class="op">$</span><span class="va">scaling</span> <span class="op">==</span> <span class="st">"YuGene"</span><span class="op">]</span><span class="op">)</span>,</span>
+<span>    mode <span class="op">=</span> <span class="st">"EN"</span></span>
+<span>  <span class="op">)</span></span>
+<span>  <span class="va">out</span> <span class="op">&lt;-</span> <span class="va">res</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"scaled_diff_EN_tAge"</span>, <span class="st">"yugene_diff_EN_tAge"</span><span class="op">)</span>, drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span>
+<span>  <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">outcome</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"_Scaled"</span>, <span class="st">"_YuGene"</span><span class="op">)</span><span class="op">)</span></span>
+<span>  <span class="va">out</span></span>
+<span><span class="op">}</span></span>
+<span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span>
+<span>  <span class="fu">Biobase</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/Biobase/man/phenoData.html" class="external-link">pData</a></span><span class="op">(</span><span class="va">tAge_eset</span><span class="op">$</span><span class="va">scaled_diff</span><span class="op">)</span>,</span>
+<span>  <span class="fu">predict_one_outcome</span><span class="op">(</span><span class="st">"Chronological"</span><span class="op">)</span>,</span>
+<span>  <span class="fu">predict_one_outcome</span><span class="op">(</span><span class="st">"Mortality"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Genotype"</span>, <span class="st">"Tissue"</span>, <span class="st">"scaled_diff_EN_tAge"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt;         Genotype Tissue scaled_diff_EN_tAge</span></span>
-<span><span class="co">#&gt; Klo93K        WT Kidney          -0.5939931</span></span>
-<span><span class="co">#&gt; Klo94K        WT Kidney          -0.6682321</span></span>
-<span><span class="co">#&gt; Klo95K        WT Kidney          -0.5306280</span></span>
-<span><span class="co">#&gt; Klo96K        WT Kidney          -0.1638941</span></span>
-<span><span class="co">#&gt; Klo99K        WT Kidney          -0.5889994</span></span>
-<span><span class="co">#&gt; Klo100K       WT Kidney          -0.6160492</span></span></code></pre></div>
-<p>These mortality values are <code>log10(hazard ratio)</code> — small
+<span></span>
+<span><span class="co"># The table the figures use to label rows and pick units per outcome.</span></span>
+<span><span class="va">clocks_meta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
+<span>  filename <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chronological_Scaled"</span>, <span class="st">"Chronological_YuGene"</span>,</span>
+<span>               <span class="st">"Mortality_Scaled"</span>, <span class="st">"Mortality_YuGene"</span><span class="op">)</span>,</span>
+<span>  name     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EN Scaled"</span>, <span class="st">"EN YuGene"</span>, <span class="st">"EN Scaled"</span>, <span class="st">"EN YuGene"</span><span class="op">)</span>,</span>
+<span>  outcome  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chronological"</span>, <span class="st">"Mortality"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>,</span>
+<span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Genotype"</span>, <span class="st">"Tissue"</span>, <span class="st">"Mortality_Scaled"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         Genotype Tissue Mortality_Scaled</span></span>
+<span><span class="co">#&gt; Klo93K        WT Kidney      0.022934135</span></span>
+<span><span class="co">#&gt; Klo94K        WT Kidney     -0.068923471</span></span>
+<span><span class="co">#&gt; Klo95K        WT Kidney      0.127629789</span></span>
+<span><span class="co">#&gt; Klo96K        WT Kidney      0.584237945</span></span>
+<span><span class="co">#&gt; Klo99K        WT Kidney     -0.011345993</span></span>
+<span><span class="co">#&gt; Klo100K       WT Kidney     -0.004835266</span></span></code></pre></div>
+<p>The mortality values are <code>log10(hazard ratio)</code> — small
 numbers centred near zero, <strong>not</strong> ages. See below.</p>
 </div>
 <div class="section level2">
-<h2 id="interpreting-the-output">Interpreting the output<a class="anchor" aria-label="anchor" href="#interpreting-the-output"></a>
+<h2 id="compare-groups">5. Compare groups<a class="anchor" aria-label="anchor" href="#compare-groups"></a>
+</h2>
+<p><code><a href="../reference/tage_compare_groups.html">tage_compare_groups()</a></code> is the test behind every figure in
+the package: estimated marginal-mean contrasts of
+<code>tAge ~ group + covariates</code>, one model per stratum, as in the
+paper’s clock analyses.</p>
+<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">stats</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/tage_compare_groups.html">tage_compare_groups</a></span><span class="op">(</span></span>
+<span>  <span class="va">results</span>,</span>
+<span>  value_columns   <span class="op">=</span> <span class="va">clocks_meta</span><span class="op">$</span><span class="va">filename</span>,</span>
+<span>  group_column    <span class="op">=</span> <span class="st">"Genotype"</span>,</span>
+<span>  reference_group <span class="op">=</span> <span class="st">"WT"</span>,</span>
+<span>  split_by        <span class="op">=</span> <span class="st">"Tissue"</span>,</span>
+<span>  p_adjust        <span class="op">=</span> <span class="st">"BH"</span>,</span>
+<span>  p_adjust_scope  <span class="op">=</span> <span class="st">"across_columns"</span>   <span class="co"># correct across the clocks in one panel</span></span>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="va">stats</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"value_column"</span>, <span class="st">"split"</span>, <span class="st">"group2"</span>, <span class="st">"estimate"</span>,</span>
+<span>          <span class="st">"ci_low"</span>, <span class="st">"ci_high"</span>, <span class="st">"p_adjusted"</span>, <span class="st">"label"</span><span class="op">)</span><span class="op">]</span></span>
+<span><span class="co">#&gt;           value_column           split    group2  estimate    ci_low   ci_high</span></span>
+<span><span class="co">#&gt; 1 Chronological_Scaled          Kidney Klotho KO 6.8815265 3.7835072  9.979546</span></span>
+<span><span class="co">#&gt; 2 Chronological_Scaled Skeletal muscle Klotho KO 8.5465910 4.0084004 13.084782</span></span>
+<span><span class="co">#&gt; 3 Chronological_YuGene          Kidney Klotho KO 9.7994616 6.1556913 13.443232</span></span>
+<span><span class="co">#&gt; 4 Chronological_YuGene Skeletal muscle Klotho KO 8.0065956 3.0476482 12.965543</span></span>
+<span><span class="co">#&gt; 5     Mortality_Scaled          Kidney Klotho KO 0.6441031 0.2724851  1.015721</span></span>
+<span><span class="co">#&gt; 6     Mortality_Scaled Skeletal muscle Klotho KO 0.6141689 0.1241048  1.104233</span></span>
+<span><span class="co">#&gt; 7     Mortality_YuGene          Kidney Klotho KO 0.9934256 0.5292257  1.457625</span></span>
+<span><span class="co">#&gt; 8     Mortality_YuGene Skeletal muscle Klotho KO 0.6491303 0.1306110  1.167650</span></span>
+<span><span class="co">#&gt;     p_adjusted label</span></span>
+<span><span class="co">#&gt; 1 0.0010118358    **</span></span>
+<span><span class="co">#&gt; 2 0.0073594525    **</span></span>
+<span><span class="co">#&gt; 3 0.0005338923   ***</span></span>
+<span><span class="co">#&gt; 4 0.0097361695    **</span></span>
+<span><span class="co">#&gt; 5 0.0031504821    **</span></span>
+<span><span class="co">#&gt; 6 0.0191398010     *</span></span>
+<span><span class="co">#&gt; 7 0.0010118358    **</span></span>
+<span><span class="co">#&gt; 8 0.0191398010     *</span></span></code></pre></div>
+<p><code>estimate</code> is always <code>group2 - group1</code>, in the
+clock’s own units, and <code>ci_low</code>/<code>ci_high</code> are the
+95% interval. A few arguments are worth knowing:</p>
+<ul>
+<li>
+<code>covariates</code> puts nuisance variables in the model instead
+of ignoring them.</li>
+<li>
+<code>se_columns</code> switches to the weighted meta-regression for
+Bayesian ridge clocks — pass the <code>_sd</code> columns that
+<code>predict_tAge(mode = "BR")</code> returns.</li>
+<li>
+<code>variance_strata</code> chooses whether the residual variance
+comes from the two compared groups or from every group present.</li>
+<li>
+<code>p_adjust_scope</code> chooses the correction family:
+<code>"within_column"</code> across the comparisons of one clock,
+<code>"across_columns"</code> across clocks within a comparison, or
+<code>"global"</code>.</li>
+</ul>
+</div>
+<div class="section level2">
+<h2 id="figures">6. Figures<a class="anchor" aria-label="anchor" href="#figures"></a>
+</h2>
+<p><code><a href="../reference/tage_clock_forest.html">tage_clock_forest()</a></code> shows every clock at once with its
+uncertainty. Filled markers cleared the correction; hollow ones did
+not.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tage_clock_forest.html">tage_clock_forest</a></span><span class="op">(</span></span>
+<span>  <span class="va">results</span>,</span>
+<span>  clocks_meta     <span class="op">=</span> <span class="va">clocks_meta</span>,</span>
+<span>  group_column    <span class="op">=</span> <span class="st">"Genotype"</span>,</span>
+<span>  reference_group <span class="op">=</span> <span class="st">"WT"</span>,</span>
+<span>  compare_groups  <span class="op">=</span> <span class="st">"Klotho KO"</span>,</span>
+<span>  split_by        <span class="op">=</span> <span class="st">"Tissue"</span>,</span>
+<span>  title           <span class="op">=</span> <span class="st">"Klotho KO vs WT"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="tage-bulk_files/figure-html/forest-1.png" class="r-plt" alt="" width="864"></p>
+<p>For a single clock, <code><a href="../reference/tage_boxplot.html">tage_boxplot()</a></code> shows the samples
+themselves. It annotates the brackets from the same engine, so the stars
+agree with the table above.</p>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="../reference/tage_boxplot.html">tage_boxplot</a></span><span class="op">(</span></span>
+<span>  <span class="va">results</span>,</span>
+<span>  x_var        <span class="op">=</span> <span class="st">"Genotype"</span>,</span>
+<span>  y_var        <span class="op">=</span> <span class="st">"Mortality_Scaled"</span>,</span>
+<span>  subgroup_var <span class="op">=</span> <span class="st">"Tissue"</span>,</span>
+<span>  x_order      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"WT"</span>, <span class="st">"Klotho KO"</span><span class="op">)</span>,</span>
+<span>  ylab         <span class="op">=</span> <span class="st">"Mortality tAge, log10 HR"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p><img src="tage-bulk_files/figure-html/boxplot-1.png" class="r-plt" alt="" width="768"></p>
+<p>When the clocks are module clocks, <code><a href="../reference/tage_module_heatmap.html">tage_module_heatmap()</a></code>
+is the equivalent figure: modules on the rows, strata on the columns,
+effects in the cells.</p>
+</div>
+<div class="section level2">
+<h2 id="interpreting-the-output">7. Interpreting the output<a class="anchor" aria-label="anchor" href="#interpreting-the-output"></a>
 </h2>
 <table class="table">
 <colgroup>
@@ -200,8 +329,9 @@ numbers centred near zero, <strong>not</strong> ages. See below.</p>
 <tbody>
 <tr class="odd">
 <td>Chronological</td>
-<td>age (years / months)</td>
-<td>normalised age rescaled by species max lifespan</td>
+<td>months (rodents) / years (primates)</td>
+<td>normalised age rescaled by species max lifespan;
+<code>age_units</code> overrides</td>
 </tr>
 <tr class="even">
 <td>Mortality</td>
@@ -212,15 +342,21 @@ numbers centred near zero, <strong>not</strong> ages. See below.</p>
 <tr class="odd">
 <td>Normalized age</td>
 <td>fraction of max lifespan</td>
-<td>native scale</td>
+<td>
+<code>normalized_age = "percent"</code> for the paper’s percent
+scale</td>
 </tr>
 </tbody>
 </table>
 <p><code>tAge</code> looks up each clock in the registry and rescales
-<strong>only</strong> chronological clocks to age units.</p>
+<strong>only</strong> chronological clocks to age units;
+<code>attr(results, "tage_units")</code> records the unit of every
+column. The example’s KO effect is partly driven by the <em>Klotho</em>
+gene itself, which the distributed clocks contain and the paper’s Klotho
+analysis excluded.</p>
 </div>
 <div class="section level2">
-<h2 id="reference-groups-centring">Reference groups (centring)<a class="anchor" aria-label="anchor" href="#reference-groups-centring"></a>
+<h2 id="reference-groups-centring">8. Reference groups (centring)<a class="anchor" aria-label="anchor" href="#reference-groups-centring"></a>
 </h2>
 <p>All distributed clocks are <em>relative</em>: they operate on
 expression centred against a reference group.</p>
@@ -234,16 +370,21 @@ expression centred against a reference group.</p>
 to <code><a href="../reference/tAge_preprocessing.html">tAge_preprocessing()</a></code> to centre on matched controls
 (recommended for treatment-vs-control designs),
 e.g. <code>control_group_column = "Genotype", control_group_label = "WT"</code>.</li>
+<li>
+<strong>Several tissues / datasets:</strong> add
+<code>split_by</code> so that every stratum is filtered, normalised and
+centred on its own controls, as the clocks were trained. That is what
+section 2 does with <code>split_by = "Tissue"</code>.</li>
 </ul>
 </div>
 <div class="section level2">
 <h2 id="session-info">Session info<a class="anchor" aria-label="anchor" href="#session-info"></a>
 </h2>
-<div class="sourceCode" id="cb6"><pre class="downlit sourceCode r">
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/sessionInfo.html" class="external-link">sessionInfo</a></span><span class="op">(</span><span class="op">)</span></span>
 <span><span class="co">#&gt; R version 4.6.1 (2026-06-24)</span></span>
 <span><span class="co">#&gt; Platform: x86_64-pc-linux-gnu</span></span>
-<span><span class="co">#&gt; Running under: Ubuntu 24.04.4 LTS</span></span>
+<span><span class="co">#&gt; Running under: Ubuntu 24.04.5 LTS</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; Matrix products: default</span></span>
 <span><span class="co">#&gt; BLAS:   /usr/lib/x86_64-linux-gnu/openblas-pthread/libblas.so.3 </span></span>
@@ -262,22 +403,32 @@ e.g. <code>control_group_column = "Genotype", control_group_label = "WT"</code>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] tAge_1.1.0</span></span>
+<span><span class="co">#&gt; [1] tAge_1.4.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
-<span><span class="co">#&gt;  [1] cli_3.6.6           knitr_1.51          rlang_1.3.0        </span></span>
-<span><span class="co">#&gt;  [4] xfun_0.60           otel_0.2.0          png_0.1-9          </span></span>
-<span><span class="co">#&gt;  [7] generics_0.1.4      textshaping_1.0.5   jsonlite_2.0.0     </span></span>
-<span><span class="co">#&gt; [10] statmod_1.5.2       htmltools_0.5.9     ragg_1.5.2         </span></span>
-<span><span class="co">#&gt; [13] sass_0.4.10         locfit_1.5-9.12     Biobase_2.72.0     </span></span>
-<span><span class="co">#&gt; [16] rmarkdown_2.31      grid_4.6.1          evaluate_1.0.5     </span></span>
-<span><span class="co">#&gt; [19] jquerylib_0.1.4     fastmap_1.2.0       yaml_2.3.12        </span></span>
-<span><span class="co">#&gt; [22] lifecycle_1.0.5     compiler_4.6.1      fs_2.1.0           </span></span>
-<span><span class="co">#&gt; [25] limma_3.68.4        Rcpp_1.1.2          edgeR_4.10.1       </span></span>
-<span><span class="co">#&gt; [28] lattice_0.22-9      systemfonts_1.3.2   digest_0.6.39      </span></span>
-<span><span class="co">#&gt; [31] R6_2.6.1            reticulate_1.46.0   bslib_0.11.0       </span></span>
-<span><span class="co">#&gt; [34] Matrix_1.7-5        tools_4.6.1         BiocGenerics_0.58.1</span></span>
-<span><span class="co">#&gt; [37] pkgdown_2.2.1       cachem_1.1.0        desc_1.4.3</span></span></code></pre></div>
+<span><span class="co">#&gt;  [1] tidyr_1.3.2         sass_0.4.10         generics_0.1.4     </span></span>
+<span><span class="co">#&gt;  [4] rstatix_1.1.0       lattice_0.22-9      digest_0.6.39      </span></span>
+<span><span class="co">#&gt;  [7] magrittr_2.0.5      evaluate_1.0.5      grid_4.6.1         </span></span>
+<span><span class="co">#&gt; [10] estimability_2.0.0  RColorBrewer_1.1-3  mvtnorm_1.4-2      </span></span>
+<span><span class="co">#&gt; [13] fastmap_1.2.0       jsonlite_2.0.0      Matrix_1.7-5       </span></span>
+<span><span class="co">#&gt; [16] backports_1.5.1     Formula_1.2-6       limma_3.68.5       </span></span>
+<span><span class="co">#&gt; [19] purrr_1.2.2         scales_1.4.0        textshaping_1.0.5  </span></span>
+<span><span class="co">#&gt; [22] jquerylib_0.1.4     abind_1.4-8         cli_3.6.6          </span></span>
+<span><span class="co">#&gt; [25] rlang_1.3.0         Biobase_2.72.0      withr_3.0.3        </span></span>
+<span><span class="co">#&gt; [28] cachem_1.1.0        yaml_2.3.12         otel_0.2.0         </span></span>
+<span><span class="co">#&gt; [31] tools_4.6.1         ggsignif_0.6.4      dplyr_1.2.1        </span></span>
+<span><span class="co">#&gt; [34] ggplot2_4.0.3       ggpubr_1.0.0        locfit_1.5-9.12    </span></span>
+<span><span class="co">#&gt; [37] BiocGenerics_0.58.1 broom_1.0.13        reticulate_1.47.0  </span></span>
+<span><span class="co">#&gt; [40] vctrs_0.7.3         R6_2.6.1            png_0.1-9          </span></span>
+<span><span class="co">#&gt; [43] lifecycle_1.0.5     emmeans_2.0.4       car_3.1-5          </span></span>
+<span><span class="co">#&gt; [46] edgeR_4.10.5        fs_2.1.0            ragg_1.5.2         </span></span>
+<span><span class="co">#&gt; [49] pkgconfig_2.0.3     desc_1.4.3          pkgdown_2.2.1      </span></span>
+<span><span class="co">#&gt; [52] pillar_1.11.1       bslib_0.12.0        gtable_0.3.6       </span></span>
+<span><span class="co">#&gt; [55] glue_1.8.1          Rcpp_1.1.2          statmod_1.5.2      </span></span>
+<span><span class="co">#&gt; [58] systemfonts_1.3.2   xfun_0.61           tibble_3.3.1       </span></span>
+<span><span class="co">#&gt; [61] tidyselect_1.2.1    knitr_1.52          farver_2.1.2       </span></span>
+<span><span class="co">#&gt; [64] htmltools_0.5.9     carData_3.0-6       labeling_0.4.3     </span></span>
+<span><span class="co">#&gt; [67] rmarkdown_2.32      compiler_4.6.1      S7_0.2.2</span></span></code></pre></div>
 </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>

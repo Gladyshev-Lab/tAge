@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tAge</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.1.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -127,16 +127,21 @@
 <span><span class="va">metadata</span>   <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="st">"metadata.csv"</span>, row.names <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span>
 <span><span class="va">eset</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/make_ExpressionSet.html">make_ExpressionSet</a></span><span class="op">(</span><span class="va">exprs_data</span>, <span class="va">metadata</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2. Preprocess: filter, map genes, RLE-normalise, log, scale, YuGene, centre</span></span>
+<span><span class="co"># 2. Preprocess: filter, map genes, RLE-normalise, log, scale, YuGene, centre.</span></span>
+<span><span class="co">#    Gene identifiers (Ensembl / Gene.Symbol / Entrez) are detected automatically.</span></span>
+<span><span class="co">#    With several tissues, preprocess and centre each on its own controls:</span></span>
 <span><span class="va">tAge_eset</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tAge_preprocessing.html">tAge_preprocessing</a></span><span class="op">(</span></span>
 <span>  <span class="va">eset</span>,</span>
 <span>  species <span class="op">=</span> <span class="st">"mouse"</span>,</span>
-<span>  gene_mapping_type <span class="op">=</span> <span class="st">"Gene.Symbol"</span>    <span class="co"># or "Ensembl"</span></span>
+<span>  split_by <span class="op">=</span> <span class="st">"Tissue"</span>,</span>
+<span>  control_group_column <span class="op">=</span> <span class="st">"Genotype"</span>, control_group_label <span class="op">=</span> <span class="st">"WT"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 3. Predict</span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/predict_tAge.html">predict_tAge</a></span><span class="op">(</span><span class="va">tAge_eset</span>, <span class="va">model_paths</span>, species <span class="op">=</span> <span class="st">"mouse"</span>, mode <span class="op">=</span> <span class="st">"EN"</span><span class="op">)</span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span></span></code></pre></div>
+<span><span class="co"># 3. Predict (the species was recorded by tAge_preprocessing)</span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/predict_tAge.html">predict_tAge</a></span><span class="op">(</span><span class="va">tAge_eset</span>, <span class="va">model_paths</span>, mode <span class="op">=</span> <span class="st">"EN"</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">results</span>, <span class="st">"tage_units"</span><span class="op">)</span>   <span class="co"># unit of every prediction column</span></span></code></pre></div>
+<p><code>species</code> is the species of the <em>samples</em> and only sets the maximum lifespan used to express chronological-age clocks in months (rodents) or years (primates); it is not the species group a clock was trained on. <code>age_units</code> forces months or years, and <code>normalized_age = "percent"</code> reports normalized-age clocks as a percentage of the expected maximum lifespan, as the paper does.</p>
 </div>
 <div class="section level3">
 <h3 id="single-cell-pseudobulk">Single-cell (pseudobulk)<a class="anchor" aria-label="anchor" href="#single-cell-pseudobulk"></a>
@@ -163,6 +168,97 @@
 </div>
 </div>
 <div class="section level2">
+<h2 id="statistics">Statistics<a class="anchor" aria-label="anchor" href="#statistics"></a>
+</h2>
+<p><code><a href="reference/tage_compare_groups.html">tage_compare_groups()</a></code> and friends implement the statistical models of the paper’s clock analyses; the R and Python packages agree numerically. Elastic net clocks are compared with estimated marginal-mean contrasts of <code>value ~ group + covariates</code> (<code>emmeans</code> on an <code>lm</code>); Bayesian ridge clocks go through a REML meta-regression (<code><a href="https://wviechtb.github.io/metafor/reference/rma.uni.html" class="external-link">metafor::rma.uni</a></code>) that weights each sample by its own prediction standard deviation and reports z-tests.</p>
+<div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="co"># BR predictions carry a matching &lt;normalisation&gt;_BR_tAge_sd column.</span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/predict_tAge.html">predict_tAge</a></span><span class="op">(</span><span class="va">tAge_eset</span>, <span class="va">model_paths</span>, species <span class="op">=</span> <span class="st">"mouse"</span>, mode <span class="op">=</span> <span class="st">"BR"</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="reference/tage_compare_groups.html">tage_compare_groups</a></span><span class="op">(</span></span>
+<span>  <span class="va">results</span>,</span>
+<span>  value_columns   <span class="op">=</span> <span class="st">"yugene_diff_BR_tAge"</span>,</span>
+<span>  group_column    <span class="op">=</span> <span class="st">"Genotype"</span>,</span>
+<span>  reference_group <span class="op">=</span> <span class="st">"WT"</span>,</span>
+<span>  covariates      <span class="op">=</span> <span class="st">"Sex"</span>,</span>
+<span>  split_by        <span class="op">=</span> <span class="st">"Tissue"</span>,</span>
+<span>  se_columns      <span class="op">=</span> <span class="st">"yugene_diff_BR_tAge_sd"</span>,   <span class="co"># BR clocks only</span></span>
+<span>  p_adjust        <span class="op">=</span> <span class="st">"BH"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>One row per contrast, with <code>estimate</code> always meaning <code>group2 - group1</code>, plus <code>se</code>, a 95% interval in <code>ci_low</code> / <code>ci_high</code>, <code>statistic</code>, <code>df</code>, <code>p_value</code>, <code>p_adjusted</code> and a <code>label</code> holding the usual <code>*** ** * ^</code> stars.</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Function</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code><a href="reference/tage_compare_groups.html">tage_compare_groups()</a></code></td>
+<td>marginal-mean contrasts between groups</td>
+</tr>
+<tr>
+<td><code><a href="reference/tage_regress_continuous.html">tage_regress_continuous()</a></code></td>
+<td>slope of tAge against a numeric predictor</td>
+</tr>
+<tr>
+<td><code><a href="reference/tage_module_stats.html">tage_module_stats()</a></code></td>
+<td>per-module effect sizes and p-values for module clocks</td>
+</tr>
+<tr>
+<td><code><a href="reference/tage_adjust_covariates.html">tage_adjust_covariates()</a></code></td>
+<td>covariate-adjusted values matching what the model tested</td>
+</tr>
+<tr>
+<td><code><a href="reference/tage_significance_stars.html">tage_significance_stars()</a></code></td>
+<td>
+<code>*** ** * ^</code> labels</td>
+</tr>
+</tbody>
+</table>
+<p>Two figures are built directly on those tests, and return the statistics as the <code>"tage_stats"</code> attribute:</p>
+<table class="table">
+<colgroup>
+<col width="50%">
+<col width="50%">
+</colgroup>
+<thead><tr>
+<th>Function</th>
+<th>Description</th>
+</tr></thead>
+<tbody>
+<tr>
+<td><code><a href="reference/tage_clock_forest.html">tage_clock_forest()</a></code></td>
+<td>one clock per row, effect with 95% CI, filled = survives the correction</td>
+</tr>
+<tr>
+<td><code><a href="reference/tage_module_heatmap.html">tage_module_heatmap()</a></code></td>
+<td>module effects as a heatmap, modules × strata</td>
+</tr>
+</tbody>
+</table>
+<div class="sourceCode" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">p</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tage_clock_forest.html">tage_clock_forest</a></span><span class="op">(</span></span>
+<span>  <span class="va">results</span>, clocks_meta <span class="op">=</span> <span class="va">clocks</span>,</span>
+<span>  group_column <span class="op">=</span> <span class="st">"Genotype"</span>, reference_group <span class="op">=</span> <span class="st">"WT"</span>, split_by <span class="op">=</span> <span class="st">"Tissue"</span></span>
+<span><span class="op">)</span></span></code></pre></div>
+<p>A <code>ggplot</code> carries no size of its own, so the figure functions record the size they were designed for and grow it with the number of clocks, modules and panels. <code><a href="reference/tage_save_plot.html">tage_save_plot()</a></code> uses that size; <code><a href="reference/tage_fig_size.html">tage_fig_size()</a></code> reads it back for a knitr chunk:</p>
+<div class="sourceCode" id="cb9"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="fu"><a href="reference/tage_fig_size.html">tage_fig_size</a></span><span class="op">(</span><span class="va">p</span><span class="op">)</span>                       <span class="co"># width and height in inches</span></span>
+<span><span class="fu"><a href="reference/tage_save_plot.html">tage_save_plot</a></span><span class="op">(</span><span class="va">p</span>, <span class="st">"forest.png"</span><span class="op">)</span>        <span class="co"># saved at the recorded size</span></span>
+<span><span class="fu"><a href="reference/tage_save_plot.html">tage_save_plot</a></span><span class="op">(</span><span class="va">p</span>, <span class="st">"forest.pdf"</span>, width <span class="op">=</span> <span class="fl">7</span><span class="op">)</span>   <span class="co"># override just the width</span></span>
+<span></span>
+<span><span class="co"># or fix the size up front</span></span>
+<span><span class="fu"><a href="reference/tage_clock_forest.html">tage_clock_forest</a></span><span class="op">(</span><span class="va">...</span>, width <span class="op">=</span> <span class="fl">7</span>, height <span class="op">=</span> <span class="fl">4.5</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/tage_clock_forest.html">tage_clock_forest</a></span><span class="op">(</span><span class="va">...</span>, row_height <span class="op">=</span> <span class="fl">0.22</span>, panel_width <span class="op">=</span> <span class="fl">4.0</span><span class="op">)</span></span>
+<span><span class="fu"><a href="reference/tage_module_heatmap.html">tage_module_heatmap</a></span><span class="op">(</span><span class="va">...</span>, cell_height <span class="op">=</span> <span class="fl">0.28</span>, cell_width <span class="op">=</span> <span class="fl">0.9</span><span class="op">)</span></span></code></pre></div>
+<p><code>variance_strata</code> chooses whether the residual variance comes from the two compared groups (<code>"subset"</code>) or from every group in the stratum (<code>"all_data"</code>); <code>p_adjust_scope</code> chooses the correction family — <code>"within_column"</code> across comparisons and strata of one clock, <code>"across_columns"</code> across clocks or modules within a comparison and stratum, or <code>"global"</code>.</p>
+<p><code><a href="reference/tage_boxplot.html">tage_boxplot()</a></code> uses this engine by default (<code>stat_method = "emmeans"</code>); pass <code>stat_method = "t.test"</code> (or another <code><a href="https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html" class="external-link">ggpubr::stat_compare_means</a></code> method) for a plain two-sample test.</p>
+</div>
+<div class="section level2">
 <h2 id="interpreting-the-output">Interpreting the output<a class="anchor" aria-label="anchor" href="#interpreting-the-output"></a>
 </h2>
 <p>The units of the prediction depend on the clock <strong>outcome</strong>:</p>
@@ -183,8 +279,8 @@
 <tr>
 <td>Chronological</td>
 <td><code>*_tAge</code></td>
-<td>age (years for human, months for rodents)</td>
-<td>normalised age rescaled by species max lifespan</td>
+<td>months (rodents) or years (primates); <code>age_units</code> overrides</td>
+<td>normalised age rescaled by species max lifespan (<code><a href="reference/tage_species.html">tage_species()</a></code>)</td>
 </tr>
 <tr>
 <td>Mortality</td>
@@ -196,12 +292,13 @@
 <tr>
 <td>Normalized age</td>
 <td><code>*_tAge</code></td>
-<td>fraction of max lifespan</td>
-<td>reported on its native scale</td>
+<td>fraction of max lifespan, or <code>%</code> with <code>normalized_age = "percent"</code>
+</td>
+<td>age / expected maximum lifespan of the experimental model</td>
 </tr>
 </tbody>
 </table>
-<p>Only <strong>chronological</strong> clocks are rescaled to age units. Mortality clocks output a <code>log10</code> hazard ratio and must <strong>not</strong> be interpreted in years — tAge derives this automatically from the clock registry.</p>
+<p>Only <strong>chronological</strong> clocks are rescaled to age units. Mortality clocks output a <code>log10</code> hazard ratio and must <strong>not</strong> be interpreted in years — tAge derives this automatically from the clock registry (and from the file name for models outside it). The <code>"tage_units"</code> attribute of the result records the unit of every column.</p>
 </div>
 <div class="section level2">
 <h2 id="relative-differential-clocks-and-centring">Relative (differential) clocks and centring<a class="anchor" aria-label="anchor" href="#relative-differential-clocks-and-centring"></a>
@@ -212,12 +309,15 @@
 <strong>No reference group given (default):</strong> centres on all samples (overall per-gene median). Use this for a general age/mortality readout of a cohort.</li>
 <li>
 <strong>Reference group given:</strong> pass <code>control_group_column</code> and <code>control_group_label</code> to centre on age-/sex-matched controls within your design (recommended when comparing treatment vs control).</li>
+<li>
+<strong>Several tissues, datasets or cell types:</strong> pass <code>split_by</code>. The clocks were trained on expression centred <em>within each dataset and tissue</em>, so filtering, normalisation and centring must happen per stratum; a single reference pooled across tissues mixes tissue differences into the signal. <code><a href="reference/tAge_by_group.html">tAge_by_group()</a></code> does the same and predicts in one call.</li>
 </ul>
+<p>The bundled example is the Klotho-knockout dataset of the paper (kidney and skeletal muscle, WT vs KO). Note that the distributed clocks contain the <em>Klotho</em> gene itself, whereas the paper’s Klotho analysis used clocks retrained without it; expect the KO effect here to be somewhat larger.</p>
 </div>
 <div class="section level2">
 <h2 id="supported-species">Supported species<a class="anchor" aria-label="anchor" href="#supported-species"></a>
 </h2>
-<p>Mouse, human, rat, monkey. Non-mouse species are mapped to mouse orthologs internally, so all clocks operate in the mouse Entrez gene space.</p>
+<p>Mouse, human, rat, monkey (<code><a href="reference/tage_species.html">tage_species()</a></code>). Non-mouse species are mapped to mouse orthologs internally, so all clocks operate in the mouse Entrez gene space. Input identifiers may be Ensembl (with or without version suffix), gene symbols or Entrez IDs; <code><a href="reference/map_genes.html">map_genes()</a></code> detects which.</p>
 </div>
 <div class="section level2">
 <h2 id="citation">Citation<a class="anchor" aria-label="anchor" href="#citation"></a>

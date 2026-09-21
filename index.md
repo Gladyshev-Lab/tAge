@@ -82,17 +82,28 @@ exprs_data <- read.csv("expression_matrix.csv", row.names = 1)
 metadata   <- read.csv("metadata.csv", row.names = 1)
 eset <- make_ExpressionSet(exprs_data, metadata)
 
-# 2. Preprocess: filter, map genes, RLE-normalise, log, scale, YuGene, centre
+# 2. Preprocess: filter, map genes, RLE-normalise, log, scale, YuGene, centre.
+#    Gene identifiers (Ensembl / Gene.Symbol / Entrez) are detected automatically.
+#    With several tissues, preprocess and centre each on its own controls:
 tAge_eset <- tAge_preprocessing(
   eset,
   species = "mouse",
-  gene_mapping_type = "Gene.Symbol"    # or "Ensembl"
+  split_by = "Tissue",
+  control_group_column = "Genotype", control_group_label = "WT"
 )
 
-# 3. Predict
-results <- predict_tAge(tAge_eset, model_paths, species = "mouse", mode = "EN")
+# 3. Predict (the species was recorded by tAge_preprocessing)
+results <- predict_tAge(tAge_eset, model_paths, mode = "EN")
 head(results)
+attr(results, "tage_units")   # unit of every prediction column
 ```
+
+`species` is the species of the *samples* and only sets the maximum
+lifespan used to express chronological-age clocks in months (rodents) or
+years (primates); it is not the species group a clock was trained on.
+`age_units` forces months or years, and `normalized_age = "percent"`
+reports normalized-age clocks as a percentage of the expected maximum
+lifespan, as the paper does.
 
 ### Single-cell (pseudobulk)
 
@@ -118,19 +129,112 @@ results <- tAge_by_group(
 )
 ```
 
+## Statistics
+
+[`tage_compare_groups()`](https://gladyshev-lab.github.io/tAge/reference/tage_compare_groups.md)
+and friends implement the statistical models of the paper’s clock
+analyses; the R and Python packages agree numerically. Elastic net
+clocks are compared with estimated marginal-mean contrasts of
+`value ~ group + covariates` (`emmeans` on an `lm`); Bayesian ridge
+clocks go through a REML meta-regression
+([`metafor::rma.uni`](https://wviechtb.github.io/metafor/reference/rma.uni.html))
+that weights each sample by its own prediction standard deviation and
+reports z-tests.
+
+``` r
+
+# BR predictions carry a matching <normalisation>_BR_tAge_sd column.
+results <- predict_tAge(tAge_eset, model_paths, species = "mouse", mode = "BR")
+
+tage_compare_groups(
+  results,
+  value_columns   = "yugene_diff_BR_tAge",
+  group_column    = "Genotype",
+  reference_group = "WT",
+  covariates      = "Sex",
+  split_by        = "Tissue",
+  se_columns      = "yugene_diff_BR_tAge_sd",   # BR clocks only
+  p_adjust        = "BH"
+)
+```
+
+One row per contrast, with `estimate` always meaning `group2 - group1`,
+plus `se`, a 95% interval in `ci_low` / `ci_high`, `statistic`, `df`,
+`p_value`, `p_adjusted` and a `label` holding the usual `*** ** * ^`
+stars.
+
+| Function | Description |
+|----|----|
+| [`tage_compare_groups()`](https://gladyshev-lab.github.io/tAge/reference/tage_compare_groups.md) | marginal-mean contrasts between groups |
+| [`tage_regress_continuous()`](https://gladyshev-lab.github.io/tAge/reference/tage_regress_continuous.md) | slope of tAge against a numeric predictor |
+| [`tage_module_stats()`](https://gladyshev-lab.github.io/tAge/reference/tage_module_stats.md) | per-module effect sizes and p-values for module clocks |
+| [`tage_adjust_covariates()`](https://gladyshev-lab.github.io/tAge/reference/tage_adjust_covariates.md) | covariate-adjusted values matching what the model tested |
+| [`tage_significance_stars()`](https://gladyshev-lab.github.io/tAge/reference/tage_significance_stars.md) | `*** ** * ^` labels |
+
+Two figures are built directly on those tests, and return the statistics
+as the `"tage_stats"` attribute:
+
+| Function | Description |
+|----|----|
+| [`tage_clock_forest()`](https://gladyshev-lab.github.io/tAge/reference/tage_clock_forest.md) | one clock per row, effect with 95% CI, filled = survives the correction |
+| [`tage_module_heatmap()`](https://gladyshev-lab.github.io/tAge/reference/tage_module_heatmap.md) | module effects as a heatmap, modules × strata |
+
+``` r
+
+p <- tage_clock_forest(
+  results, clocks_meta = clocks,
+  group_column = "Genotype", reference_group = "WT", split_by = "Tissue"
+)
+```
+
+A `ggplot` carries no size of its own, so the figure functions record
+the size they were designed for and grow it with the number of clocks,
+modules and panels.
+[`tage_save_plot()`](https://gladyshev-lab.github.io/tAge/reference/tage_save_plot.md)
+uses that size;
+[`tage_fig_size()`](https://gladyshev-lab.github.io/tAge/reference/tage_fig_size.md)
+reads it back for a knitr chunk:
+
+``` r
+
+tage_fig_size(p)                       # width and height in inches
+tage_save_plot(p, "forest.png")        # saved at the recorded size
+tage_save_plot(p, "forest.pdf", width = 7)   # override just the width
+
+# or fix the size up front
+tage_clock_forest(..., width = 7, height = 4.5)
+tage_clock_forest(..., row_height = 0.22, panel_width = 4.0)
+tage_module_heatmap(..., cell_height = 0.28, cell_width = 0.9)
+```
+
+`variance_strata` chooses whether the residual variance comes from the
+two compared groups (`"subset"`) or from every group in the stratum
+(`"all_data"`); `p_adjust_scope` chooses the correction family —
+`"within_column"` across comparisons and strata of one clock,
+`"across_columns"` across clocks or modules within a comparison and
+stratum, or `"global"`.
+
+[`tage_boxplot()`](https://gladyshev-lab.github.io/tAge/reference/tage_boxplot.md)
+uses this engine by default (`stat_method = "emmeans"`); pass
+`stat_method = "t.test"` (or another
+[`ggpubr::stat_compare_means`](https://rpkgs.datanovia.com/ggpubr/reference/stat_compare_means.html)
+method) for a plain two-sample test.
+
 ## Interpreting the output
 
 The units of the prediction depend on the clock **outcome**:
 
 | Outcome | Column | Units | Notes |
 |----|----|----|----|
-| Chronological | `*_tAge` | age (years for human, months for rodents) | normalised age rescaled by species max lifespan |
+| Chronological | `*_tAge` | months (rodents) or years (primates); `age_units` overrides | normalised age rescaled by species max lifespan ([`tage_species()`](https://gladyshev-lab.github.io/tAge/reference/tage_species.md)) |
 | Mortality | `*_tAge` | `log10(hazard ratio)` | **not** an age; higher = higher expected mortality |
-| Normalized age | `*_tAge` | fraction of max lifespan | reported on its native scale |
+| Normalized age | `*_tAge` | fraction of max lifespan, or `%` with `normalized_age = "percent"` | age / expected maximum lifespan of the experimental model |
 
 Only **chronological** clocks are rescaled to age units. Mortality
 clocks output a `log10` hazard ratio and must **not** be interpreted in
-years — tAge derives this automatically from the clock registry.
+years — tAge derives this automatically from the clock registry (and
+from the file name for models outside it). The `"tage_units"` attribute
+of the result records the unit of every column.
 
 ## Relative (differential) clocks and centring
 
@@ -145,12 +249,29 @@ centres the data automatically:
 - **Reference group given:** pass `control_group_column` and
   `control_group_label` to centre on age-/sex-matched controls within
   your design (recommended when comparing treatment vs control).
+- **Several tissues, datasets or cell types:** pass `split_by`. The
+  clocks were trained on expression centred *within each dataset and
+  tissue*, so filtering, normalisation and centring must happen per
+  stratum; a single reference pooled across tissues mixes tissue
+  differences into the signal.
+  [`tAge_by_group()`](https://gladyshev-lab.github.io/tAge/reference/tAge_by_group.md)
+  does the same and predicts in one call.
+
+The bundled example is the Klotho-knockout dataset of the paper (kidney
+and skeletal muscle, WT vs KO). Note that the distributed clocks contain
+the *Klotho* gene itself, whereas the paper’s Klotho analysis used
+clocks retrained without it; expect the KO effect here to be somewhat
+larger.
 
 ## Supported species
 
-Mouse, human, rat, monkey. Non-mouse species are mapped to mouse
-orthologs internally, so all clocks operate in the mouse Entrez gene
-space.
+Mouse, human, rat, monkey
+([`tage_species()`](https://gladyshev-lab.github.io/tAge/reference/tage_species.md)).
+Non-mouse species are mapped to mouse orthologs internally, so all
+clocks operate in the mouse Entrez gene space. Input identifiers may be
+Ensembl (with or without version suffix), gene symbols or Entrez IDs;
+[`map_genes()`](https://gladyshev-lab.github.io/tAge/reference/map_genes.md)
+detects which.
 
 ## Citation
 

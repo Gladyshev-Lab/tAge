@@ -11,7 +11,8 @@ download_clocks(
   dest_dir = "clocks",
   record = .TAGE_ZENODO_RECORD,
   overwrite = FALSE,
-  quiet = FALSE
+  quiet = FALSE,
+  timeout = 3600
 )
 ```
 
@@ -41,9 +42,21 @@ download_clocks(
 
   Logical. Suppress progress messages. Default FALSE.
 
+- timeout:
+
+  Seconds allowed per file. R's default of 60 s aborts the Bayesian
+  ridge models, which are 0.9-2.4 GB each; elastic net models are about
+  1 MB. Default 3600.
+
 ## Value
 
 The `clocks` data frame with an added `path` column.
+
+## Details
+
+A partial or failed download is removed rather than left on disk, and
+every file is checked to be a pickle (Zenodo answers some errors with an
+HTML page, which would otherwise be saved under the model's name).
 
 ## Examples
 

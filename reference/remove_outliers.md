@@ -1,6 +1,24 @@
-# Remove outlier pseudobulk samples using PCA-based Mahalanobis distance
+# Remove outlier samples
 
-Remove outlier pseudobulk samples using PCA-based Mahalanobis distance
+Three detectors are available, all working on `log10(counts + 1)` within
+each level of `split_by` (tissue, dataset, cell type):
+
+- `"mahalanobis"`:
+
+  (default) robust Mahalanobis distance in PCA space (MCD covariance,
+  chi-squared cutoff at `threshold_quantile`) plus PC1/PC2 beyond 3 IQR.
+
+- `"pca_iqr"`:
+
+  the paper's rule for bulk data: samples whose PC1 or PC2 score lies
+  more than `iqr_factor` (1.5) interquartile ranges below the first or
+  above the third quartile.
+
+- `"spearman_median"`:
+
+  the paper's rule for the integrated meta-dataset: samples whose
+  Spearman correlation with the median expression profile of their group
+  is below `cor_threshold` (0.5).
 
 ## Usage
 
@@ -11,7 +29,10 @@ remove_outliers(
   threshold_quantile = 0.99,
   split_by = NULL,
   min_samples = 10,
-  verbose = TRUE
+  verbose = TRUE,
+  method = c("mahalanobis", "pca_iqr", "spearman_median"),
+  iqr_factor = 1.5,
+  cor_threshold = 0.5
 )
 ```
 
@@ -23,12 +44,12 @@ remove_outliers(
 
 - n_components:
 
-  Integer. Number of PCA components. Default 10.
+  Integer. Number of PCA components (Mahalanobis). Default 10.
 
 - threshold_quantile:
 
-  Numeric in (0,1). Chi-squared quantile for outlier cutoff. Default
-  0.99.
+  Numeric in (0,1). Chi-squared quantile for the Mahalanobis cutoff.
+  Default 0.99.
 
 - split_by:
 
@@ -43,6 +64,19 @@ remove_outliers(
 - verbose:
 
   Logical. Default TRUE.
+
+- method:
+
+  One of `"mahalanobis"`, `"pca_iqr"`, `"spearman_median"`.
+
+- iqr_factor:
+
+  Numeric. Interquartile-range multiplier for `"pca_iqr"`. Default 1.5.
+
+- cor_threshold:
+
+  Numeric. Minimum Spearman correlation with the group median profile
+  for `"spearman_median"`. Default 0.5.
 
 ## Value
 

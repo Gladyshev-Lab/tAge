@@ -46,9 +46,8 @@ An ExpressionSet object with reference-centred expression data.
 
 If no reference group is specified (both `column_name` and
 `control_label` are `NULL`), or no matching control samples are found,
-all samples are used as the reference (per-gene overall median). This
-matches the default behaviour of the TACO reference application, which
-always centres and defaults the reference group to all samples.
+all samples are used as the reference (per-gene overall median).
+Centring itself is never skipped.
 
 ## Examples
 
@@ -64,6 +63,7 @@ eset <- make_ExpressionSet(expr_data, meta_data)
 
 # Subtract control group (assuming 'Group' column has 'Control' label)
 control_eset <- control_subtraction(eset, "Group", "Control", verbose = TRUE)
+#> Warning: No sample has Group == 'Control'; centring on all samples instead.
 #> ✓ No control samples found for label 'Control'. Centring on all samples (overall median).
 #> Warning: NaNs produced
 ```
