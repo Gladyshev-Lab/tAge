@@ -60,3 +60,58 @@ test_that("human and rat still go through the mouse ortholog table", {
   expect_gt(nrow(mapped), 0)
   expect_true(all(rownames(mapped) %in% as.character(orth$Entrez.Mouse)))
 })
+
+test_that("the identifier type is detected from the gene table", {
+  eset <- .tage_example_eset()                     # Ensembl row names
+  gt <- tAge:::.read_gene_table(get_metadata_dir(), "mouse")
+
+  d <- tAge:::.detect_gene_mapping_type(rownames(eset), gt)
+  expect_equal(d$type, "Ensembl")
+  expect_false(d$strip_version)
+  expect_gt(d$n_matched, 10000)
+
+  symbols <- head(gt$Gene.Symbol[!is.na(gt$Gene.Symbol)], 500)
+  expect_equal(tAge:::.detect_gene_mapping_type(symbols, gt)$type, "Gene.Symbol")
+
+  entrez <- head(gt$Entrez[!is.na(gt$Entrez)], 500)
+  expect_equal(tAge:::.detect_gene_mapping_type(entrez, gt)$type, "Entrez")
+
+  expect_error(tAge:::.detect_gene_mapping_type(c("foo", "bar"), gt), "None of the row names match")
+  expect_error(tAge:::.detect_gene_mapping_type(symbols, gt, requested = "RefSeq"),
+               "not available")
+})
+
+test_that("Ensembl version suffixes are stripped when that is what matches", {
+  eset <- .tage_example_eset()
+  eset <- filter_genes(eset, verbose = FALSE)
+  versioned <- eset
+  rownames(versioned) <- paste0(rownames(eset), ".", seq_len(nrow(eset)) %% 7 + 1)
+
+  gt <- tAge:::.read_gene_table(get_metadata_dir(), "mouse")
+  d <- tAge:::.detect_gene_mapping_type(rownames(versioned), gt)
+  expect_true(d$strip_version)
+  expect_equal(d$type, "Ensembl")
+
+  plain  <- map_genes(eset, "mouse", verbose = FALSE)
+  strip  <- map_genes(versioned, "mouse", verbose = FALSE)
+  expect_equal(rownames(strip), rownames(plain))
+  expect_equal(Biobase::exprs(strip), Biobase::exprs(plain))
+})
+
+test_that("Entrez input maps onto itself and auto-detection agrees with the explicit type", {
+  eset <- filter_genes(.tage_example_eset(), verbose = FALSE)
+  explicit <- map_genes(eset, "mouse", gene_mapping_type = "Ensembl", verbose = FALSE)
+  auto     <- map_genes(eset, "mouse", verbose = FALSE)
+  expect_equal(Biobase::exprs(auto), Biobase::exprs(explicit))
+
+  entrez_in <- explicit
+  again <- map_genes(entrez_in, "mouse", gene_mapping_type = "Entrez", verbose = FALSE)
+  expect_equal(rownames(again), rownames(explicit))
+  expect_equal(Biobase::exprs(again), Biobase::exprs(explicit))
+})
+
+test_that("an unknown species is an error", {
+  eset <- .tage_example_eset()
+  expect_error(map_genes(eset, "rhesus", verbose = FALSE), "Unknown species")
+  expect_error(tAge_preprocessing(eset, species = "rhesus", verbose = FALSE), "Unknown species")
+})

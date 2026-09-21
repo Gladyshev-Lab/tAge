@@ -1,25 +1,45 @@
 #' Map genes in an ExpressionSet using local CSV mapping tables
 #'
+#' Translates the row names of \code{eset} to mouse Entrez IDs, the gene space
+#' every clock operates in: identifiers of the given species are looked up in
+#' the bundled gene table, and rat, human and macaque genes are then carried
+#' over to mouse through 1:1 ortholog tables. Genes that do not map are
+#' dropped; identifiers that collapse onto one Entrez ID are summed.
+#'
 #' @param eset An ExpressionSet object.
 #' @param species One of "human", "mouse", "rat", "monkey".
-#' @param gene_mapping_type One of "Ensembl" or "Gene.Symbol".
+#' @param gene_mapping_type Identifier type of the row names: "Ensembl",
+#'   "Gene.Symbol", "Entrez", or "auto" (default) to detect it as the type
+#'   with the most matches in the gene table. Ensembl IDs may carry a version
+#'   suffix (\code{ENSMUSG00000000001.4}); it is stripped when that is what
+#'   makes them match.
 #' @param verbose Logical. Print progress messages. Default TRUE.
 #' @return ExpressionSet with Entrez (mouse) gene IDs as rownames.
 #' @export
 map_genes <- function(eset,
                       species,
-                      gene_mapping_type,
+                      gene_mapping_type = "auto",
                       verbose = TRUE) {
   metadata_dir <- get_metadata_dir()
+  species <- .tage_species_row(species)$species
 
-  valid_gene_types <- c("Ensembl", "Gene.Symbol")
+  valid_gene_types <- c("auto", "Ensembl", "Gene.Symbol", "Entrez")
   if (!gene_mapping_type %in% valid_gene_types) {
     stop(sprintf("gene_mapping_type must be one of {%s}, got '%s'",
                  paste(valid_gene_types, collapse = ", "), gene_mapping_type))
   }
 
-  gene_map <- .load_gene_mapping(metadata_dir, species, gene_mapping_type)
-  eset     <- .apply_gene_mapping(eset, gene_map)
+  gene_table <- .read_gene_table(metadata_dir, species)
+  detected   <- .detect_gene_mapping_type(rownames(eset), gene_table, gene_mapping_type)
+  gene_mapping_type <- detected$type
+  if (verbose) {
+    cat(sprintf("\u2713 Gene identifiers: %s (%d of %d row names found in the %s gene table%s)\n",
+                gene_mapping_type, detected$n_matched, nrow(eset), species,
+                if (detected$strip_version) ", after removing Ensembl version suffixes" else ""))
+  }
+
+  gene_map <- .load_gene_mapping(metadata_dir, species, gene_mapping_type, gene_table)
+  eset     <- .apply_gene_mapping(eset, gene_map, keys = detected$keys)
 
   if (!species %in% c("mouse", "monkey")) {
     eset <- .apply_ortholog_mapping(eset, metadata_dir, species, verbose)
@@ -31,17 +51,63 @@ map_genes <- function(eset,
 }
 
 
-.load_gene_mapping <- function(metadata_dir, species, gene_mapping_type) {
+.read_gene_table <- function(metadata_dir, species) {
   gene_table_path <- file.path(metadata_dir, sprintf("Gene_table_%s.csv", species))
-
   if (!file.exists(gene_table_path)) {
     stop(sprintf("Gene table not found at %s", gene_table_path))
   }
+  gene_table <- utils::read.csv(gene_table_path, stringsAsFactors = FALSE, check.names = FALSE)
+  # Entrez IDs are read as numbers; the row names they are matched against
+  # are text.
+  gene_table[["Entrez"]] <- ifelse(is.na(gene_table[["Entrez"]]), NA_character_,
+                                   as.character(as.integer(gene_table[["Entrez"]])))
+  gene_table
+}
 
-  gene_table <- read.csv(gene_table_path, stringsAsFactors = FALSE, check.names = FALSE)
+.strip_ensembl_version <- function(x) sub("\\.[0-9]+$", "", x)
+
+# Which identifier type the row names are, as the type with the most matches
+# in the gene table -- the TACO application's rule. Returns the type, the
+# keys to look up (row names, or Ensembl IDs with their version suffix
+# removed when that is what makes them match) and the match count.
+.detect_gene_mapping_type <- function(genes, gene_table, requested = "auto") {
+  genes <- as.character(genes)
+  candidates <- intersect(c("Ensembl", "Gene.Symbol", "Entrez"), colnames(gene_table))
+  if (requested != "auto") {
+    if (!requested %in% colnames(gene_table)) {
+      stop(sprintf("'%s' identifiers are not available in the gene table of this species", requested),
+           call. = FALSE)
+    }
+    candidates <- requested
+  }
+
+  count <- function(keys, column) sum(keys %in% unique(gene_table[[column]]))
+  matches <- vapply(candidates, function(col) count(genes, col), numeric(1))
+  stripped <- .strip_ensembl_version(genes)
+  matches_stripped <- if ("Ensembl" %in% candidates) count(stripped, "Ensembl") else 0
+
+  best <- candidates[which.max(matches)]
+  strip_version <- "Ensembl" %in% candidates && matches_stripped > max(matches)
+  if (strip_version) best <- "Ensembl"
+  n_matched <- if (strip_version) matches_stripped else max(matches)
+
+  if (n_matched == 0) {
+    detail <- paste(sprintf("%s: %d", candidates, matches[candidates]), collapse = ", ")
+    stop("None of the row names match the gene table (matches by identifier type -- ", detail,
+         "). Check `species` and the identifiers, e.g. ", paste(head(genes, 3), collapse = ", "),
+         call. = FALSE)
+  }
+
+  list(type = best, keys = if (strip_version) stripped else genes,
+       n_matched = as.integer(n_matched), strip_version = strip_version)
+}
+
+
+.load_gene_mapping <- function(metadata_dir, species, gene_mapping_type, gene_table = NULL) {
+  if (is.null(gene_table)) gene_table <- .read_gene_table(metadata_dir, species)
 
   if (!gene_mapping_type %in% colnames(gene_table)) {
-    stop(sprintf("'%s' not found in %s", gene_mapping_type, gene_table_path))
+    stop(sprintf("'%s' identifiers are not available for %s", gene_mapping_type, species))
   }
 
   if (species == "monkey") {
@@ -51,9 +117,10 @@ map_genes <- function(eset,
   gene_table <- gene_table[!is.na(gene_table[["Entrez"]]), ]
 
   # Deduplicate by gene_mapping_type, keeping first occurrence
+  gene_table <- gene_table[!is.na(gene_table[[gene_mapping_type]]), ]
   gene_table <- gene_table[!duplicated(gene_table[[gene_mapping_type]]), ]
 
-  setNames(gene_table[["Entrez"]], gene_table[[gene_mapping_type]])
+  setNames(as.numeric(gene_table[["Entrez"]]), gene_table[[gene_mapping_type]])
 }
 
 
@@ -61,7 +128,8 @@ map_genes <- function(eset,
   if (gene_mapping_type == "Ensembl") {
     monkey_ens_map <- setNames(gene_table[["Ensembl"]], gene_table[["Ensembl"]])
   } else {
-    monkey_ens_map <- setNames(gene_table[["Ensembl"]], gene_table[["Gene.Symbol"]])
+    # Gene.Symbol or (macaque) Entrez -> Ensembl
+    monkey_ens_map <- setNames(gene_table[["Ensembl"]], gene_table[[gene_mapping_type]])
   }
 
   orthologs_path <- file.path(metadata_dir, "Orthologs_monkey_to_mouse_5.0.csv")
@@ -80,10 +148,15 @@ map_genes <- function(eset,
 }
 
 
-.apply_gene_mapping <- function(eset, gene_map) {
+# `keys` are the identifiers looked up in gene_map (the row names, or Ensembl
+# IDs without version suffix); the row names themselves are what is recorded
+# as the original genes.
+.apply_gene_mapping <- function(eset, gene_map, keys = rownames(eset)) {
   genes  <- rownames(eset)
-  mapped <- gene_map[genes]
+  mapped <- gene_map[as.character(keys)]
+  names(mapped) <- genes
   valid  <- !is.na(mapped)
+  if (!any(valid)) stop("No gene could be mapped to Entrez IDs.", call. = FALSE)
 
   expr_valid <- Biobase::exprs(eset)[valid, , drop = FALSE]
   mapped_ids <- unname(mapped[valid])
