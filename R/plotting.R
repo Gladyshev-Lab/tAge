@@ -6,6 +6,8 @@
 #'
 #' @param eset An ExpressionSet object containing expression data.
 #' @param title Character string for the plot title. Default is "Density Plot".
+#' @param subtitle,caption Subtitle (secondary ink) and a provenance caption
+#'   (muted ink) under the plot.
 #' @param log_transform Logical indicating whether to apply log2 transformation
 #'   before plotting. Default is TRUE.
 #' @param na_rm Logical indicating whether to remove NA values when computing densities.
@@ -14,8 +16,9 @@
 #' @param height Numeric value for plot height in inches. Default is 6.
 #' @param error_message Character string to display if plotting fails. Default is
 #'   "Error: No data available".
-#' @param palette Character string specifying the color palette. See ?hcl.colors for
-#'   available options. Default is "viridis".
+#' @param palette \code{NULL} (default) draws every sample in muted grey, the
+#'   shape of the distributions being the point; a \code{hcl.colors} palette
+#'   name colours the samples and adds a legend when there are at most 20.
 #' @param legend_position Character string specifying legend position. Options include
 #'   "topright", "topleft", "bottomright", "bottomleft", etc. Default is "topright".
 #' @return Invisibly returns NULL. Creates a density plot.
@@ -36,7 +39,7 @@ plot_eset_density <- function(
   width          = 8,
   height         = 6,
   error_message  = "Error: No data available",
-  palette        = "viridis",   # see ?hcl.colors for palette options
+  palette        = NULL,
   legend_position     = "topright"
 ) {
   # Set plot dimensions in Jupyter
@@ -61,24 +64,28 @@ plot_eset_density <- function(
       labs <- colnames(expr_data)
     if (is.null(labs)) labs <- paste0("Sample ", seq_len(n_samples))
 
-    # Colors: use hcl.colors for better distinction
-    cols <- if (n_samples == 1) "black" else grDevices::hcl.colors(n_samples, palette = palette)
+    # Muted lines: the shape of the distributions is the point, not sample
+    # identity. A named palette colours the samples instead.
+    cols <- if (is.null(palette)) {
+      rep(grDevices::adjustcolor(TAGE_TEXT_MUTED, alpha.f = 0.6), n_samples)
+    } else if (n_samples == 1) TAGE_TEXT_PRIMARY else grDevices::hcl.colors(n_samples, palette = palette)
 
-    # Plot first sample
-    d1 <- density(expr_data[, 1], na.rm = na_rm)
-    plot(d1,
-         main = title,
-         xlab = "Expression values",
-         ylab = "Density",
-         col  = cols[1])
+    dens <- lapply(seq_len(n_samples), function(i) density(expr_data[, i], na.rm = na_rm))
+    op <- par(family = "sans", bty = "l", col.axis = TAGE_TEXT_SECONDARY, col.lab = TAGE_TEXT_SECONDARY,
+              fg = TAGE_AXIS_COLOR, mgp = c(2.2, 0.6, 0), tcl = -0.25, mar = c(4, 4, 3, 1))
+    on.exit(par(op), add = TRUE)
+    plot(dens[[1]], main = "", xlab = "Expression values", ylab = "Density",
+         col = cols[1], lwd = 1, xlim = range(unlist(lapply(dens, `[[`, "x"))),
+         ylim = c(0, max(unlist(lapply(dens, `[[`, "y")))))
+    grid(nx = NA, ny = NULL, col = TAGE_GRID_COLOR, lty = 1, lwd = 0.6)
+    for (i in seq_len(n_samples)) lines(dens[[i]], col = cols[i], lwd = 1)
+    title(main = title, adj = 0, font.main = 2, col.main = TAGE_TEXT_PRIMARY, cex.main = 1.05)
+    mtext(sprintf("%d samples", n_samples), side = 3, adj = 0, line = 0.2,
+          col = TAGE_TEXT_SECONDARY, cex = 0.85)
 
-    # Add remaining samples
-    if (n_samples > 1) {
-      for (i in 2:n_samples) {
-        lines(density(expr_data[, i], na.rm = na_rm), col = cols[i])
-      }
-      # Add legend with sample labels
-      legend(legend_position, legend = labs, col = cols, lty = 1, cex = 0.8, bty = "n")
+    if (n_samples > 1 && !is.null(palette) && n_samples <= 20) {
+      legend(legend_position, legend = labs, col = cols, lty = 1, cex = 0.75, bty = "n",
+             text.col = TAGE_TEXT_PRIMARY)
     }
 
     invisible(NULL)
@@ -107,8 +114,9 @@ plot_eset_density <- function(
 #'   column.
 #' @param subgroup_var Optional column name used to facet the plot. Default
 #'   \code{NULL}.
-#' @param colors Optional named vector of fill colours, keyed by the levels of
-#'   \code{x_var}.
+#' @param colors Optional colours keyed by the levels of \code{x_var}, overriding
+#'   the default in which the reference group is grey and the other groups take
+#'   the categorical slots of \code{\link{tage_series_colors}} in order.
 #' @param point_size,point_alpha Size and opacity of the jittered points.
 #' @param box_width Width of the boxes.
 #' @param stat_method Test used for the comparisons. \code{"emmeans"} (default)
@@ -140,8 +148,7 @@ plot_eset_density <- function(
 #' @param min_group_n Minimum number of non-missing observations required in both
 #'   groups for a comparison to be shown. When faceting, every facet must meet it.
 #' @param font_size Base font size; also scales the annotation text.
-#' @param theme_type ggplot2 theme to apply, e.g. \code{"classic"} or
-#'   \code{"minimal"}.
+#' @param theme_type Deprecated; figures follow \code{\link{theme_tage}}.
 #' @param title,xlab,ylab Plot title and axis labels.
 #' @param legend_position Legend placement passed to \code{ggplot2::theme}.
 #' @param y_center If given, the y axis is made symmetric around this value --
@@ -189,9 +196,11 @@ tage_boxplot <- function(
   p_label = "p.signif",
   p_threshold = NULL,
   min_group_n = 2,
-  font_size = 12,
-  theme_type = "classic",
+  font_size = 10,
+  theme_type = NULL,
   title = NULL,
+  subtitle = NULL,
+  caption = NULL,
   xlab = NULL,
   ylab = NULL,
   legend_position = "right",
@@ -312,14 +321,25 @@ tage_boxplot <- function(
     }
   }
 
-  p <- ggplot(data, aes(x = .data[[x_var]], y = .data[[y_var]], fill = .data[[x_var]])) +
-    geom_boxplot(width = box_width, outlier.shape = NA) +
-    geom_jitter(width = 0.2, size = point_size, alpha = point_alpha) +
-    scale_x_discrete(limits = x_levels, drop = FALSE)
-
-  if (!is.null(colors)) {
-    p <- p + scale_fill_manual(values = colors[x_levels], breaks = x_levels, drop = FALSE)
+  if (!is.null(theme_type)) {
+    warning("`theme_type` is deprecated and has no effect: figures follow theme_tage().",
+            call. = FALSE)
   }
+  # Reference grey, comparisons in the fixed categorical slots; `colors`
+  # overrides per level.
+  ref_for_colour <- if (!is.null(reference_group)) reference_group else x_levels[1]
+  cols <- tage_series_colors(x_levels, reference = ref_for_colour, palette = colors)
+
+  p <- ggplot(data, aes(x = .data[[x_var]], y = .data[[y_var]],
+                        fill = .data[[x_var]], colour = .data[[x_var]])) +
+    # A coloured edge over a tinted fill (alpha over white), not a solid block.
+    geom_boxplot(width = box_width, outlier.shape = NA, alpha = 0.35,
+                 linewidth = 0.5, fatten = 2) +
+    geom_point(position = position_jitter(width = 0.15, seed = 1), shape = 21,
+               size = point_size, alpha = point_alpha, colour = TAGE_SURFACE, stroke = 0.5) +
+    scale_x_discrete(limits = x_levels, drop = FALSE) +
+    scale_fill_manual(values = cols, breaks = x_levels, drop = FALSE, name = x_var) +
+    scale_colour_manual(values = cols, breaks = x_levels, drop = FALSE, guide = "none")
 
   # Add stat comparisons only if there are valid ones
   if (length(valid_comparisons) > 0 && use_emmeans) {
@@ -368,7 +388,9 @@ tage_boxplot <- function(
         xmin       = "group1",
         xmax       = "group2",
         tip.length = 0.01,
-        size       = font_size / 3
+        size       = font_size / 3,
+        color      = TAGE_TEXT_SECONDARY,
+        bracket.size = 0.4
       )
     } else {
       y_max_needed <- y_range_vals[2] + y_range_size * 0.05
@@ -388,7 +410,9 @@ tage_boxplot <- function(
       label       = p_label,
       size        = font_size / 3,
       tip.length  = 0.01,
-      label.y     = label_y_pos
+      label.y     = label_y_pos,
+      color       = TAGE_TEXT_SECONDARY,
+      bracket.size = 0.4
     )
   } else {
     y_range_vals <- range(data[[y_var]], na.rm = TRUE)
@@ -414,31 +438,19 @@ tage_boxplot <- function(
   }
 
   if (!is.null(ylim_vals)) p <- p + coord_cartesian(ylim = ylim_vals, clip = "off")
-  if (!is.null(y_center)) p <- p + geom_hline(yintercept = y_center, linetype = "dashed", linewidth = 0.5)
+  if (!is.null(y_center)) p <- p + geom_hline(yintercept = y_center, colour = TAGE_AXIS_COLOR, linewidth = 0.4)
 
   if (!is.null(subgroup_var)) {
     scales_use <- if (force_fixed && identical(facet_scales, "free_y")) "fixed" else facet_scales
     p <- p + facet_wrap(vars(.data[[subgroup_var]]), scales = scales_use)
   }
 
-  theme_func <- switch(theme_type,
-    "classic" = theme_classic,
-    "bw"      = theme_bw,
-    "minimal" = theme_minimal,
-    stop("Invalid theme_type")
-  )
+  p <- p + theme_tage(base_size = font_size, grid = "y") +
+    theme(legend.position = legend_position)
 
-  p <- p + theme_func(base_size = font_size) +
-    theme(
-      axis.text = element_text(size = font_size, color = "black"),
-      axis.title = element_text(size = font_size + 2, face = "bold"),
-      legend.position = legend_position,
-      strip.text = element_text(size = font_size, face = "bold")
-    )
-
-  if (!is.null(title)) p <- p + ggtitle(title)
-  p <- p + xlab(ifelse(!is.null(xlab), xlab, x_var))
-  p <- p + ylab(ifelse(!is.null(ylab), ylab, y_var))
+  p <- p + labs(title = title, subtitle = subtitle, caption = caption,
+                x = if (!is.null(xlab)) xlab else x_var,
+                y = if (!is.null(ylab)) ylab else y_var)
 
   return(p)
 }

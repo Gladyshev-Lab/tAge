@@ -8,18 +8,18 @@
 
 # One colour per outcome, kept identical to the Python package.
 TAGE_OUTCOME_COLORS <- c(
-  "Chronological" = "#c0392b",
-  "Mortality"     = "#2471a3",
-  "Lifespan"      = "#1e8449",
-  "NormalizedAge" = "#7d3c98"
+  "Chronological" = "#2a78d6",
+  "Mortality"     = "#e34948",
+  "Lifespan"      = "#4a3aa7",
+  "NormalizedAge" = "#4a3aa7"
 )
 TAGE_OUTCOME_ORDER <- c("Chronological", "NormalizedAge", "Lifespan", "Mortality")
 
 TAGE_OUTCOME_UNITS <- c(
   "Chronological" = "months",
   "Mortality"     = "log10 hazard ratio",
-  "Lifespan"      = "fraction of maximum lifespan",
-  "NormalizedAge" = "fraction of maximum lifespan"
+  "Lifespan"      = "fraction of max lifespan",
+  "NormalizedAge" = "fraction of max lifespan"
 )
 
 # The registry writes "Normalized age"; the figures key panels by the
@@ -355,13 +355,15 @@ tage_clock_forest <- function(data,
   # The unit goes in the strip, because the x axis is shared down a column and
   # a single axis title cannot describe months and log10 hazard ratios at once.
   unit_by_outcome <- .tage_outcome_unit(levels(d$outcome_f), units)
+  pretty_outcome <- c(NormalizedAge = "Normalized age")[levels(d$outcome_f)]
+  pretty_outcome[is.na(pretty_outcome)] <- levels(d$outcome_f)[is.na(pretty_outcome)]
   strip <- ifelse(levels(d$outcome_f) == "Effect",
-                  "EFFECT",
-                  paste0(toupper(levels(d$outcome_f)), "  (", unit_by_outcome, ")"))
+                  "Effect",
+                  paste0(pretty_outcome, "\n(", unit_by_outcome, ")"))
   d$outcome_panel <- factor(strip[as.integer(d$outcome_f)], levels = strip)
 
   colours <- TAGE_OUTCOME_COLORS[levels(d$outcome_f)]
-  colours[is.na(colours)] <- "#555555"
+  colours[is.na(colours)] <- TAGE_TEXT_SECONDARY
   names(colours) <- strip
 
   if (identical(subtitle, NA)) {
@@ -382,15 +384,15 @@ tage_clock_forest <- function(data,
   }
 
   p <- ggplot2::ggplot(d) +
-    ggplot2::geom_vline(xintercept = 0, linetype = "dashed", linewidth = 0.4) +
+    ggplot2::geom_vline(xintercept = 0, colour = TAGE_AXIS_COLOR, linewidth = 0.4) +
     # geom_errorbar(orientation = "y") rather than the deprecated geom_errorbarh().
     ggplot2::geom_errorbar(
       ggplot2::aes(y = .data$clock_label, xmin = .data$ci_low, xmax = .data$ci_high,
                    group = .data$group2),
-      orientation = "y", width = 0.22, colour = "grey55", linewidth = 0.5,
+      orientation = "y", width = 0.22, colour = TAGE_TEXT_MUTED, linewidth = 0.45,
       position = ggplot2::position_dodge(width = 0.5)
     ) +
-    ggplot2::geom_point(aes_point, size = 2.6, stroke = 0.9,
+    ggplot2::geom_point(aes_point, size = 2.4, stroke = 0.8,
                         position = ggplot2::position_dodge(width = 0.5)) +
     # 21 is a filled circle, 1 a hollow one: significance is legible in print
     # and without colour.
@@ -399,7 +401,10 @@ tage_clock_forest <- function(data,
                   x = NULL, y = NULL)
 
   if (multi_group) {
-    p <- p + ggplot2::labs(colour = "vs reference", fill = "vs reference")
+    group_cols <- tage_series_colors(unique(as.character(d$group2)))
+    p <- p + ggplot2::labs(colour = "vs reference", fill = "vs reference") +
+      ggplot2::scale_colour_manual(values = group_cols) +
+      ggplot2::scale_fill_manual(values = group_cols)
   } else {
     p <- p + ggplot2::scale_colour_manual(values = colours, guide = "none") +
       ggplot2::scale_fill_manual(values = colours, guide = "none")
@@ -415,16 +420,13 @@ tage_clock_forest <- function(data,
 
   ref_lab <- unique(d$group1)[1]
   p <- p + ggplot2::labs(x = sprintf("effect vs %s", ref_lab)) +
-    ggplot2::theme_bw(base_size = base_size) +
+    theme_tage(base_size = base_size, grid = "x") +
     ggplot2::theme(
-      panel.grid.minor = ggplot2::element_blank(),
-      panel.grid.major.y = ggplot2::element_blank(),
-      strip.background = ggplot2::element_rect(fill = "grey95", colour = NA),
-      strip.text = ggplot2::element_text(face = "bold", size = base_size - 2),
-      plot.title = ggplot2::element_text(face = "bold", size = base_size + 1),
-      plot.subtitle = ggplot2::element_text(size = base_size - 2, colour = "grey30"),
-      plot.caption = ggplot2::element_text(size = base_size - 4, colour = "grey45"),
-      axis.text.y = ggplot2::element_text(size = base_size - 3)
+      axis.line.y = ggplot2::element_blank(),
+      axis.ticks.y = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_text(size = base_size - 2.5),
+      strip.text.y = ggplot2::element_text(angle = 0, hjust = 0),
+      panel.spacing = ggplot2::unit(10, "pt")
     )
 
   attr(p, "tage_stats") <- stats
@@ -520,7 +522,7 @@ tage_module_heatmap <- function(data,
                                 caption = NULL,
                                 base_size = 11,
                                 cell_height = 0.30,
-                                cell_width = 1.15,
+                                cell_width = 1.3,
                                 width = NULL,
                                 height = NULL,
                                 stats = NULL) {
@@ -562,7 +564,7 @@ tage_module_heatmap <- function(data,
     d <- merge(d, denom, by = "column", all.x = TRUE, sort = FALSE)
     d$fill <- d$estimate / d$denom
     lim <- if (is.null(limit)) 1.2 else limit
-    fill_lab <- sprintf("effect / %gth pct |effect| of the column", robust_pct)
+    fill_lab <- sprintf("effect /\n%gth pct |effect|\nof the column", robust_pct)
   } else {
     d$fill <- d$estimate
     lim <- if (is.null(limit)) max(abs(d$estimate), na.rm = TRUE) else limit
@@ -588,34 +590,33 @@ tage_module_heatmap <- function(data,
 
   p <- ggplot2::ggplot(d, ggplot2::aes(x = .data$column, y = .data$module_label,
                                        fill = .data$fill)) +
-    ggplot2::geom_tile(colour = "white", linewidth = 0.6)
+    ggplot2::geom_tile(colour = TAGE_SURFACE, linewidth = 1) +
+    # Column labels wrap on spaces so narrow cells do not collide.
+    ggplot2::scale_x_discrete(labels = function(x) gsub(" ", "\n", x))
 
   if (isTRUE(annotate)) {
+    # Ink on light cells, white on saturated ones; the ramp is symmetric so
+    # the threshold is on |fill|.
     p <- p + ggplot2::geom_text(
       ggplot2::aes(label = .data$text,
-                   colour = abs(.data$fill) > 0.72 * lim),
+                   colour = abs(.data$fill) > 0.55 * lim),
       size = base_size / 4.2, show.legend = FALSE
-    ) + ggplot2::scale_colour_manual(values = c(`FALSE` = "black", `TRUE` = "white"),
+    ) + ggplot2::scale_colour_manual(values = c(`FALSE` = TAGE_TEXT_PRIMARY, `TRUE` = TAGE_SURFACE),
                                      guide = "none")
   }
 
   p <- p +
-    ggplot2::scale_fill_gradient2(low = "#2166ac", mid = "#f7f7f7", high = "#b2182b",
-                                  midpoint = 0, limits = c(-lim, lim),
-                                  name = fill_lab) +
+    scale_fill_tage_diverging(limit = lim, name = fill_lab) +
     ggplot2::facet_wrap(~panel, nrow = 1) +
     ggplot2::labs(title = title, subtitle = subtitle, caption = caption,
                   x = NULL, y = NULL) +
-    ggplot2::theme_minimal(base_size = base_size) +
+    theme_tage(base_size = base_size, grid = "none") +
     ggplot2::theme(
-      panel.grid = ggplot2::element_blank(),
-      strip.text = ggplot2::element_text(face = "bold", size = base_size - 2),
-      plot.title = ggplot2::element_text(face = "bold", size = base_size + 1),
-      plot.subtitle = ggplot2::element_text(size = base_size - 2, colour = "grey30"),
-      plot.caption = ggplot2::element_text(size = base_size - 4, colour = "grey45"),
-      axis.text.y = ggplot2::element_text(size = base_size - 3),
-      legend.key.height = ggplot2::unit(1.1, "cm"),
-      legend.title = ggplot2::element_text(size = base_size - 3)
+      axis.line = ggplot2::element_blank(),
+      axis.ticks = ggplot2::element_blank(),
+      axis.text.y = ggplot2::element_text(size = base_size - 2),
+      legend.key.height = ggplot2::unit(0.9, "cm"),
+      legend.key.width = ggplot2::unit(0.3, "cm")
     )
 
   attr(p, "tage_stats") <- stats

@@ -24,9 +24,11 @@ tage_boxplot(
   p_label = "p.signif",
   p_threshold = NULL,
   min_group_n = 2,
-  font_size = 12,
-  theme_type = "classic",
+  font_size = 10,
+  theme_type = NULL,
   title = NULL,
+  subtitle = NULL,
+  caption = NULL,
   xlab = NULL,
   ylab = NULL,
   legend_position = "right",
@@ -51,8 +53,9 @@ column.}
 \item{subgroup_var}{Optional column name used to facet the plot. Default
 \code{NULL}.}
 
-\item{colors}{Optional named vector of fill colours, keyed by the levels of
-\code{x_var}.}
+\item{colors}{Optional colours keyed by the levels of \code{x_var}, overriding
+the default in which the reference group is grey and the other groups take
+the categorical slots of \code{\link{tage_series_colors}} in order.}
 
 \item{point_size, point_alpha}{Size and opacity of the jittered points.}
 
@@ -98,8 +101,7 @@ groups for a comparison to be shown. When faceting, every facet must meet it.}
 
 \item{font_size}{Base font size; also scales the annotation text.}
 
-\item{theme_type}{ggplot2 theme to apply, e.g. \code{"classic"} or
-\code{"minimal"}.}
+\item{theme_type}{Deprecated; figures follow \code{\link{theme_tage}}.}
 
 \item{title, xlab, ylab}{Plot title and axis labels.}
 

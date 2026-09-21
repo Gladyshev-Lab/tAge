@@ -179,7 +179,7 @@ remove_outliers <- function(
     }
 
     .plot_pca_outliers(pca_coords, var_explained, outlier_mask, maha_dist, threshold,
-                        title = "PCA \u2014 Outlier Detection")
+                        title = "PCA outlier detection")
   }
 
   if (sum(outlier_mask) == 0) return(eset)
@@ -223,7 +223,7 @@ remove_outliers <- function(
   if (verbose) {
     cat("    - PC1/PC2 IQR outliers:", sum(outlier), "\n")
     .plot_pca_outliers(scores, var_explained, outlier, rep(1, n_samples),
-                       threshold = iqr_factor, title = "PCA - IQR outliers")
+                       threshold = iqr_factor, title = "PCA outlier detection (IQR rule)")
   }
   if (!any(outlier)) return(eset)
   if (all(outlier)) {
@@ -270,21 +270,19 @@ remove_outliers <- function(
     maha_dist = maha_dist
   )
 
-  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$PC1, y = .data$PC2, color = .data$outlier, size = .data$maha_dist)) +
-    ggplot2::geom_point(alpha = 0.7) +
-    ggplot2::scale_color_manual(values = c("Inlier" = "steelblue", "Outlier" = "firebrick")) +
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$PC1, y = .data$PC2, fill = .data$outlier, size = .data$maha_dist)) +
+    ggplot2::geom_point(alpha = 0.9, shape = 21, colour = TAGE_SURFACE, stroke = 0.5) +
+    ggplot2::scale_fill_manual(values = c("Inlier" = TAGE_REFERENCE_COLOR, "Outlier" = "#e34948")) +
     ggplot2::scale_size_continuous(range = c(1.5, 5), guide = "none") +
     ggplot2::labs(
       title = title,
       x = paste0("PC1 (", round(var_explained[1], 1), "%)"),
       y = paste0("PC2 (", round(var_explained[2], 1), "%)"),
-      color = NULL,
-      caption = paste0("Threshold: ", round(threshold, 2),
-                        " | Outliers: ", sum(outlier_mask), "/", length(outlier_mask))
+      fill = NULL,
+      caption = paste0("threshold ", round(threshold, 2),
+                        " \u00b7 outliers ", sum(outlier_mask), "/", length(outlier_mask))
     ) +
-    ggplot2::theme_bw(base_size = 14) +
-    ggplot2::theme(legend.position = "top",
-                    plot.title = ggplot2::element_text(hjust = 0.5, face = "bold"))
+    theme_tage(base_size = 10, grid = "both")
 
   print(p)
 }
