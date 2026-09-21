@@ -112,16 +112,16 @@ plot_eset_density <- function(
 #' @param point_size,point_alpha Size and opacity of the jittered points.
 #' @param box_width Width of the boxes.
 #' @param stat_method Test used for the comparisons. \code{"emmeans"} (default)
-#'   uses \code{\link{tage_compare_groups}}, i.e. the estimated marginal-mean
-#'   contrasts of the reference application, which support covariates,
-#'   stratum-wise models and Bayesian ridge weighting. Any other value is
-#'   passed straight to \code{ggpubr::stat_compare_means} as before, e.g.
+#'   uses \code{\link{tage_compare_groups}}: estimated marginal-mean
+#'   contrasts, which support covariates, stratum-wise models and Bayesian
+#'   ridge weighting. Any other value is passed to
+#'   \code{ggpubr::stat_compare_means}, e.g.
 #'   \code{"t.test"} or \code{"wilcox.test"}.
 #' @param reference_group Reference level for \code{stat_method = "emmeans"}.
 #'   Default \code{NULL} uses the first level of \code{x_var}.
 #' @param covariates Covariate columns adjusted for when
 #'   \code{stat_method = "emmeans"}. Supplying them also switches the plotted
-#'   values to covariate-adjusted ones, matching the reference application.
+#'   values to covariate-adjusted ones (\code{\link{tage_adjust_covariates}}).
 #' @param se_column Column of per-sample prediction standard deviations for a
 #'   Bayesian ridge clock, enabling the meta-regression test. Default
 #'   \code{NULL}.
@@ -203,8 +203,6 @@ tage_boxplot <- function(
   width  = 10,
   height = 6
 ) {
-  if (!requireNamespace("ggpubr", quietly = TRUE)) stop("ggpubr required")
-
   options(repr.plot.width = width, repr.plot.height = height)
 
   if (!x_var %in% colnames(data)) stop("x_var not found in data")
@@ -242,8 +240,8 @@ tage_boxplot <- function(
       p_adjust_scope  = p_adjust_scope
     )
 
-    # Plot what the model tested: with covariates the reference application
-    # shows partial residuals rather than raw predictions.
+    # Plot what the model tested: with covariates, partial residuals rather
+    # than raw predictions.
     if (!is.null(covariates)) {
       data[[".tage_adjusted"]] <- tage_adjust_covariates(
         data, y_var, covariates, split_by = subgroup_var, se_column = se_column
@@ -362,6 +360,7 @@ tage_boxplot <- function(
 
       y_max_needed <- max(ann$y.position, na.rm = TRUE) + y_range_size * 0.08
 
+      .tage_require("ggpubr")
       p <- p + ggpubr::stat_pvalue_manual(
         ann,
         label      = "label",
@@ -382,6 +381,7 @@ tage_boxplot <- function(
     label_y_pos   <- y_start + y_range_size * 0.10 * seq(0, n_comp - 1)
     y_max_needed  <- max(label_y_pos) + y_range_size * 0.08
 
+    .tage_require("ggpubr")
     p <- p + ggpubr::stat_compare_means(
       method      = stat_method,
       comparisons = valid_comparisons,

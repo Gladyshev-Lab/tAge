@@ -53,6 +53,8 @@
   `tage_boxplot()` no longer calls `library()`. `png` and `robustbase` are
   listed in Suggests. The test helper downloads models through
   `download_clocks()`.
+* `tage_boxplot()` needs `ggpubr` only for the bracket layer it draws with
+  it; the pkgdown workflow installs it for the vignettes.
 * `download_clocks()` writes to `<file>.part` and renames only once the
   transfer is complete and checked, so an interrupted session cannot leave a
   truncated model under the real name. Non-ASCII characters in R sources are
