@@ -1,9 +1,9 @@
-# Species maximum lifespans (AnAge maximum longevity) that turn the clocks'
-# normalised age back into age units, and the units each species is reported
-# in. The paper text quotes 3.8 y for rat and 122 y for human.
+# Species maximum lifespans (AnAge maximum longevity, as used to train the
+# clocks: 4, 3.8, 39 and 122 years) that turn the clocks' normalised age back
+# into age units, and the units each species is reported in.
 .TAGE_SPECIES <- data.frame(
   species            = c("mouse", "rat", "human", "monkey"),
-  max_lifespan_years = c(4, 4.2, 122.5, 39),
+  max_lifespan_years = c(4, 3.8, 122, 39),
   default_units      = c("months", "months", "years", "years"),
   stringsAsFactors   = FALSE
 )

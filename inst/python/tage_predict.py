@@ -17,7 +17,9 @@ import numpy as np
 # _load_clock), not process-wide.
 
 
-PREDICTIONS_SPECIES_ADJ = {"human": 122.5, "mouse": 48, "rat": 50.4, "monkey": 39}
+# Species maximum lifespans in the default reporting units (months for
+# rodents, years for primates); used only when R does not pass output_factor.
+PREDICTIONS_SPECIES_ADJ = {"human": 122, "mouse": 48, "rat": 45.6, "monkey": 39}
 
 
 def _is_chronological_clock(model_path: Union[str, Path]) -> bool:

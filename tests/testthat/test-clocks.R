@@ -85,8 +85,9 @@ test_that("output scaling follows outcome, species and units", {
   chrono <- "EN_Chronoage_Mouse_Multitissue_scaleddiff.pkl"
   expect_equal(sc(chrono, "mouse", "auto", "fraction"), list(factor = 48, units = "months"))
   expect_equal(sc(chrono, "mouse", "years", "fraction"), list(factor = 4, units = "years"))
-  expect_equal(sc(chrono, "human", "auto", "fraction"), list(factor = 122.5, units = "years"))
-  expect_equal(sc(chrono, "human", "months", "fraction")$factor, 122.5 * 12)
+  expect_equal(sc(chrono, "human", "auto", "fraction"), list(factor = 122, units = "years"))
+  expect_equal(sc(chrono, "human", "months", "fraction")$factor, 122 * 12)
+  expect_equal(sc(chrono, "rat", "auto", "fraction"), list(factor = 45.6, units = "months"))
   na <- "EN_NormalizedAge_Mouse_Multitissue_scaleddiff.pkl"
   expect_equal(sc(na, "mouse", "auto", "fraction")$factor, 1)
   expect_equal(sc(na, "mouse", "auto", "percent"), list(factor = 100, units = "% of maximum lifespan"))
