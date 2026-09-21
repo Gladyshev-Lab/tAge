@@ -76,7 +76,7 @@ remove_outliers <- function(
     n_sub <- ncol(eset_sub)
 
     if (n_sub < min_samples) {
-      if (verbose) cat("  [", grp, "] ", n_sub, " samples — too few, keeping all\n")
+      if (verbose) cat("  [", grp, "] ", n_sub, " samples \u2014 too few, keeping all\n")
       keep_samples <- c(keep_samples, colnames(eset_sub))
       next
     }
@@ -134,7 +134,7 @@ remove_outliers <- function(
 
   # PCA on log-transformed counts
   log_data <- log10(expr_data + 1)
-  gene_vars <- apply(log_data, 1, var)
+  gene_vars <- apply(log_data, 1, stats::var)
   log_data <- log_data[gene_vars > 0, , drop = FALSE]
 
   pca_result <- prcomp(t(log_data), center = TRUE, scale. = TRUE, rank. = n_components)
@@ -148,7 +148,7 @@ remove_outliers <- function(
     cov_mat <- mcd$cov + diag(1e-6, n_components)
   } else {
     center <- colMeans(pca_coords)
-    cov_mat <- cov(pca_coords) + diag(1e-6, n_components)
+    cov_mat <- stats::cov(pca_coords) + diag(1e-6, n_components)
   }
 
   maha_dist <- mahalanobis(pca_coords, center, cov_mat)
@@ -179,7 +179,7 @@ remove_outliers <- function(
     }
 
     .plot_pca_outliers(pca_coords, var_explained, outlier_mask, maha_dist, threshold,
-                        title = "PCA — Outlier Detection")
+                        title = "PCA \u2014 Outlier Detection")
   }
 
   if (sum(outlier_mask) == 0) return(eset)
@@ -270,7 +270,7 @@ remove_outliers <- function(
     maha_dist = maha_dist
   )
 
-  p <- ggplot2::ggplot(df, ggplot2::aes(x = PC1, y = PC2, color = outlier, size = maha_dist)) +
+  p <- ggplot2::ggplot(df, ggplot2::aes(x = .data$PC1, y = .data$PC2, color = .data$outlier, size = .data$maha_dist)) +
     ggplot2::geom_point(alpha = 0.7) +
     ggplot2::scale_color_manual(values = c("Inlier" = "steelblue", "Outlier" = "firebrick")) +
     ggplot2::scale_size_continuous(range = c(1.5, 5), guide = "none") +

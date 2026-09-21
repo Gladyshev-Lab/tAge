@@ -67,7 +67,7 @@ load_h5ad_simple <- function(h5ad_path, python_path = NULL, verbose = TRUE) {
     )
 
     if (verbose) {
-      cat("✓ Successfully created Seurat object\n")
+      cat("\u2713 Successfully created Seurat object\n")
       cat("  - Cells:", ncol(seurat_obj), "\n")
       cat("  - Genes:", nrow(seurat_obj), "\n")
       cat("  - Metadata columns:", ncol(seurat_obj@meta.data), "\n")
@@ -164,7 +164,7 @@ subset_seurat_by_metadata <- function(
   seurat_subset <- subset(seurat_obj, cells = cell_names)
 
   if (verbose) {
-    cat("✓ Subsetting completed\n")
+    cat("\u2713 Subsetting completed\n")
     cat("  - Final cells:", ncol(seurat_subset), "\n")
     cat("  - Retained:", round(ncol(seurat_subset) / ncol(seurat_obj) * 100, 1), "%\n")
   }

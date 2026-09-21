@@ -71,7 +71,7 @@ aggregate_pseudobulk <- function(
   cum_totals <- cumsum(ordered_totals)
   group_assignments <- as.integer(cum_totals %/% coverage_threshold) + 1L
 
-  # Last group may not reach threshold — that's ok
+  # Last group may not reach threshold -- that's ok
   n_groups <- max(group_assignments)
 
   # Build sparse indicator matrix (cells x groups) for fast aggregation
@@ -252,7 +252,7 @@ aggregate_on_obs_columns <- function(
   )
 
   if (verbose) {
-    cat("✓ Combined pseudobulk aggregation completed\n")
+    cat("\u2713 Combined pseudobulk aggregation completed\n")
     cat("  - Total pseudobulk samples:", ncol(eset), "\n")
     cat("  - Total genes:", nrow(eset), "\n")
   }

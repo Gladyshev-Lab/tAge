@@ -97,7 +97,7 @@ plot_eset_density <- function(
 #' Draws a box plot with jittered points for one prediction column, split by a
 #' grouping variable and optionally faceted by a subgroup. Pairwise comparisons
 #' are annotated with brackets; comparisons involving groups with too few
-#' observations, and — when \code{p_threshold} is set — non-significant ones, are
+#' observations, and -- when \code{p_threshold} is set -- non-significant ones, are
 #' dropped before plotting so the panel stays readable.
 #'
 #' @param data Data frame of per-sample values, typically the prediction table
@@ -144,7 +144,7 @@ plot_eset_density <- function(
 #'   \code{"minimal"}.
 #' @param title,xlab,ylab Plot title and axis labels.
 #' @param legend_position Legend placement passed to \code{ggplot2::theme}.
-#' @param y_center If given, the y axis is made symmetric around this value —
+#' @param y_center If given, the y axis is made symmetric around this value --
 #'   useful for relative predictions centred on zero.
 #' @param y_min,y_max Explicit y-axis limits, overriding the automatic range.
 #' @param facet_scales Scale behaviour across facets, passed to
@@ -203,11 +203,7 @@ tage_boxplot <- function(
   width  = 10,
   height = 6
 ) {
-  if (!requireNamespace("ggplot2", quietly = TRUE)) stop("ggplot2 required")
   if (!requireNamespace("ggpubr", quietly = TRUE)) stop("ggpubr required")
-
-  library(ggplot2)
-  library(ggpubr)
 
   options(repr.plot.width = width, repr.plot.height = height)
 
@@ -386,7 +382,7 @@ tage_boxplot <- function(
     label_y_pos   <- y_start + y_range_size * 0.10 * seq(0, n_comp - 1)
     y_max_needed  <- max(label_y_pos) + y_range_size * 0.08
 
-    p <- p + stat_compare_means(
+    p <- p + ggpubr::stat_compare_means(
       method      = stat_method,
       comparisons = valid_comparisons,
       label       = p_label,

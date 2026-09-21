@@ -34,7 +34,7 @@ make_ExpressionSet <- function(exprs_data, phenodata, verbose = TRUE) {
   eset <- methods::new("ExpressionSet", exprs = as.matrix(exprs_data), phenoData = pheno)
 
   if (verbose) {
-    cat("✓ ExpressionSet created successfully\n")
+    cat("\u2713 ExpressionSet created successfully\n")
     cat("  - Number of genes:", nrow(eset), "\n")
     cat("  - Number of samples:", ncol(eset), "\n")
     plot_eset_density(eset, title = "Raw Data")
@@ -77,7 +77,7 @@ filter_genes <- function(exprs_set, count_threshold = 10, percent_threshold = 20
   filtered_set <- exprs_set[genes_passing, ]
 
   if (verbose) {
-    cat("✓ Gene filtering completed\n")
+    cat("\u2713 Gene filtering completed\n")
     cat("  - Number of genes before filtering:", nrow(exprs_set), "\n")
     cat("  - Number of genes after filtering:", nrow(filtered_set), "\n")
     cat("  - Percentage of genes retained:", round(nrow(filtered_set) / nrow(exprs_set) * 100, 1), "%\n")
@@ -120,7 +120,7 @@ RLE_normalization <- function(original_dataset, verbose = FALSE) {
   Biobase::exprs(RLE_dataset) <- sweep(Biobase::exprs(original_dataset), 2, edger.rle, "/") * 10^7
 
   if (verbose) {
-    cat("✓ RLE normalization completed\n")
+    cat("\u2713 RLE normalization completed\n")
     plot_eset_density(RLE_dataset, title = "RLE Normalized Data")
   }
 
@@ -221,7 +221,7 @@ log_transform <- function(eset, verbose = TRUE) {
   log_data <- log10(expr_data + 1)
   Biobase::exprs(eset_log_transformed) <- log_data
   if (verbose) {
-    cat("✓ Log transformation completed\n")
+    cat("\u2713 Log transformation completed\n")
     plot_eset_density(eset_log_transformed, title = "Log-Transformed Data", log_transform = FALSE)
   }
   return(eset_log_transformed)
@@ -257,7 +257,7 @@ scale_eset <- function(eset, verbose = TRUE) {
   scaled_data <- scale(expr_data)
   Biobase::exprs(eset_scaled) <- scaled_data
   if (verbose) {
-    cat("✓ Scaling completed\n")
+    cat("\u2713 Scaling completed\n")
     plot_eset_density(eset_scaled, title = "Scaled Data", log_transform = FALSE)
   }
   return(eset_scaled)
@@ -325,13 +325,13 @@ control_subtraction <- function(eset, column_name = NULL, control_label = NULL, 
 
   if (verbose) {
     if (is.null(column_name) || is.null(control_label)) {
-      cat("✓ Centring on all samples (overall per-gene median; no reference group specified).\n")
+      cat("\u2713 Centring on all samples (overall per-gene median; no reference group specified).\n")
       plot_eset_density(eset_final, title = "Centred on All Samples (Overall Median)")
     } else if (length(control_idx) == 0) {
-      cat("✓ No control samples found for label '", control_label, "'. Centring on all samples (overall median).\n", sep = "")
+      cat("\u2713 No control samples found for label '", control_label, "'. Centring on all samples (overall median).\n", sep = "")
       plot_eset_density(eset_final, title = "Subtraction using Overall Median")
     } else {
-      cat("✓ Control samples found for label '", control_label, "'. Using control group median for subtraction.\n", sep = "")
+      cat("\u2713 Control samples found for label '", control_label, "'. Using control group median for subtraction.\n", sep = "")
       plot_eset_density(eset_final, title = paste("Subtraction using Control Group (", control_label, ")", sep = ""))
     }
   }

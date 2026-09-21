@@ -90,7 +90,7 @@ One row per clock: the effect between two groups, whiskers spanning the
 confidence interval, filled when the adjusted p-value clears
 \code{sig_threshold} and hollow otherwise. Panels are laid out as outcome
 (rows) by stratum (columns). This is the figure to reach for when several
-clocks are applied to one comparison — a heatmap hides the uncertainty and a
+clocks are applied to one comparison -- a heatmap hides the uncertainty and a
 box plot per clock does not fit on a page.
 }
 \details{

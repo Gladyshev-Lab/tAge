@@ -289,7 +289,7 @@ tAge_by_group <- function(
   )
 
   if (verbose) {
-    cat("✓ Combined results:", nrow(combined), "samples from",
+    cat("\u2713 Combined results:", nrow(combined), "samples from",
         length(setdiff(names(counts), small)), "groups\n")
   }
   combined

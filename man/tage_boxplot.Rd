@@ -105,7 +105,7 @@ groups for a comparison to be shown. When faceting, every facet must meet it.}
 
 \item{legend_position}{Legend placement passed to \code{ggplot2::theme}.}
 
-\item{y_center}{If given, the y axis is made symmetric around this value —
+\item{y_center}{If given, the y axis is made symmetric around this value --
 useful for relative predictions centred on zero.}
 
 \item{y_min, y_max}{Explicit y-axis limits, overriding the automatic range.}
@@ -124,7 +124,7 @@ A \code{ggplot} object.
 Draws a box plot with jittered points for one prediction column, split by a
 grouping variable and optionally faceted by a subgroup. Pairwise comparisons
 are annotated with brackets; comparisons involving groups with too few
-observations, and — when \code{p_threshold} is set — non-significant ones, are
+observations, and -- when \code{p_threshold} is set -- non-significant ones, are
 dropped before plotting so the panel stays readable.
 }
 \examples{

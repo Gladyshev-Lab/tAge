@@ -211,7 +211,7 @@ tage_save_plot <- function(p, filename, width = NULL, height = NULL,
 #' confidence interval, filled when the adjusted p-value clears
 #' \code{sig_threshold} and hollow otherwise. Panels are laid out as outcome
 #' (rows) by stratum (columns). This is the figure to reach for when several
-#' clocks are applied to one comparison — a heatmap hides the uncertainty and a
+#' clocks are applied to one comparison -- a heatmap hides the uncertainty and a
 #' box plot per clock does not fit on a page.
 #'
 #' The statistics come from \code{\link{tage_compare_groups}}, so the figure and
@@ -366,7 +366,7 @@ tage_clock_forest <- function(data,
 
   if (identical(subtitle, NA)) {
     subtitle <- sprintf(
-      "point = effect, whiskers = %d%% CI · filled = %s < %s within panel",
+      "point = effect, whiskers = %d%% CI \u00b7 filled = %s < %s within panel",
       round(conf_level * 100), p_adjust, format(sig_threshold)
     )
   }
@@ -572,7 +572,7 @@ tage_module_heatmap <- function(data,
 
   funcs <- if (is.null(module_functions)) load_module_functions(modules_version) else module_functions
   pretty <- vapply(module_columns, function(m) {
-    if (!is.null(funcs) && m %in% names(funcs)) paste0(m, " — ", funcs[[m]]) else m
+    if (!is.null(funcs) && m %in% names(funcs)) paste0(m, " \u2014 ", funcs[[m]]) else m
   }, character(1))
   d$module_label <- factor(unname(pretty[as.character(d$module)]),
                            levels = rev(unname(pretty[module_columns])))
