@@ -7,7 +7,7 @@
 ## Citation
 
 Source:
-[`DESCRIPTION`](https://github.com/Gladyshev-Lab/tAge/blob/main/DESCRIPTION)
+[`DESCRIPTION`](https://github.com/Gladyshev-Lab/tAge/blob/1.4.0/DESCRIPTION)
 
 Glubokov D (2026). *tAge: tAge – Transcriptomic Biological Age Analysis
 Package*. R package version 1.4.0,
