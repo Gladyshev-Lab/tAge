@@ -40,6 +40,7 @@ reference:
   desc: Browse the registry of pre-trained models and fetch them from Zenodo.
   contents:
   - list_clocks
+  - list_module_clocks
   - download_clocks
   - tage_species
 

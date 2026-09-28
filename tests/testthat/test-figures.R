@@ -151,12 +151,12 @@ test_that("figures reject columns that are not in the data", {
 })
 
 test_that("module functions are looked up from the bundled annotation", {
-  funcs <- load_module_functions("4.6")
+  funcs <- load_module_functions("rodent")
   skip_if(length(funcs) == 0, "module annotation not installed")
   expect_true("blue" %in% names(funcs))
   expect_match(unname(funcs[["blue"]]), "Respiration|Mitochondrial|Muscle")
 
-  expect_true(length(load_module_functions("5.4")) > 0)
+  expect_true(length(load_module_functions("multispecies")) > 0)
   expect_true(length(load_module_functions("human")) > 0)
 })
 

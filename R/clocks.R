@@ -1,28 +1,43 @@
-# Registry of published transcriptomic clock models and helpers to list and
-# download them from Zenodo. The registry lists only the models that are
-# publicly available in the Zenodo record referenced below.
+# Registry of the published transcriptomic clock models and helpers to list
+# and download them from Zenodo. The registry mirrors the Zenodo record
+# referenced below: the composite clocks as single files and the module
+# clocks as two archives.
 
 # Zenodo record holding the published clock models.
-.TAGE_ZENODO_RECORD <- "18763485"
+.TAGE_ZENODO_RECORD <- "22166800"
 
-# Load the bundled clock registry.
+# Load a bundled registry table.
+.tage_registry <- function(file) {
+  path <- system.file("extdata", file, package = "tAge")
+  if (path == "") stop(file, " not found in the installed package.")
+  utils::read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
+}
+
 .clock_registry <- function() {
-  path <- system.file("extdata", "clocks_metadata.csv", package = "tAge")
-  if (path == "") {
-    stop("clocks_metadata.csv not found in the installed package.")
-  }
-  df <- utils::read.csv(path, stringsAsFactors = FALSE, check.names = FALSE)
+  df <- .tage_registry("clocks_metadata.csv")
   df$lifespan_scaled <- as.logical(df$lifespan_scaled)
   df
 }
 
-# What a clock predicts, from the registry or -- for models that are not in
-# it, such as the lab's internal and module clocks -- from the file name:
-# "Chronological", "Mortality", "Normalized age", "Lifespan" or NA.
+.module_clock_registry <- function() .tage_registry("module_clocks_metadata.csv")
+
+.tage_filter <- function(df, ...) {
+  filters <- list(...)
+  for (col in names(filters)) {
+    if (!is.null(filters[[col]])) df <- df[df[[col]] %in% filters[[col]], , drop = FALSE]
+  }
+  rownames(df) <- NULL
+  df
+}
+
+# What a clock predicts, from the registries or -- for models outside them --
+# from the file name: "Chronological", "Mortality", "Normalized age",
+# "Lifespan" or NA. Module clocks predict the same quantities as the composite
+# clocks and are scaled the same way.
 .clock_outcome <- function(model_path) {
   fn  <- basename(as.character(model_path))
-  reg <- tryCatch(.clock_registry(), error = function(e) NULL)
-  if (!is.null(reg)) {
+  for (reg in list(tryCatch(.clock_registry(), error = function(e) NULL),
+                   tryCatch(.module_clock_registry(), error = function(e) NULL))) {
     hit <- reg[reg$filename == fn, , drop = FALSE]
     if (nrow(hit) == 1) return(as.character(hit$outcome))
   }
@@ -66,24 +81,44 @@
 #' list_clocks(type = "EN", outcome = "Mortality")
 list_clocks <- function(type = NULL, outcome = NULL, species = NULL,
                         tissue = NULL, scaling = NULL) {
-  df <- .clock_registry()
-  keep <- function(df, col, val) if (is.null(val)) df else df[df[[col]] %in% val, , drop = FALSE]
-  df <- keep(df, "type", type)
-  df <- keep(df, "outcome", outcome)
-  df <- keep(df, "species", species)
-  df <- keep(df, "tissue", tissue)
-  df <- keep(df, "scaling", scaling)
-  rownames(df) <- NULL
-  df
+  .tage_filter(.clock_registry(), type = type, outcome = outcome, species = species,
+               tissue = tissue, scaling = scaling)
+}
+
+#' List available module clock models
+#'
+#' Returns the registry of published module clocks: one elastic net clock per
+#' co-expression module (plus \code{"allmodulegenes"}, trained on the genes of
+#' all modules), for the rodent and the multispecies module sets. Pass a
+#' returned (filtered) data frame to \code{\link{download_clocks}}, which
+#' fetches the archive each set is published as.
+#'
+#' @param outcome Character. "Chronological" or "Mortality". Default NULL.
+#' @param species Character. Module set: "Rodents" or "Multispecies". Default
+#'   NULL.
+#' @param color Character. Module colour(s), e.g. "blue". Default NULL.
+#' @return A data frame with columns \code{filename}, \code{type},
+#'   \code{outcome}, \code{species}, \code{tissue}, \code{scaling},
+#'   \code{color}, \code{function} (the module's annotated biological process)
+#'   and \code{archive} (the Zenodo archive holding the file).
+#' @export
+#' @examples
+#' list_module_clocks(outcome = "Mortality", species = "Rodents")
+list_module_clocks <- function(outcome = NULL, species = NULL, color = NULL) {
+  .tage_filter(.module_clock_registry(), outcome = outcome, species = species, color = color)
 }
 
 #' Download clock models from Zenodo
 #'
-#' Downloads the given clock model files from the Zenodo record and returns the
+#' Downloads the given clock models from the Zenodo record and returns the
 #' input augmented with a \code{path} column pointing to the local files.
+#' Composite clocks (\code{\link{list_clocks}}) are single files; module
+#' clocks (\code{\link{list_module_clocks}}) come in one archive per module
+#' set, which is downloaded once and unpacked into \code{dest_dir}.
 #'
-#' @param clocks Either a data frame returned by \code{\link{list_clocks}} (the
-#'   \code{filename} column is used) or a character vector of model file names.
+#' @param clocks A data frame returned by \code{\link{list_clocks}} or
+#'   \code{\link{list_module_clocks}}, or a character vector of composite clock
+#'   file names.
 #' @param dest_dir Directory to save the models into. Created if needed.
 #'   Default "clocks".
 #' @param record Character Zenodo record id. Defaults to the published record.
@@ -91,11 +126,13 @@ list_clocks <- function(type = NULL, outcome = NULL, species = NULL,
 #' @param quiet Logical. Suppress progress messages. Default FALSE.
 #' @param timeout Seconds allowed per file. R's default of 60 s aborts the
 #'   Bayesian ridge models, which are 0.9-2.4 GB each; elastic net models are
-#'   about 1 MB. Default 3600.
+#'   about 1 MB and the module clock archives under 1 MB. Default 3600.
 #' @return The \code{clocks} data frame with an added \code{path} column.
-#' @details A partial or failed download is removed rather than left on disk,
-#'   and every file is checked to be a pickle (Zenodo answers some errors with
-#'   an HTML page, which would otherwise be saved under the model's name).
+#' @details The whole record is about 64 GB, nearly all of it the 30 Bayesian
+#'   ridge models. A partial or failed download is removed rather than left on
+#'   disk, and every file is checked to be a pickle or a zip archive (Zenodo
+#'   answers some errors with an HTML page, which would otherwise be saved
+#'   under the model's name).
 #' @export
 #' @examples
 #' \dontrun{
@@ -106,6 +143,9 @@ list_clocks <- function(type = NULL, outcome = NULL, species = NULL,
 #'   scaled_diff = clocks$path[clocks$scaling == "Scaled"],
 #'   yugene_diff = clocks$path[clocks$scaling == "YuGene"]
 #' )
+#'
+#' modules <- download_clocks(list_module_clocks(outcome = "Mortality", species = "Rodents"),
+#'                            dest_dir = "clocks")
 #' }
 download_clocks <- function(clocks, dest_dir = "clocks",
                             record = .TAGE_ZENODO_RECORD,
@@ -113,7 +153,7 @@ download_clocks <- function(clocks, dest_dir = "clocks",
                             timeout = 3600) {
   if (is.data.frame(clocks)) {
     if (!"filename" %in% colnames(clocks)) {
-      stop("`clocks` data frame must have a 'filename' column (use list_clocks()).")
+      stop("`clocks` data frame must have a 'filename' column (use list_clocks() or list_module_clocks()).")
     }
     files <- as.character(clocks$filename)
   } else {
@@ -121,6 +161,7 @@ download_clocks <- function(clocks, dest_dir = "clocks",
     clocks <- data.frame(filename = files, stringsAsFactors = FALSE)
   }
   if (length(files) == 0) stop("No clocks to download.")
+  archives <- if ("archive" %in% colnames(clocks)) as.character(clocks$archive) else rep(NA_character_, length(files))
 
   dir.create(dest_dir, showWarnings = FALSE, recursive = TRUE)
   paths <- character(length(files))
@@ -129,16 +170,36 @@ download_clocks <- function(clocks, dest_dir = "clocks",
   on.exit(options(timeout = old_timeout), add = TRUE)
   options(timeout = max(old_timeout, timeout))
 
-  for (i in seq_along(files)) {
-    fn   <- files[i]
-    dest <- file.path(dest_dir, fn)
+  fetch <- function(name, dest) {
     if (file.exists(dest) && !overwrite) {
-      if (!quiet) message(sprintf("\u2713 Already present: %s", fn))
+      if (!quiet) message(sprintf("\u2713 Already present: %s", name))
+      return(invisible(FALSE))
+    }
+    url <- sprintf("https://zenodo.org/records/%s/files/%s?download=1",
+                   record, utils::URLencode(name, reserved = TRUE))
+    if (!quiet) message(sprintf("Downloading %s ...", name))
+    .tage_download_file(url, dest, quiet = quiet)
+    invisible(TRUE)
+  }
+
+  # Module clocks: one archive per set, unpacked into a folder of the same name.
+  for (archive in unique(archives[!is.na(archives)])) {
+    zip <- file.path(dest_dir, paste0(archive, ".zip"))
+    fresh <- fetch(paste0(archive, ".zip"), zip)
+    if (fresh || !dir.exists(file.path(dest_dir, archive))) {
+      utils::unzip(zip, exdir = dest_dir, overwrite = TRUE)
+    }
+  }
+
+  for (i in seq_along(files)) {
+    if (is.na(archives[i])) {
+      dest <- file.path(dest_dir, files[i])
+      fetch(files[i], dest)
     } else {
-      url <- sprintf("https://zenodo.org/records/%s/files/%s?download=1",
-                     record, utils::URLencode(fn, reserved = TRUE))
-      if (!quiet) message(sprintf("Downloading %s ...", fn))
-      .tage_download_file(url, dest, quiet = quiet)
+      dest <- file.path(dest_dir, archives[i], files[i])
+      if (!file.exists(dest)) {
+        stop(sprintf("%s is not in the unpacked archive %s.", files[i], archives[i]), call. = FALSE)
+      }
     }
     paths[i] <- dest
   }
@@ -171,12 +232,14 @@ download_clocks <- function(clocks, dest_dir = "clocks",
   invisible(dest)
 }
 
-# joblib pickles start with the pickle PROTO opcode (0x80); an HTML error page
-# starts with "<". Anything else that is empty is an aborted transfer.
+# joblib pickles start with the pickle PROTO opcode (0x80) and zip archives
+# with "PK"; an HTML error page starts with "<". Anything else that is empty
+# is an aborted transfer.
 .tage_check_download <- function(dest, shown_as = basename(dest)) {
   size <- file.info(dest)$size
-  first <- if (isTRUE(size > 0)) readBin(dest, "raw", n = 1L) else raw(0)
-  ok <- length(first) == 1L && first == as.raw(0x80)
+  first <- if (isTRUE(size > 0)) readBin(dest, "raw", n = 2L) else raw(0)
+  ok <- length(first) >= 1L &&
+    (first[1] == as.raw(0x80) || identical(first, charToRaw("PK")))
   if (!ok) {
     head <- if (length(first)) rawToChar(readBin(dest, "raw", n = min(size, 200L))) else ""
     unlink(dest)

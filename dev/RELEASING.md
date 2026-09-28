@@ -9,7 +9,7 @@ below.
 - **Paper-cited concept DOI:** `10.5281/zenodo.19039289` — always resolves to
   the *latest* version. The paper cites the 1.0.0 version DOI
   (`10.5281/zenodo.19039290`); each version also gets its own frozen version DOI.
-- **Clock models live in a separate record** (`10.5281/zenodo.18763485`).
+- **Clock models live in a separate record** (`10.5281/zenodo.18763484`, record 22166800).
   Releasing the R package does **not** touch it.
 - Use **"New version"**, never "Edit": a published record's files are
   immutable; "Edit" only changes metadata.

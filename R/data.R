@@ -4,7 +4,7 @@
 #' The data files are located in the inst/extdata directory and include:
 #' - Exprs_example.csv: Example expression data
 #' - Metadata_example.csv: Example metadata
-#' - Gene_list_all_4.6.txt: Gene list for analysis
+#' - Gene_list_rodent_clocks.txt: Gene list of the rodent clocks (mouse Entrez IDs)
 #'
 #' @param filename Character string specifying the name of the data file to retrieve.
 #' @return Character string with the full path to the requested data file.
@@ -17,7 +17,7 @@
 #' meta_path <- get_package_data("Metadata_example.csv")
 #' 
 #' # Get path to gene list
-#' gene_path <- get_package_data("Gene_list_all_4.6.txt")
+#' gene_path <- get_package_data("Gene_list_rodent_clocks.txt")
 get_package_data <- function(filename) {
   if (!file.exists(system.file("extdata", filename, package = "tAge"))) {
     available_files <- list.files(system.file("extdata", package = "tAge"))
@@ -65,7 +65,7 @@ load_example_metadata <- function() {
 #' gene_list <- load_gene_list()
 #' head(gene_list)
 load_gene_list <- function() {
-  gene_path <- get_package_data("Gene_list_all_4.6.txt")
+  gene_path <- get_package_data("Gene_list_rodent_clocks.txt")
   gene_list <- readLines(gene_path)
   gene_list <- gene_list[gene_list != ""]
   gene_list <- trimws(gene_list)

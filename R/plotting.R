@@ -6,8 +6,6 @@
 #'
 #' @param eset An ExpressionSet object containing expression data.
 #' @param title Character string for the plot title. Default is "Density Plot".
-#' @param subtitle,caption Subtitle (secondary ink) and a provenance caption
-#'   (muted ink) under the plot.
 #' @param log_transform Logical indicating whether to apply log2 transformation
 #'   before plotting. Default is TRUE.
 #' @param na_rm Logical indicating whether to remove NA values when computing densities.
@@ -150,6 +148,8 @@ plot_eset_density <- function(
 #' @param font_size Base font size; also scales the annotation text.
 #' @param theme_type Deprecated; figures follow \code{\link{theme_tage}}.
 #' @param title,xlab,ylab Plot title and axis labels.
+#' @param subtitle,caption Subtitle (secondary ink) and a provenance caption
+#'   (muted ink) under the plot.
 #' @param legend_position Legend placement passed to \code{ggplot2::theme}.
 #' @param y_center If given, the y axis is made symmetric around this value --
 #'   useful for relative predictions centred on zero.

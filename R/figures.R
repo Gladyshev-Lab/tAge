@@ -106,22 +106,20 @@ TAGE_OUTCOME_UNITS <- c(
 #' Reads the bundled annotation that names each co-expression module, e.g.
 #' \code{"blue"} -> \code{"Respiration/Mitochondrial translation"}.
 #'
-#' @param version Module set: \code{"4.6"} (default), \code{"5.4"} or
-#'   \code{"human"}.
+#' @param module_set Module set: \code{"rodent"} (default) or
+#'   \code{"multispecies"}, the two sets published with the clocks (see
+#'   \code{\link{list_module_clocks}}), or \code{"human"}.
 #'
 #' @return A named character vector, module colour to function, or an empty
 #'   vector when the annotation is unavailable.
 #'
 #' @examples
-#' head(load_module_functions("4.6"))
+#' head(load_module_functions("rodent"))
 #' @export
-load_module_functions <- function(version = c("4.6", "5.4", "human")) {
-  version <- match.arg(version)
-  file <- switch(version,
-                 "4.6"   = "Module_to_function_map.csv",
-                 "5.4"   = "Module_to_function_map_54.csv",
-                 "human" = "Module_to_function_annotation_human.csv")
-  path <- system.file("extdata", "modules", file, package = "tAge")
+load_module_functions <- function(module_set = c("rodent", "multispecies", "human")) {
+  module_set <- match.arg(module_set)
+  path <- system.file("extdata", "modules",
+                      sprintf("Module_to_function_map_%s.csv", module_set), package = "tAge")
   if (!nzchar(path) || !file.exists(path)) return(stats::setNames(character(0), character(0)))
   tab <- utils::read.csv(path, stringsAsFactors = FALSE)
   if (!all(c("Module", "Function") %in% names(tab))) {
@@ -466,8 +464,9 @@ tage_clock_forest <- function(data,
 #' @param covariates,split_by,variance_strata,standardize,p_adjust,p_adjust_scope
 #'   Passed to \code{\link{tage_module_stats}}.
 #' @param sig_threshold Adjusted p-value below which a cell is starred.
-#' @param modules_version Module set used for the row labels, one of
-#'   \code{"4.6"}, \code{"5.4"} or \code{"human"}.
+#' @param module_set Module set used for the row labels, one of
+#'   \code{"rodent"}, \code{"multispecies"} or \code{"human"}; see
+#'   \code{\link{load_module_functions}}.
 #' @param module_functions Named character vector overriding the bundled
 #'   module-to-function annotation.
 #' @param color_scale \code{"robust"} divides each column by its
@@ -510,7 +509,7 @@ tage_module_heatmap <- function(data,
                                 p_adjust = "BH",
                                 p_adjust_scope = "across_columns",
                                 sig_threshold = 0.05,
-                                modules_version = c("4.6", "5.4", "human"),
+                                module_set = c("rodent", "multispecies", "human"),
                                 module_functions = NULL,
                                 color_scale = c("robust", "absolute"),
                                 robust_pct = 95,
@@ -528,7 +527,7 @@ tage_module_heatmap <- function(data,
                                 stats = NULL) {
   .tage_gg_require()
   variance_strata <- match.arg(variance_strata)
-  modules_version <- match.arg(modules_version)
+  module_set <- match.arg(module_set)
   color_scale <- match.arg(color_scale)
 
   module_columns <- intersect(as.character(module_columns), colnames(data))
@@ -572,7 +571,7 @@ tage_module_heatmap <- function(data,
   }
   d$fill <- pmax(pmin(d$fill, lim), -lim)
 
-  funcs <- if (is.null(module_functions)) load_module_functions(modules_version) else module_functions
+  funcs <- if (is.null(module_functions)) load_module_functions(module_set) else module_functions
   pretty <- vapply(module_columns, function(m) {
     if (!is.null(funcs) && m %in% names(funcs)) paste0(m, " \u2014 ", funcs[[m]]) else m
   }, character(1))

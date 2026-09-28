@@ -17,7 +17,7 @@ This function provides access to example data files included with the tAge packa
 The data files are located in the inst/extdata directory and include:
 - Exprs_example.csv: Example expression data
 - Metadata_example.csv: Example metadata
-- Gene_list_all_4.6.txt: Gene list for analysis
+- Gene_list_rodent_clocks.txt: Gene list of the rodent clocks (mouse Entrez IDs)
 }
 \examples{
 # Get path to example expression data
@@ -27,5 +27,5 @@ expr_path <- get_package_data("Exprs_example.csv")
 meta_path <- get_package_data("Metadata_example.csv")
 
 # Get path to gene list
-gene_path <- get_package_data("Gene_list_all_4.6.txt")
+gene_path <- get_package_data("Gene_list_rodent_clocks.txt")
 }

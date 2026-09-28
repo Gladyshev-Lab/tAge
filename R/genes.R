@@ -132,7 +132,7 @@ map_genes <- function(eset,
     monkey_ens_map <- setNames(gene_table[["Ensembl"]], gene_table[[gene_mapping_type]])
   }
 
-  orthologs_path <- file.path(metadata_dir, "Orthologs_monkey_to_mouse_5.0.csv")
+  orthologs_path <- file.path(metadata_dir, "Orthologs_monkey_to_mouse.csv")
   orthologs      <- read.csv(orthologs_path, stringsAsFactors = FALSE, check.names = FALSE)
   orthologs      <- orthologs[!is.na(orthologs[["Entrez.mouse"]]), ]
   ortholog_map   <- setNames(orthologs[["Entrez.mouse"]], orthologs[["Ensembl.macaca"]])

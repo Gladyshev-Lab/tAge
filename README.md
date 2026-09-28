@@ -44,8 +44,9 @@ Sys.setenv(RETICULATE_PYTHON = ".venv/Scripts/python.exe")
 ## Clock models
 
 Models are published on Zenodo
-([record 18763485](https://zenodo.org/records/18763485)). You can list and
-download them directly from R:
+([record 22166800](https://zenodo.org/records/22166800)): 60 composite clocks
+as single files and the rodent and multispecies module clocks as two archives.
+The bundled registry mirrors the record; list and download from R:
 
 ```r
 library(tAge)
@@ -62,6 +63,11 @@ model_paths <- list(
   scaled_diff = clocks$path[clocks$scaling == "Scaled"],
   yugene_diff = clocks$path[clocks$scaling == "YuGene"]
 )
+
+# Module clocks: one file per co-expression module, fetched as one archive per
+# set ("Rodents" or "Multispecies") and unpacked into dest_dir
+modules <- download_clocks(list_module_clocks(outcome = "Mortality", species = "Rodents"),
+                           dest_dir = "clocks")
 ```
 
 ## Quick start
@@ -165,7 +171,7 @@ Two figures are built directly on those tests, and return the statistics as the
 | Function | Description |
 |---|---|
 | `tage_clock_forest()` | one clock per row, effect with 95% CI, filled = survives the correction |
-| `tage_module_heatmap()` | module effects as a heatmap, modules × strata |
+| `tage_module_heatmap()` | module effects as a heatmap, modules × strata; `module_set` ("rodent", "multispecies", "human") picks the row annotation |
 
 ```r
 p <- tage_clock_forest(

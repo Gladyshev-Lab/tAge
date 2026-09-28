@@ -35,7 +35,7 @@ test_that("monkey gene symbols map to mouse Entrez", {
 test_that("monkey genes without a mouse ortholog are dropped, not fatal", {
   gt  <- utils::read.csv(file.path(get_metadata_dir(), "Gene_table_monkey.csv"),
                          stringsAsFactors = FALSE)
-  orth <- utils::read.csv(file.path(get_metadata_dir(), "Orthologs_monkey_to_mouse_5.0.csv"),
+  orth <- utils::read.csv(file.path(get_metadata_dir(), "Orthologs_monkey_to_mouse.csv"),
                           stringsAsFactors = FALSE)
   no_ortholog <- setdiff(unique(gt$Ensembl[!is.na(gt$Ensembl)]), orth$Ensembl.macaca)
   with_ortholog <- intersect(unique(gt$Ensembl[!is.na(gt$Ensembl)]),

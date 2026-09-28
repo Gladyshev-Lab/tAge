@@ -40,9 +40,6 @@ name colours the samples and adds a legend when there are at most 20.}
 
 \item{legend_position}{Character string specifying legend position. Options include
 "topright", "topleft", "bottomright", "bottomleft", etc. Default is "topright".}
-
-\item{subtitle, caption}{Subtitle (secondary ink) and a provenance caption
-(muted ink) under the plot.}
 }
 \value{
 Invisibly returns NULL. Creates a density plot.

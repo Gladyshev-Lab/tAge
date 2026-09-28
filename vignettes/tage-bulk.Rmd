@@ -94,8 +94,8 @@ species is recorded in these objects, so `predict_tAge()` does not need it.
 
 # 3. Browse and download clocks
 
-The published clocks live on Zenodo; list them from R (reads the bundled
-registry):
+The published clocks live on Zenodo (record 22166800); list them from R
+(reads the bundled registry):
 
 ```{r list-clocks}
 head(list_clocks(type = "EN", outcome = "Mortality"))
@@ -231,8 +231,10 @@ tage_boxplot(
 cat("> _Figures skipped along with the prediction step._\n")
 ```
 
-When the clocks are module clocks, `tage_module_heatmap()` is the equivalent
-figure: modules on the rows, strata on the columns, effects in the cells.
+When the clocks are module clocks (`list_module_clocks()`),
+`tage_module_heatmap()` is the equivalent figure: modules on the rows, strata
+on the columns, effects in the cells, with `module_set` naming the row
+annotation.
 
 # 7. Interpreting the output
 

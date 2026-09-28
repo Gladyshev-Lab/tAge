@@ -15,7 +15,7 @@ suppressMessages(requireNamespace("Biobase", quietly = TRUE))
 # Download (and cache) a clock model from Zenodo for prediction tests.
 # Returns the local path, or NULL if the download failed / no network.
 .tage_test_model <- function(filename,
-                             record = "18763485") {
+                             record = "22166800") {
   cache <- tools::R_user_dir("tAge", "cache")
   dir.create(cache, showWarnings = FALSE, recursive = TRUE)
   dest <- file.path(cache, filename)

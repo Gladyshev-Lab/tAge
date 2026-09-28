@@ -4,11 +4,12 @@
 \alias{load_module_functions}
 \title{Module colour to biological function map}
 \usage{
-load_module_functions(version = c("4.6", "5.4", "human"))
+load_module_functions(module_set = c("rodent", "multispecies", "human"))
 }
 \arguments{
-\item{version}{Module set: \code{"4.6"} (default), \code{"5.4"} or
-\code{"human"}.}
+\item{module_set}{Module set: \code{"rodent"} (default) or
+\code{"multispecies"}, the two sets published with the clocks (see
+\code{\link{list_module_clocks}}), or \code{"human"}.}
 }
 \value{
 A named character vector, module colour to function, or an empty
@@ -19,5 +20,5 @@ Reads the bundled annotation that names each co-expression module, e.g.
 \code{"blue"} -> \code{"Respiration/Mitochondrial translation"}.
 }
 \examples{
-head(load_module_functions("4.6"))
+head(load_module_functions("rodent"))
 }

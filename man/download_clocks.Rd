@@ -14,8 +14,9 @@ download_clocks(
 )
 }
 \arguments{
-\item{clocks}{Either a data frame returned by \code{\link{list_clocks}} (the
-\code{filename} column is used) or a character vector of model file names.}
+\item{clocks}{A data frame returned by \code{\link{list_clocks}} or
+\code{\link{list_module_clocks}}, or a character vector of composite clock
+file names.}
 
 \item{dest_dir}{Directory to save the models into. Created if needed.
 Default "clocks".}
@@ -28,19 +29,24 @@ Default "clocks".}
 
 \item{timeout}{Seconds allowed per file. R's default of 60 s aborts the
 Bayesian ridge models, which are 0.9-2.4 GB each; elastic net models are
-about 1 MB. Default 3600.}
+about 1 MB and the module clock archives under 1 MB. Default 3600.}
 }
 \value{
 The \code{clocks} data frame with an added \code{path} column.
 }
 \description{
-Downloads the given clock model files from the Zenodo record and returns the
+Downloads the given clock models from the Zenodo record and returns the
 input augmented with a \code{path} column pointing to the local files.
+Composite clocks (\code{\link{list_clocks}}) are single files; module
+clocks (\code{\link{list_module_clocks}}) come in one archive per module
+set, which is downloaded once and unpacked into \code{dest_dir}.
 }
 \details{
-A partial or failed download is removed rather than left on disk,
-  and every file is checked to be a pickle (Zenodo answers some errors with
-  an HTML page, which would otherwise be saved under the model's name).
+The whole record is about 64 GB, nearly all of it the 30 Bayesian
+  ridge models. A partial or failed download is removed rather than left on
+  disk, and every file is checked to be a pickle or a zip archive (Zenodo
+  answers some errors with an HTML page, which would otherwise be saved
+  under the model's name).
 }
 \examples{
 \dontrun{
@@ -51,5 +57,8 @@ model_paths <- list(
   scaled_diff = clocks$path[clocks$scaling == "Scaled"],
   yugene_diff = clocks$path[clocks$scaling == "YuGene"]
 )
+
+modules <- download_clocks(list_module_clocks(outcome = "Mortality", species = "Rodents"),
+                           dest_dir = "clocks")
 }
 }

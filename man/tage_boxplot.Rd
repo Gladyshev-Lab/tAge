@@ -105,6 +105,9 @@ groups for a comparison to be shown. When faceting, every facet must meet it.}
 
 \item{title, xlab, ylab}{Plot title and axis labels.}
 
+\item{subtitle, caption}{Subtitle (secondary ink) and a provenance caption
+(muted ink) under the plot.}
+
 \item{legend_position}{Legend placement passed to \code{ggplot2::theme}.}
 
 \item{y_center}{If given, the y axis is made symmetric around this value --

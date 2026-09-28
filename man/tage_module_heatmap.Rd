@@ -17,7 +17,7 @@ tage_module_heatmap(
   p_adjust = "BH",
   p_adjust_scope = "across_columns",
   sig_threshold = 0.05,
-  modules_version = c("4.6", "5.4", "human"),
+  module_set = c("rodent", "multispecies", "human"),
   module_functions = NULL,
   color_scale = c("robust", "absolute"),
   robust_pct = 95,
@@ -29,7 +29,7 @@ tage_module_heatmap(
   caption = NULL,
   base_size = 11,
   cell_height = 0.3,
-  cell_width = 1.15,
+  cell_width = 1.3,
   width = NULL,
   height = NULL,
   stats = NULL
@@ -51,8 +51,9 @@ facet. \code{NULL} uses every other level.}
 
 \item{sig_threshold}{Adjusted p-value below which a cell is starred.}
 
-\item{modules_version}{Module set used for the row labels, one of
-\code{"4.6"}, \code{"5.4"} or \code{"human"}.}
+\item{module_set}{Module set used for the row labels, one of
+\code{"rodent"}, \code{"multispecies"} or \code{"human"}; see
+\code{\link{load_module_functions}}.}
 
 \item{module_functions}{Named character vector overriding the bundled
 module-to-function annotation.}

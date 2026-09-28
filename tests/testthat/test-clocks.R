@@ -69,13 +69,14 @@ test_that("download_clocks raises the timeout only while it runs", {
   expect_equal(getOption("timeout"), 60)
 })
 
-test_that("clock outcomes are recognised from registry and internal names", {
+test_that("clock outcomes are recognised from registry, module and internal names", {
   co <- tAge:::.clock_outcome
   expect_equal(co("EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl"), "Mortality")
   expect_equal(co("BR_NormalizedAge_Rodents_Liver_yugenediff.pkl"), "Normalized age")
   expect_equal(co("/x/EN_Hazard_All_All_All_scaleddiff.pkl"), "Mortality")
   expect_equal(co("EN_Relage999_Mouse_All_All_yugenediff.pkl"), "Normalized age")
-  expect_equal(co("EN_Chronoage_blue_Rodents_All_WT_scaleddiff.pkl"), "Chronological")
+  expect_equal(co("EN_Moduleclock_Chronoage_Rodents_Multitissue_blue_scaleddiff.pkl"), "Chronological")
+  expect_equal(co("EN_Moduleclock_Mortality_Multispecies_Multitissue_blue_scaleddiff.pkl"), "Mortality")
   expect_equal(co("EN_Lifespan_Rodents_All_All_scaleddiff.pkl"), "Lifespan")
   expect_true(is.na(co("Ovarian_clock_scaleddiff_EN.pkl")))
 })
@@ -114,4 +115,40 @@ test_that("a download lands under its final name only once complete", {
   expect_true(file.exists(dest))
   expect_false(file.exists(paste0(dest, ".part")))
   expect_equal(readBin(dest, "raw", 4), as.raw(c(0x80, 0x05, 0x95, 0x00)))
+})
+
+test_that("list_module_clocks returns the two published module sets", {
+  mods <- list_module_clocks()
+  expect_equal(nrow(mods), 78)
+  expect_setequal(unique(mods$archive), c("Rodent module clocks", "Multispecies module clocks"))
+  expect_true(all(c("filename", "outcome", "species", "color", "function", "archive") %in% colnames(mods)))
+  blue <- list_module_clocks(outcome = "Mortality", species = "Rodents", color = "blue")
+  expect_equal(blue$filename, "EN_Moduleclock_Mortality_Rodents_Multitissue_blue_scaleddiff.pkl")
+  expect_equal(nrow(list_module_clocks(species = "Multispecies")), 30)
+})
+
+test_that("module clocks are scaled like the composite clock of the same outcome", {
+  expect_true(tAge:::.clock_lifespan_scaled(
+    "EN_Moduleclock_Chronoage_Rodents_Multitissue_blue_scaleddiff.pkl"))
+  expect_false(tAge:::.clock_lifespan_scaled(
+    "EN_Moduleclock_Mortality_Multispecies_Multitissue_pink_scaleddiff.pkl"))
+})
+
+test_that("module clock paths point into the unpacked archive", {
+  # The archive is already unpacked, so no transfer happens.
+  dir <- tempfile(); dir.create(dir)
+  mods <- list_module_clocks(outcome = "Chronological", species = "Multispecies")
+  archive <- unique(mods$archive)
+  dir.create(file.path(dir, archive))
+  writeBin(as.raw(c(0x50, 0x4b, 0x03, 0x04)), file.path(dir, paste0(archive, ".zip")))
+  for (fn in mods$filename) writeBin(as.raw(0x80), file.path(dir, archive, fn))
+  res <- download_clocks(mods, dest_dir = dir, quiet = TRUE)
+  expect_equal(res$path, file.path(dir, archive, mods$filename))
+  expect_true(all(file.exists(res$path)))
+})
+
+test_that("a zip archive passes the download check", {
+  zip <- tempfile(fileext = ".zip")
+  writeBin(as.raw(c(0x50, 0x4b, 0x03, 0x04)), zip)
+  expect_true(.tage_check_download(zip))
 })

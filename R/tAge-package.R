@@ -6,7 +6,7 @@
 # from many of its functions.
 #' @import ggplot2
 #' @importFrom stats median quantile prcomp mahalanobis qchisq setNames lm density var cov
-#' @importFrom graphics plot lines legend par plot.new text
+#' @importFrom graphics plot lines legend par plot.new text grid mtext
 #' @importFrom methods is new
 #' @importFrom utils read.csv head combn
 NULL
