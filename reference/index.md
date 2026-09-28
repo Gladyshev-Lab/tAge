@@ -24,6 +24,8 @@ Browse the registry of pre-trained models and fetch them from Zenodo.
 
 - [`list_clocks()`](https://gladyshev-lab.github.io/tAge/reference/list_clocks.md)
   : List available transcriptomic clock models
+- [`list_module_clocks()`](https://gladyshev-lab.github.io/tAge/reference/list_module_clocks.md)
+  : List available module clock models
 - [`download_clocks()`](https://gladyshev-lab.github.io/tAge/reference/download_clocks.md)
   : Download clock models from Zenodo
 - [`tage_species()`](https://gladyshev-lab.github.io/tAge/reference/tage_species.md)

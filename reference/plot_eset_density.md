@@ -65,11 +65,6 @@ plot_eset_density(
   "topright", "topleft", "bottomright", "bottomleft", etc. Default is
   "topright".
 
-- subtitle, caption:
-
-  Subtitle (secondary ink) and a provenance caption (muted ink) under
-  the plot.
-
 ## Value
 
 Invisibly returns NULL. Creates a density plot.

@@ -73,8 +73,8 @@ does not need it.
 
 ## 3. Browse and download clocks
 
-The published clocks live on Zenodo; list them from R (reads the bundled
-registry):
+The published clocks live on Zenodo (record 22166800); list them from R
+(reads the bundled registry):
 
 ``` r
 
@@ -258,10 +258,11 @@ tage_boxplot(
 
 ![](tage-bulk_files/figure-html/boxplot-1.png)
 
-When the clocks are module clocks,
+When the clocks are module clocks
+([`list_module_clocks()`](https://gladyshev-lab.github.io/tAge/reference/list_module_clocks.md)),
 [`tage_module_heatmap()`](https://gladyshev-lab.github.io/tAge/reference/tage_module_heatmap.md)
 is the equivalent figure: modules on the rows, strata on the columns,
-effects in the cells.
+effects in the cells, with `module_set` naming the row annotation.
 
 ## 7. Interpreting the output
 
@@ -320,7 +321,7 @@ sessionInfo()
 #> [1] stats     graphics  grDevices utils     datasets  methods   base     
 #> 
 #> other attached packages:
-#> [1] tAge_1.4.0
+#> [1] tAge_1.5.0
 #> 
 #> loaded via a namespace (and not attached):
 #>  [1] tidyr_1.3.2         sass_0.4.10         generics_0.1.4     

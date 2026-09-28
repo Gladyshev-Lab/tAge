@@ -1,5 +1,33 @@
 # Changelog
 
+## tAge 1.5.0
+
+### Clock registry
+
+- The registry is the Zenodo record 22166800: the 60 composite clocks
+  and, new, the published module clocks.
+  [`list_module_clocks()`](https://gladyshev-lab.github.io/tAge/reference/list_module_clocks.md)
+  lists the 78 elastic net module clocks of the rodent and multispecies
+  sets (one per co-expression module plus `allmodulegenes`,
+  chronological and mortality, Scaled normalisation) with their
+  annotated function and the archive each set is published as.
+  [`download_clocks()`](https://gladyshev-lab.github.io/tAge/reference/download_clocks.md)
+  accepts its output: the archive is downloaded once, unpacked into
+  `dest_dir`, and `path` points inside it. Downloads are checked to be a
+  pickle or a zip archive. Module clocks are scaled like the composite
+  clock of the same outcome.
+
+- Module sets are named `"rodent"`, `"multispecies"` and `"human"`:
+  `load_module_functions(module_set = )` and
+  `tage_module_heatmap(module_set = )` replace the `version` /
+  `modules_version` arguments. The bundled annotation files are
+  `Module_to_function_map_<set>.csv`.
+
+- Bundled data files renamed: `Gene_list_rodent_clocks.txt` (the gene
+  list of the rodent clocks, read by
+  [`load_gene_list()`](https://gladyshev-lab.github.io/tAge/reference/load_gene_list.md))
+  and `metadata/Orthologs_monkey_to_mouse.csv`.
+
 ## tAge 1.4.0
 
 ### New features

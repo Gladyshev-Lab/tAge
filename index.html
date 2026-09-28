@@ -32,7 +32,7 @@
 
     <a class="navbar-brand me-2" href="index.html">tAge</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -95,7 +95,7 @@
 <div class="section level2">
 <h2 id="clock-models">Clock models<a class="anchor" aria-label="anchor" href="#clock-models"></a>
 </h2>
-<p>Models are published on Zenodo (<a href="https://zenodo.org/records/18763485" class="external-link">record 18763485</a>). You can list and download them directly from R:</p>
+<p>Models are published on Zenodo (<a href="https://zenodo.org/records/22166800" class="external-link">record 22166800</a>): 60 composite clocks as single files and the rodent and multispecies module clocks as two archives. The bundled registry mirrors the record; list and download from R:</p>
 <div class="sourceCode" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="kw"><a href="https://rdrr.io/r/base/library.html" class="external-link">library</a></span><span class="op">(</span><span class="va"><a href="https://github.com/Gladyshev-Lab/tAge" class="external-link">tAge</a></span><span class="op">)</span></span>
 <span></span>
@@ -110,7 +110,12 @@
 <span><span class="va">model_paths</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>  scaled_diff <span class="op">=</span> <span class="va">clocks</span><span class="op">$</span><span class="va">path</span><span class="op">[</span><span class="va">clocks</span><span class="op">$</span><span class="va">scaling</span> <span class="op">==</span> <span class="st">"Scaled"</span><span class="op">]</span>,</span>
 <span>  yugene_diff <span class="op">=</span> <span class="va">clocks</span><span class="op">$</span><span class="va">path</span><span class="op">[</span><span class="va">clocks</span><span class="op">$</span><span class="va">scaling</span> <span class="op">==</span> <span class="st">"YuGene"</span><span class="op">]</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># Module clocks: one file per co-expression module, fetched as one archive per</span></span>
+<span><span class="co"># set ("Rodents" or "Multispecies") and unpacked into dest_dir</span></span>
+<span><span class="va">modules</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/download_clocks.html">download_clocks</a></span><span class="op">(</span><span class="fu"><a href="reference/list_module_clocks.html">list_module_clocks</a></span><span class="op">(</span>outcome <span class="op">=</span> <span class="st">"Mortality"</span>, species <span class="op">=</span> <span class="st">"Rodents"</span><span class="op">)</span>,</span>
+<span>                           dest_dir <span class="op">=</span> <span class="st">"clocks"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div class="section level2">
 <h2 id="quick-start">Quick start<a class="anchor" aria-label="anchor" href="#quick-start"></a>
@@ -236,7 +241,7 @@
 </tr>
 <tr>
 <td><code><a href="reference/tage_module_heatmap.html">tage_module_heatmap()</a></code></td>
-<td>module effects as a heatmap, modules × strata</td>
+<td>module effects as a heatmap, modules × strata; <code>module_set</code> (“rodent”, “multispecies”, “human”) picks the row annotation</td>
 </tr>
 </tbody>
 </table>

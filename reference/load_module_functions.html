@@ -9,7 +9,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tAge</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -35,7 +35,7 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Module colour to biological function map</h1>
-      <small class="dont-index">Source: <a href="https://github.com/Gladyshev-Lab/tAge/blob/1.4.0/R/figures.R" class="external-link"><code>R/figures.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Gladyshev-Lab/tAge/blob/main/R/figures.R" class="external-link"><code>R/figures.R</code></a></small>
       <div class="d-none name"><code>load_module_functions.Rd</code></div>
     </div>
 
@@ -46,16 +46,17 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">load_module_functions</span><span class="op">(</span>version <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"4.6"</span>, <span class="st">"5.4"</span>, <span class="st">"human"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">load_module_functions</span><span class="op">(</span>module_set <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rodent"</span>, <span class="st">"multispecies"</span>, <span class="st">"human"</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-version">version<a class="anchor" aria-label="anchor" href="#arg-version"></a></dt>
-<dd><p>Module set: <code>"4.6"</code> (default), <code>"5.4"</code> or
-<code>"human"</code>.</p></dd>
+<dl><dt id="arg-module-set">module_set<a class="anchor" aria-label="anchor" href="#arg-module-set"></a></dt>
+<dd><p>Module set: <code>"rodent"</code> (default) or
+<code>"multispecies"</code>, the two sets published with the clocks (see
+<code><a href="list_module_clocks.html">list_module_clocks</a></code>), or <code>"human"</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -66,7 +67,7 @@
 
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">load_module_functions</span><span class="op">(</span><span class="st">"4.6"</span><span class="op">)</span><span class="op">)</span></span></span>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu">load_module_functions</span><span class="op">(</span><span class="st">"rodent"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                   black                                    blue </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>         "Myogenesis/Muscle contraction" "Respiration/Mitochondrial translation" </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                                   brown                                    cyan </span>

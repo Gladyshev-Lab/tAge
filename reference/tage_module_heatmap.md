@@ -23,7 +23,7 @@ tage_module_heatmap(
   p_adjust = "BH",
   p_adjust_scope = "across_columns",
   sig_threshold = 0.05,
-  modules_version = c("4.6", "5.4", "human"),
+  module_set = c("rodent", "multispecies", "human"),
   module_functions = NULL,
   color_scale = c("robust", "absolute"),
   robust_pct = 95,
@@ -35,7 +35,7 @@ tage_module_heatmap(
   caption = NULL,
   base_size = 11,
   cell_height = 0.3,
-  cell_width = 1.15,
+  cell_width = 1.3,
   width = NULL,
   height = NULL,
   stats = NULL
@@ -75,10 +75,11 @@ tage_module_heatmap(
 
   Adjusted p-value below which a cell is starred.
 
-- modules_version:
+- module_set:
 
-  Module set used for the row labels, one of `"4.6"`, `"5.4"` or
-  `"human"`.
+  Module set used for the row labels, one of `"rodent"`,
+  `"multispecies"` or `"human"`; see
+  [`load_module_functions`](https://gladyshev-lab.github.io/tAge/reference/load_module_functions.md).
 
 - module_functions:
 

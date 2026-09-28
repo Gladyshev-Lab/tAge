@@ -6,14 +6,17 @@ Reads the bundled annotation that names each co-expression module, e.g.
 ## Usage
 
 ``` r
-load_module_functions(version = c("4.6", "5.4", "human"))
+load_module_functions(module_set = c("rodent", "multispecies", "human"))
 ```
 
 ## Arguments
 
-- version:
+- module_set:
 
-  Module set: `"4.6"` (default), `"5.4"` or `"human"`.
+  Module set: `"rodent"` (default) or `"multispecies"`, the two sets
+  published with the clocks (see
+  [`list_module_clocks`](https://gladyshev-lab.github.io/tAge/reference/list_module_clocks.md)),
+  or `"human"`.
 
 ## Value
 
@@ -23,7 +26,7 @@ when the annotation is unavailable.
 ## Examples
 
 ``` r
-head(load_module_functions("4.6"))
+head(load_module_functions("rodent"))
 #>                                   black                                    blue 
 #>         "Myogenesis/Muscle contraction" "Respiration/Mitochondrial translation" 
 #>                                   brown                                    cyan 

@@ -7,7 +7,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tAge</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -33,9 +33,18 @@
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Changelog</h1>
-      <small>Source: <a href="https://github.com/Gladyshev-Lab/tAge/blob/1.4.0/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
+      <small>Source: <a href="https://github.com/Gladyshev-Lab/tAge/blob/main/NEWS.md" class="external-link"><code>NEWS.md</code></a></small>
     </div>
 
+    <div class="section level2">
+<h2 class="pkg-version" data-toc-text="1.5.0" id="tage-150">tAge 1.5.0<a class="anchor" aria-label="anchor" href="#tage-150"></a></h2>
+<div class="section level3">
+<h3 id="clock-registry-1-5-0">Clock registry<a class="anchor" aria-label="anchor" href="#clock-registry-1-5-0"></a></h3>
+<ul><li><p>The registry is the Zenodo record 22166800: the 60 composite clocks and, new, the published module clocks. <code><a href="../reference/list_module_clocks.html">list_module_clocks()</a></code> lists the 78 elastic net module clocks of the rodent and multispecies sets (one per co-expression module plus <code>allmodulegenes</code>, chronological and mortality, Scaled normalisation) with their annotated function and the archive each set is published as. <code><a href="../reference/download_clocks.html">download_clocks()</a></code> accepts its output: the archive is downloaded once, unpacked into <code>dest_dir</code>, and <code>path</code> points inside it. Downloads are checked to be a pickle or a zip archive. Module clocks are scaled like the composite clock of the same outcome.</p></li>
+<li><p>Module sets are named <code>"rodent"</code>, <code>"multispecies"</code> and <code>"human"</code>: <code>load_module_functions(module_set = )</code> and <code>tage_module_heatmap(module_set = )</code> replace the <code>version</code> / <code>modules_version</code> arguments. The bundled annotation files are <code>Module_to_function_map_&lt;set&gt;.csv</code>.</p></li>
+<li><p>Bundled data files renamed: <code>Gene_list_rodent_clocks.txt</code> (the gene list of the rodent clocks, read by <code><a href="../reference/load_gene_list.html">load_gene_list()</a></code>) and <code>metadata/Orthologs_monkey_to_mouse.csv</code>.</p></li>
+</ul></div>
+</div>
     <div class="section level2">
 <h2 class="pkg-version" data-toc-text="1.4.0" id="tage-140">tAge 1.4.0<a class="anchor" aria-label="anchor" href="#tage-140"></a></h2>
 <div class="section level3">

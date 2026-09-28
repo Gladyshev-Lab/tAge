@@ -26,7 +26,7 @@
 
     <a class="navbar-brand me-2" href="../index.html">tAge</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -67,7 +67,7 @@
 Lab</h4>
             
       
-      <small class="dont-index">Source: <a href="https://github.com/Gladyshev-Lab/tAge/blob/1.4.0/vignettes/tage-bulk.Rmd" class="external-link"><code>vignettes/tage-bulk.Rmd</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Gladyshev-Lab/tAge/blob/main/vignettes/tage-bulk.Rmd" class="external-link"><code>vignettes/tage-bulk.Rmd</code></a></small>
       <div class="d-none name"><code>tage-bulk.Rmd</code></div>
     </div>
 
@@ -140,8 +140,8 @@ these objects, so <code><a href="../reference/predict_tAge.html">predict_tAge()<
 <div class="section level2">
 <h2 id="browse-and-download-clocks">3. Browse and download clocks<a class="anchor" aria-label="anchor" href="#browse-and-download-clocks"></a>
 </h2>
-<p>The published clocks live on Zenodo; list them from R (reads the
-bundled registry):</p>
+<p>The published clocks live on Zenodo (record 22166800); list them from
+R (reads the bundled registry):</p>
 <div class="sourceCode" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="../reference/list_clocks.html">list_clocks</a></span><span class="op">(</span>type <span class="op">=</span> <span class="st">"EN"</span>, outcome <span class="op">=</span> <span class="st">"Mortality"</span><span class="op">)</span><span class="op">)</span></span>
 <span><span class="co">#&gt;                                               filename type   outcome</span></span>
@@ -308,9 +308,11 @@ agree with the table above.</p>
 <span>  ylab         <span class="op">=</span> <span class="st">"Mortality tAge, log10 HR"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
 <p><img src="tage-bulk_files/figure-html/boxplot-1.png" class="r-plt" alt="" width="768"></p>
-<p>When the clocks are module clocks, <code><a href="../reference/tage_module_heatmap.html">tage_module_heatmap()</a></code>
+<p>When the clocks are module clocks
+(<code><a href="../reference/list_module_clocks.html">list_module_clocks()</a></code>), <code><a href="../reference/tage_module_heatmap.html">tage_module_heatmap()</a></code>
 is the equivalent figure: modules on the rows, strata on the columns,
-effects in the cells.</p>
+effects in the cells, with <code>module_set</code> naming the row
+annotation.</p>
 </div>
 <div class="section level2">
 <h2 id="interpreting-the-output">7. Interpreting the output<a class="anchor" aria-label="anchor" href="#interpreting-the-output"></a>
@@ -403,7 +405,7 @@ section 2 does with <code>split_by = "Tissue"</code>.</li>
 <span><span class="co">#&gt; [1] stats     graphics  grDevices utils     datasets  methods   base     </span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; other attached packages:</span></span>
-<span><span class="co">#&gt; [1] tAge_1.4.0</span></span>
+<span><span class="co">#&gt; [1] tAge_1.5.0</span></span>
 <span><span class="co">#&gt; </span></span>
 <span><span class="co">#&gt; loaded via a namespace (and not attached):</span></span>
 <span><span class="co">#&gt;  [1] tidyr_1.3.2         sass_0.4.10         generics_0.1.4     </span></span>

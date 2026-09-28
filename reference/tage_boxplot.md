@@ -157,6 +157,11 @@ tage_boxplot(
 
   Plot title and axis labels.
 
+- subtitle, caption:
+
+  Subtitle (secondary ink) and a provenance caption (muted ink) under
+  the plot.
+
 - legend_position:
 
   Legend placement passed to

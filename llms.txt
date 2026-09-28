@@ -47,8 +47,10 @@ Sys.setenv(RETICULATE_PYTHON = ".venv/Scripts/python.exe")
 ## Clock models
 
 Models are published on Zenodo ([record
-18763485](https://zenodo.org/records/18763485)). You can list and
-download them directly from R:
+22166800](https://zenodo.org/records/22166800)): 60 composite clocks as
+single files and the rodent and multispecies module clocks as two
+archives. The bundled registry mirrors the record; list and download
+from R:
 
 ``` r
 
@@ -66,6 +68,11 @@ model_paths <- list(
   scaled_diff = clocks$path[clocks$scaling == "Scaled"],
   yugene_diff = clocks$path[clocks$scaling == "YuGene"]
 )
+
+# Module clocks: one file per co-expression module, fetched as one archive per
+# set ("Rodents" or "Multispecies") and unpacked into dest_dir
+modules <- download_clocks(list_module_clocks(outcome = "Mortality", species = "Rodents"),
+                           dest_dir = "clocks")
 ```
 
 ## Quick start
@@ -177,7 +184,7 @@ as the `"tage_stats"` attribute:
 | Function | Description |
 |----|----|
 | [`tage_clock_forest()`](https://gladyshev-lab.github.io/tAge/reference/tage_clock_forest.md) | one clock per row, effect with 95% CI, filled = survives the correction |
-| [`tage_module_heatmap()`](https://gladyshev-lab.github.io/tAge/reference/tage_module_heatmap.md) | module effects as a heatmap, modules × strata |
+| [`tage_module_heatmap()`](https://gladyshev-lab.github.io/tAge/reference/tage_module_heatmap.md) | module effects as a heatmap, modules × strata; `module_set` (“rodent”, “multispecies”, “human”) picks the row annotation |
 
 ``` r
 
@@ -332,6 +339,8 @@ Browse the registry of pre-trained models and fetch them from Zenodo.
 
 - [`list_clocks()`](https://gladyshev-lab.github.io/tAge/reference/list_clocks.md)
   : List available transcriptomic clock models
+- [`list_module_clocks()`](https://gladyshev-lab.github.io/tAge/reference/list_module_clocks.md)
+  : List available module clock models
 - [`download_clocks()`](https://gladyshev-lab.github.io/tAge/reference/download_clocks.md)
   : Download clock models from Zenodo
 - [`tage_species()`](https://gladyshev-lab.github.io/tAge/reference/tage_species.md)

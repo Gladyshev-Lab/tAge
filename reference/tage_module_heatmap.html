@@ -15,7 +15,7 @@ of its column while the printed number stays in the original units."><meta prope
 
     <a class="navbar-brand me-2" href="../index.html">tAge</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.4.0</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">1.5.0</small>
 
 
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -41,7 +41,7 @@ of its column while the printed number stays in the original units."><meta prope
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
       <img src="../logo.svg" class="logo" alt=""><h1>Heatmap of module-clock effects</h1>
-      <small class="dont-index">Source: <a href="https://github.com/Gladyshev-Lab/tAge/blob/1.4.0/R/figures.R" class="external-link"><code>R/figures.R</code></a></small>
+      <small class="dont-index">Source: <a href="https://github.com/Gladyshev-Lab/tAge/blob/main/R/figures.R" class="external-link"><code>R/figures.R</code></a></small>
       <div class="d-none name"><code>tage_module_heatmap.Rd</code></div>
     </div>
 
@@ -68,7 +68,7 @@ of its column while the printed number stays in the original units.</p>
 <span>  p_adjust <span class="op">=</span> <span class="st">"BH"</span>,</span>
 <span>  p_adjust_scope <span class="op">=</span> <span class="st">"across_columns"</span>,</span>
 <span>  sig_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  modules_version <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"4.6"</span>, <span class="st">"5.4"</span>, <span class="st">"human"</span><span class="op">)</span>,</span>
+<span>  module_set <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rodent"</span>, <span class="st">"multispecies"</span>, <span class="st">"human"</span><span class="op">)</span>,</span>
 <span>  module_functions <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color_scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"robust"</span>, <span class="st">"absolute"</span><span class="op">)</span>,</span>
 <span>  robust_pct <span class="op">=</span> <span class="fl">95</span>,</span>
@@ -80,7 +80,7 @@ of its column while the printed number stays in the original units.</p>
 <span>  caption <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  base_size <span class="op">=</span> <span class="fl">11</span>,</span>
 <span>  cell_height <span class="op">=</span> <span class="fl">0.3</span>,</span>
-<span>  cell_width <span class="op">=</span> <span class="fl">1.15</span>,</span>
+<span>  cell_width <span class="op">=</span> <span class="fl">1.3</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  stats <span class="op">=</span> <span class="cn">NULL</span></span>
@@ -120,9 +120,10 @@ facet. <code>NULL</code> uses every other level.</p></dd>
 <dd><p>Adjusted p-value below which a cell is starred.</p></dd>
 
 
-<dt id="arg-modules-version">modules_version<a class="anchor" aria-label="anchor" href="#arg-modules-version"></a></dt>
+<dt id="arg-module-set">module_set<a class="anchor" aria-label="anchor" href="#arg-module-set"></a></dt>
 <dd><p>Module set used for the row labels, one of
-<code>"4.6"</code>, <code>"5.4"</code> or <code>"human"</code>.</p></dd>
+<code>"rodent"</code>, <code>"multispecies"</code> or <code>"human"</code>; see
+<code><a href="load_module_functions.html">load_module_functions</a></code>.</p></dd>
 
 
 <dt id="arg-module-functions">module_functions<a class="anchor" aria-label="anchor" href="#arg-module-functions"></a></dt>
