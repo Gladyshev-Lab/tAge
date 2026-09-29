@@ -68,7 +68,7 @@ of its column while the printed number stays in the original units.</p>
 <span>  p_adjust <span class="op">=</span> <span class="st">"BH"</span>,</span>
 <span>  p_adjust_scope <span class="op">=</span> <span class="st">"across_columns"</span>,</span>
 <span>  sig_threshold <span class="op">=</span> <span class="fl">0.05</span>,</span>
-<span>  module_set <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"rodent"</span>, <span class="st">"multispecies"</span>, <span class="st">"human"</span><span class="op">)</span>,</span>
+<span>  module_set <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  module_functions <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color_scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"robust"</span>, <span class="st">"absolute"</span><span class="op">)</span>,</span>
 <span>  robust_pct <span class="op">=</span> <span class="fl">95</span>,</span>
@@ -123,12 +123,15 @@ facet. <code>NULL</code> uses every other level.</p></dd>
 <dt id="arg-module-set">module_set<a class="anchor" aria-label="anchor" href="#arg-module-set"></a></dt>
 <dd><p>Module set used for the row labels, one of
 <code>"rodent"</code>, <code>"multispecies"</code> or <code>"human"</code>; see
-<code><a href="load_module_functions.html">load_module_functions</a></code>.</p></dd>
+<code><a href="load_module_functions.html">load_module_functions</a></code>. Either this or
+<code>module_functions</code> is required: a module colour names a different
+module in each set.</p></dd>
 
 
 <dt id="arg-module-functions">module_functions<a class="anchor" aria-label="anchor" href="#arg-module-functions"></a></dt>
-<dd><p>Named character vector overriding the bundled
-module-to-function annotation.</p></dd>
+<dd><p>Named character vector, module column to
+function, used instead of the bundled annotation; <code>character(0)</code>
+labels the rows by module name only.</p></dd>
 
 
 <dt id="arg-color-scale">color_scale<a class="anchor" aria-label="anchor" href="#arg-color-scale"></a></dt>

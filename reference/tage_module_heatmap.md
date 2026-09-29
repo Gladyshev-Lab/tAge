@@ -23,7 +23,7 @@ tage_module_heatmap(
   p_adjust = "BH",
   p_adjust_scope = "across_columns",
   sig_threshold = 0.05,
-  module_set = c("rodent", "multispecies", "human"),
+  module_set = NULL,
   module_functions = NULL,
   color_scale = c("robust", "absolute"),
   robust_pct = 95,
@@ -80,11 +80,14 @@ tage_module_heatmap(
   Module set used for the row labels, one of `"rodent"`,
   `"multispecies"` or `"human"`; see
   [`load_module_functions`](https://gladyshev-lab.github.io/tAge/reference/load_module_functions.md).
+  Either this or `module_functions` is required: a module colour names a
+  different module in each set.
 
 - module_functions:
 
-  Named character vector overriding the bundled module-to-function
-  annotation.
+  Named character vector, module column to function, used instead of the
+  bundled annotation; `character(0)` labels the rows by module name
+  only.
 
 - color_scale:
 
