@@ -24,7 +24,6 @@ Suggests:
     ggrepel,
     ggpubr,
     png,
-    robustbase,
     Seurat,
     SeuratDisk,
     BiocManager,

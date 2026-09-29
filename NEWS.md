@@ -17,6 +17,17 @@
 
 ## Breaking changes
 
+* `flag_outliers()` replaces `remove_outliers()`, as `tage.pp.flag_outliers`
+  does in the Python package, with the same numbers. It flags, in the
+  phenoData, samples whose log2(CPM + 1) profile (genes with mean CPM >= 10)
+  is far from the median profile of their stratum -- robust z of `1 - r` above
+  5 -- and leaves the removal to the caller
+  (`eset[, !eset$tage_outlier]`). `method = "pca_iqr"` is the paper's PC1/PC2
+  1.5-IQR rule on the same input. The removed detectors ran PCA on
+  log10(raw counts), where PC1 follows sequencing depth; in strata of a dozen
+  samples the 1.5-IQR rule removed normal samples in most strata. `robustbase`
+  is no longer suggested.
+
 * `tage_module_heatmap()` and `load_module_functions()` no longer default to
   the rodent module set: pass `module_set` (or `module_functions`). A module
   colour names a different module in each set -- 7 of the 8 colours shared by

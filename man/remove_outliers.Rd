@@ -2,61 +2,17 @@
 % Please edit documentation in R/outliers.R
 \name{remove_outliers}
 \alias{remove_outliers}
-\title{Remove outlier samples}
+\title{Not available: use flag_outliers()}
 \usage{
-remove_outliers(
-  eset,
-  n_components = 10,
-  threshold_quantile = 0.99,
-  split_by = NULL,
-  min_samples = 10,
-  verbose = TRUE,
-  method = c("mahalanobis", "pca_iqr", "spearman_median"),
-  iqr_factor = 1.5,
-  cor_threshold = 0.5
-)
+remove_outliers(...)
 }
 \arguments{
-\item{eset}{An ExpressionSet object.}
-
-\item{n_components}{Integer. Number of PCA components (Mahalanobis). Default 10.}
-
-\item{threshold_quantile}{Numeric in (0,1). Chi-squared quantile for the
-Mahalanobis cutoff. Default 0.99.}
-
-\item{split_by}{Character or NULL. Column in pData to split by before
-outlier detection. If NULL, all samples are analyzed together. Default NULL.}
-
-\item{min_samples}{Integer. Minimum samples in a group to run outlier
-detection. Groups below this are kept as-is. Default 10.}
-
-\item{verbose}{Logical. Default TRUE.}
-
-\item{method}{One of \code{"mahalanobis"}, \code{"pca_iqr"},
-\code{"spearman_median"}.}
-
-\item{iqr_factor}{Numeric. Interquartile-range multiplier for
-\code{"pca_iqr"}. Default 1.5.}
-
-\item{cor_threshold}{Numeric. Minimum Spearman correlation with the group
-median profile for \code{"spearman_median"}. Default 0.5.}
+\item{...}{Ignored.}
 }
 \value{
-ExpressionSet with outlier samples removed.
+Does not return; raises an error pointing to \code{\link{flag_outliers}}.
 }
 \description{
-Three detectors are available, all working on \code{log10(counts + 1)}
-within each level of \code{split_by} (tissue, dataset, cell type):
-\describe{
-  \item{\code{"mahalanobis"}}{(default) robust Mahalanobis distance in
-    PCA space (MCD covariance, chi-squared cutoff at
-    \code{threshold_quantile}) plus PC1/PC2 beyond 3 IQR.}
-  \item{\code{"pca_iqr"}}{the paper's rule for bulk data: samples whose
-    PC1 or PC2 score lies more than \code{iqr_factor} (1.5) interquartile
-    ranges below the first or above the third quartile.}
-  \item{\code{"spearman_median"}}{the paper's rule for the integrated
-    meta-dataset: samples whose Spearman correlation with the median
-    expression profile of their group is below \code{cor_threshold}
-    (0.5).}
+Not available: use flag_outliers()
 }
-}
+\keyword{internal}

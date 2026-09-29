@@ -65,7 +65,7 @@ reference:
   - aggregate_pseudobulk
   - aggregate_on_obs_columns
   - pseudobulk_summary
-  - remove_outliers
+  - flag_outliers
   - load_h5ad_simple
   - load_h5ad_to_seurat
   - subset_seurat_by_metadata
