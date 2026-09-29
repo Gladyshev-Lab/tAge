@@ -405,3 +405,22 @@ test_that("column names that are not syntactic work in every model", {
   cont <- tage_regress_continuous(d, "Normalized age", "Age (months)")
   expect_equal(cont$estimate, tage_regress_continuous(d, "tAge", "Age")$estimate)
 })
+
+test_that("a covariate with one level in a stratum is left out, not the stratum", {
+  d <- .stats_fixture()
+  d$Sex[d$Tissue == "Kidney"] <- "M"                       # one sex in the kidney
+  with_sex <- tage_compare_groups(d, "tAge", "Genotype", "WT", covariates = "Sex",
+                                  split_by = "Tissue", p_adjust = "none")
+  expect_setequal(unique(with_sex$split), c("Kidney", "Muscle"))
+  without <- tage_compare_groups(d[d$Tissue == "Kidney", ], "tAge", "Genotype", "WT",
+                                 p_adjust = "none")
+  kidney <- with_sex[with_sex$split == "Kidney", ]
+  expect_equal(kidney$estimate, without$estimate, tolerance = 1e-12)
+  expect_equal(kidney$p_value, without$p_value, tolerance = 1e-12)
+
+  br <- tage_compare_groups(d, "tAge", "Genotype", "WT", covariates = "Sex",
+                            split_by = "Tissue", se_columns = "tAge_sd", p_adjust = "none")
+  expect_setequal(unique(br$split), c("Kidney", "Muscle"))
+  adj <- tage_adjust_covariates(d, "tAge", "Sex", split_by = "Tissue", se_column = "tAge_sd")
+  expect_false(anyNA(adj))
+})

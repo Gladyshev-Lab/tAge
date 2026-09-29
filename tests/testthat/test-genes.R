@@ -115,3 +115,25 @@ test_that("an unknown species is an error", {
   expect_error(map_genes(eset, "rhesus", verbose = FALSE), "Unknown species")
   expect_error(tAge_preprocessing(eset, species = "rhesus", verbose = FALSE), "Unknown species")
 })
+
+test_that("round Entrez IDs survive the ortholog step (no scientific notation)", {
+  # Rat Entrez 500000 would be named "5e+05" if grouped as a number and then
+  # match nothing in the ortholog table; its mouse ortholog is a clock gene.
+  orth <- read.csv(file.path(get_metadata_dir(), "Table_of_orthologs.csv"))
+  mouse <- as.character(orth$Entrez.Mouse[which(orth$Entrez.Rat == 500000)])
+  others <- as.character(head(orth$Entrez.Rat[!is.na(orth$Entrez.Rat) & !is.na(orth$Entrez.Mouse)], 5))
+  out <- suppressMessages(map_genes(.eset_from_ids(c("500000", others)), "rat", "Entrez", verbose = FALSE))
+  expect_true(mouse %in% rownames(out))
+  expect_equal(unname(nrow(out)), 6L)
+})
+
+test_that("identifiers collapsing onto one Entrez ID are summed", {
+  gt <- read.csv(file.path(get_metadata_dir(), "Gene_table_mouse.csv"))
+  gt <- gt[!is.na(gt$Entrez) & !is.na(gt$Ensembl), ]
+  entrez <- gt$Entrez[duplicated(gt$Entrez)][1]
+  ids <- head(gt$Ensembl[gt$Entrez == entrez], 2)
+  eset <- .eset_from_ids(ids)
+  out <- map_genes(eset, "mouse", "Ensembl", verbose = FALSE)
+  expect_equal(rownames(out), as.character(entrez))
+  expect_equal(unname(Biobase::exprs(out)[1, ]), unname(colSums(Biobase::exprs(eset))))
+})

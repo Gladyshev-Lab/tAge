@@ -1,3 +1,27 @@
+# tAge (development version)
+
+## Bug fixes
+
+* `tAge_preprocessing()` refuses input that is not raw counts -- missing,
+  negative or non-integer values (TPM, CPM, log data), with the tolerance the
+  Python package uses -- and a `control_group_column` that does not exist or a
+  `control_group_label` that no sample carries; both used to fall back to
+  centring on all samples with a warning. A stratum of `split_by` without
+  reference samples is still centred on itself with a warning.
+  `control_subtraction()` refuses a column that does not exist.
+
+* `map_genes()` keeps Entrez IDs as text from integers when summing
+  identifiers that collapse onto one gene. Grouping on the numbers named round
+  IDs in scientific notation (rat 500000 became `"5e+05"`), so they matched
+  nothing in the ortholog table and were dropped; rat 500000 is the ortholog of
+  the clock gene 64945. Duplicates are summed with `rowsum()`.
+
+* The statistics leave out a categorical covariate that has a single level in
+  the data a model is fitted on (e.g. `Sex` in an all-male stratum) instead of
+  skipping the stratum on `lm()`'s "contrasts can be applied only to factors
+  with 2 or more levels". The Python package already fitted these strata; the
+  two now agree.
+
 # tAge 1.5.0
 
 ## Clock registry

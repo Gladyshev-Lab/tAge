@@ -158,12 +158,15 @@ map_genes <- function(eset,
   if (!any(valid)) stop("No gene could be mapped to Entrez IDs.", call. = FALSE)
 
   expr_valid <- Biobase::exprs(eset)[valid, , drop = FALSE]
-  mapped_ids <- unname(mapped[valid])
+  # Entrez IDs as text built from integers: grouping on the numbers would name
+  # round IDs in scientific notation ("5e+05" for rat 500000), which then match
+  # nothing in the ortholog table.
+  mapped_int <- as.integer(unname(mapped[valid]))
+  mapped_ids <- factor(as.character(mapped_int),
+                       levels = as.character(sort(unique(mapped_int))))
 
-  # Aggregate duplicates by summing
-  expr_agg <- apply(expr_valid, 2, function(x) {
-    tapply(x, mapped_ids, sum)
-  })
+  # Identifiers that collapse onto one Entrez ID are summed.
+  expr_agg <- rowsum(expr_valid, mapped_ids)
 
   # Track which original genes mapped to each Entrez ID
   original_genes_map <- tapply(

@@ -90,6 +90,21 @@ tage_significance_stars <- function(p) {
   ifelse(make.names(x) == x, x, paste0("`", gsub("`", "\\`", x), "`"))
 }
 
+# A categorical covariate with a single level in the data a model is fitted
+# on (Sex when a stratum holds only males) carries no information there, and
+# lm() refuses it ("contrasts can be applied only to factors with 2 or more
+# levels"), which would drop the whole stratum. It is left out of that model,
+# as treatment coding does in the Python package. Constant numeric covariates
+# stay: they are collinear with the intercept and reported as such.
+.tage_varying_covariates <- function(df, covariates) {
+  if (is.null(covariates)) return(NULL)
+  keep <- vapply(covariates, function(cv) {
+    x <- df[[cv]]
+    !(is.factor(x) || is.character(x) || is.logical(x)) || length(unique(x[!is.na(x)])) > 1L
+  }, logical(1))
+  if (any(keep)) covariates[keep] else NULL
+}
+
 .tage_rhs <- function(terms) {
   paste(.tage_bt(terms), collapse = " + ")
 }
@@ -200,6 +215,7 @@ tage_significance_stars <- function(p) {
 # qdrg() on z-tests.
 # Returns the emmeans object, or a character string saying why the fit failed.
 .tage_fit_emm <- function(df, response, group_column, covariates, se_column) {
+  covariates <- .tage_varying_covariates(df, covariates)
   rhs <- .tage_rhs(c(group_column, covariates))
 
   if (is.na(se_column)) {
@@ -582,7 +598,7 @@ tage_regress_continuous <- function(data,
         next
       }
 
-      rhs <- .tage_rhs(c(predictor, covariates))
+      rhs <- .tage_rhs(c(predictor, .tage_varying_covariates(df, covariates)))
       term <- .tage_bt(predictor)   # coefficient names keep the backticks
 
       if (is.na(se_col)) {
@@ -771,8 +787,9 @@ tage_module_stats <- function(data,
                                levels = c(reference_group, g2))
       y <- df[[mc]]
 
-      if (!is.null(covariates)) {
-        cov_fml <- stats::as.formula(paste(.tage_bt(mc), "~", .tage_rhs(covariates)))
+      varying <- .tage_varying_covariates(df, covariates)
+      if (!is.null(varying)) {
+        cov_fml <- stats::as.formula(paste(.tage_bt(mc), "~", .tage_rhs(varying)))
         cov_model <- try(stats::lm(cov_fml, data = df), silent = TRUE)
         if (inherits(cov_model, "try-error")) {
           .tage_skip(mc, base$split[i], paste("standardised effect not computed:", .tage_try_reason(cov_model)))
@@ -867,6 +884,11 @@ tage_adjust_covariates <- function(data,
   if (!any(ok)) return(out)
 
   if (is.null(se_column)) {
+    covariates <- .tage_varying_covariates(data[ok, , drop = FALSE], covariates)
+    if (is.null(covariates)) {
+      out[ok] <- data[[value_column]][ok]
+      return(out)
+    }
     rhs <- .tage_rhs(c(split_by, covariates))
     fml <- stats::as.formula(paste(.tage_bt(value_column), "~", rhs))
     model <- stats::lm(fml, data = data[ok, , drop = FALSE])
@@ -891,10 +913,14 @@ tage_adjust_covariates <- function(data,
   }
 
   .tage_require("metafor")
-  mods <- stats::as.formula(paste("~", .tage_rhs(covariates)))
   sub <- data[ok, , drop = FALSE]
+  .mods <- function(part) {
+    varying <- .tage_varying_covariates(part, covariates)
+    stats::as.formula(paste("~", if (is.null(varying)) "1" else .tage_rhs(varying)))
+  }
 
   if (is.null(split_by)) {
+    mods <- .mods(sub)
     model <- metafor::rma.uni(yi = sub[[value_column]], sei = sub[[se_column]],
                               mods = mods, data = sub, method = "REML")
     # Residuals are centred on zero; add the mean back so the adjusted values
@@ -907,6 +933,7 @@ tage_adjust_covariates <- function(data,
   for (lev in unique(as.character(sub[[split_by]]))) {
     sel <- as.character(sub[[split_by]]) == lev
     part <- sub[sel, , drop = FALSE]
+    mods <- .mods(part)
     model <- try(
       metafor::rma.uni(yi = part[[value_column]], sei = part[[se_column]],
                        mods = mods, data = part, method = "REML"),

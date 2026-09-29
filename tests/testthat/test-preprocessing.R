@@ -117,3 +117,38 @@ test_that("gene filtering uses the paper's default thresholds", {
   f25 <- filter_genes(eset, percent_threshold = 25, verbose = FALSE)
   expect_lte(nrow(f25), nrow(f20))
 })
+
+test_that("normalised or broken input is refused", {
+  eset <- .tage_example_eset()
+  x <- Biobase::exprs(eset)
+  tpm <- eset; Biobase::exprs(tpm) <- sweep(x, 2, colSums(x), "/") * 1e6
+  expect_error(tAge_preprocessing(tpm, verbose = FALSE), "non-integer")
+  neg <- eset; Biobase::exprs(neg)[1, 1] <- -1
+  expect_error(tAge_preprocessing(neg, verbose = FALSE), "negative")
+  na <- eset; Biobase::exprs(na)[1, 1] <- NA
+  expect_error(tAge_preprocessing(na, verbose = FALSE), "missing values")
+})
+
+test_that("a misspelt reference column or label is an error, not a silent fallback", {
+  eset <- .tage_example_eset()
+  expect_error(tAge_preprocessing(eset, verbose = FALSE, control_group_column = "Genotyp",
+                                  control_group_label = "WT"), "not a column")
+  expect_error(tAge_preprocessing(eset, verbose = FALSE, control_group_column = "Genotype",
+                                  control_group_label = "Wt"), "No sample has")
+  expect_error(tAge_preprocessing(eset, verbose = FALSE, control_group_column = "Genotype"),
+               "together")
+  expect_error(control_subtraction(eset, "Genotyp", "WT", verbose = FALSE), "not a column")
+})
+
+test_that("a stratum without reference samples is still only warned about", {
+  eset <- .tage_example_eset()
+  wt_kidney <- eset$Tissue == "Kidney" & eset$Genotype == "WT"
+  eset <- eset[, !wt_kidney]
+  # one warning per centred representation (Scaled and YuGene)
+  w <- testthat::capture_warnings(
+    proc <- tAge_preprocessing(eset, verbose = FALSE, split_by = "Tissue",
+                               control_group_column = "Genotype", control_group_label = "WT")
+  )
+  expect_true(length(w) > 0 && all(grepl("No sample has Genotype == 'WT'", w)))
+  expect_equal(ncol(proc$scaled_diff), ncol(eset))
+})

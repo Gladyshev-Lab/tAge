@@ -45,6 +45,6 @@ expr_data <- load_example_expression_data()
 meta_data <- load_example_metadata()
 eset <- make_ExpressionSet(expr_data, meta_data)
 
-# Subtract control group (assuming 'Group' column has 'Control' label)
-control_eset <- control_subtraction(eset, "Group", "Control", verbose = TRUE)
+# Centre on the wild-type samples
+control_eset <- control_subtraction(eset, "Genotype", "WT", verbose = TRUE)
 }

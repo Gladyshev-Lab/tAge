@@ -292,8 +292,8 @@ scale_eset <- function(eset, verbose = TRUE) {
 #' meta_data <- load_example_metadata()
 #' eset <- make_ExpressionSet(expr_data, meta_data)
 #'
-#' # Subtract control group (assuming 'Group' column has 'Control' label)
-#' control_eset <- control_subtraction(eset, "Group", "Control", verbose = TRUE)
+#' # Centre on the wild-type samples
+#' control_eset <- control_subtraction(eset, "Genotype", "WT", verbose = TRUE)
 control_subtraction <- function(eset, column_name = NULL, control_label = NULL, verbose = TRUE) {
   X <- Biobase::exprs(eset)
 
@@ -303,6 +303,9 @@ control_subtraction <- function(eset, column_name = NULL, control_label = NULL, 
   if (is.null(column_name) || is.null(control_label)) {
     control_idx <- integer(0)
   } else {
+    if (!column_name %in% colnames(Biobase::pData(eset))) {
+      stop("'", column_name, "' is not a column of the phenoData.", call. = FALSE)
+    }
     control_samples <- Biobase::pData(eset)[[column_name]]
     control_idx <- which(!is.na(control_samples) & control_samples == control_label)
   }
@@ -393,7 +396,8 @@ control_subtraction <- function(eset, column_name = NULL, control_label = NULL, 
 #' The species is recorded in every returned ExpressionSet, so
 #' \code{\link{predict_tAge}} does not need it again.
 #'
-#' @param eset An ExpressionSet object containing raw expression data.
+#' @param eset An ExpressionSet object containing raw integer counts (no NA,
+#'   no negative or non-integer values; normalised data are refused).
 #' @param species Species of the samples: "mouse", "rat", "human" or "monkey"
 #'   (see \code{\link{tage_species}}). Default is "mouse".
 #' @param gene_mapping_type Identifier type of the row names: "Ensembl",
@@ -405,7 +409,8 @@ control_subtraction <- function(eset, column_name = NULL, control_label = NULL, 
 #' @param control_group_label Character string specifying the label for control samples.
 #'   Default is NULL. With \code{split_by}, the controls of each stratum are
 #'   its reference; a stratum without controls is centred on all of its
-#'   samples, with a warning.
+#'   samples, with a warning. A column that does not exist, or a label that no
+#'   sample carries, is an error.
 #' @param count_threshold Numeric threshold for minimum expression count in gene filtering.
 #'   Default is 10.
 #' @param percent_threshold Numeric threshold for minimum percentage of samples that must
@@ -446,6 +451,7 @@ tAge_preprocessing <- function(
   split_by = NULL
 ) {
   species <- .tage_species_row(species)$species
+  .tage_check_input(eset, control_group_column, control_group_label)
 
   if (!is.null(split_by)) {
     if (length(split_by) != 1L || !split_by %in% colnames(Biobase::pData(eset))) {
@@ -455,12 +461,11 @@ tAge_preprocessing <- function(
     if (anyNA(strata)) stop("`split_by` column contains missing values.", call. = FALSE)
     per_stratum <- lapply(unique(strata), function(level) {
       if (verbose) cat(sprintf("\n=== %s = %s (%d samples) ===\n", split_by, level, sum(strata == level)))
-      tAge_preprocessing(
+      .tage_preprocess_one(
         eset[, strata == level],
         species = species, gene_mapping_type = gene_mapping_type, verbose = verbose,
         control_group_column = control_group_column, control_group_label = control_group_label,
-        count_threshold = count_threshold, percent_threshold = percent_threshold,
-        split_by = NULL
+        count_threshold = count_threshold, percent_threshold = percent_threshold
       )
     })
     combined <- lapply(names(per_stratum[[1]]), function(element) {
@@ -470,6 +475,15 @@ tAge_preprocessing <- function(
     return(lapply(combined, .tage_set_species, species = species))
   }
 
+  .tage_preprocess_one(eset, species, gene_mapping_type, verbose, control_group_column,
+                       control_group_label, count_threshold, percent_threshold)
+}
+
+# The pipeline on one stratum. The input checks are done once, on the whole
+# object, by tAge_preprocessing(): a stratum without reference samples is
+# centred on itself with a warning, not refused.
+.tage_preprocess_one <- function(eset, species, gene_mapping_type, verbose, control_group_column,
+                                 control_group_label, count_threshold, percent_threshold) {
   gene_list <- load_gene_list()
 
   eset_filtered         <- filter_genes(eset, count_threshold = count_threshold, percent_threshold = percent_threshold, verbose = verbose)
@@ -495,6 +509,35 @@ tAge_preprocessing <- function(
     yugene_diff = eset_yugene_diff
   )
   lapply(out, .tage_set_species, species = species)
+}
+
+# The pipeline normalises raw counts itself (RLE, log, scaling), so anything
+# already normalised would be normalised twice. The tolerance matches the
+# Python package, so both accept and refuse the same input. A reference
+# column that does not exist, or a label that occurs nowhere, is a typo rather
+# than a stratum without controls (which is only warned about).
+.tage_check_input <- function(eset, control_group_column, control_group_label) {
+  x <- Biobase::exprs(eset)
+  if (anyNA(x)) stop("Input counts contain missing values (NA); raw counts have none.", call. = FALSE)
+  if (any(x < 0)) stop("Input counts contain negative values; pass raw, non-normalised counts.", call. = FALSE)
+  if (any(abs(x - round(x)) > 1e-8 + 1e-5 * abs(round(x)))) {
+    stop("Input counts appear to contain non-integer values; pass raw integer counts, ",
+         "not TPM, CPM or log-transformed data.", call. = FALSE)
+  }
+  if (is.null(control_group_column) != is.null(control_group_label)) {
+    stop("`control_group_column` and `control_group_label` must be given together.", call. = FALSE)
+  }
+  if (!is.null(control_group_column)) {
+    pd <- Biobase::pData(eset)
+    if (!control_group_column %in% colnames(pd)) {
+      stop("`control_group_column` '", control_group_column, "' is not a column of the phenoData.",
+           call. = FALSE)
+    }
+    if (!any(!is.na(pd[[control_group_column]]) & pd[[control_group_column]] == control_group_label)) {
+      stop("No sample has ", control_group_column, " == '", control_group_label, "'.", call. = FALSE)
+    }
+  }
+  invisible(TRUE)
 }
 
 # Column-bind ExpressionSets that were processed separately. Genes are taken

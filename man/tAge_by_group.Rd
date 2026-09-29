@@ -41,7 +41,8 @@ that contains control group labels. Default is NULL.}
 \item{control_group_label}{Character string specifying the label for control samples.
 Default is NULL. With \code{split_by}, the controls of each stratum are
 its reference; a stratum without controls is centred on all of its
-samples, with a warning.}
+samples, with a warning. A column that does not exist, or a label that no
+sample carries, is an error.}
 
 \item{count_threshold}{Numeric threshold for minimum expression count in gene filtering.
 Default is 10.}
