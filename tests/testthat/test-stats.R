@@ -389,6 +389,41 @@ test_that("Bayesian ridge covariate adjustment keeps the tAge scale without spli
   expect_equal(mean(adj_lm), mean(d$tAge), tolerance = 1e-8)
 })
 
+test_that("with group_column the adjusted values show the tested group difference", {
+  # Unbalanced design: WT mostly male, KO mostly female, both effects real.
+  set.seed(3)
+  d <- data.frame(grp = rep(c("WT", "KO"), each = 8),
+                  sex = c(rep("M", 6), rep("F", 2), rep("M", 2), rep("F", 6)),
+                  tissue = rep(c("A", "B"), 8))
+  d$y <- 1 * (d$grp == "KO") + 1 * (d$sex == "F") + rnorm(16, sd = 0.2)
+  d$y_sd <- runif(16, 0.1, 0.3)
+
+  mean_diff <- function(v, rows = TRUE) mean(v[rows & d$grp == "KO"]) - mean(v[rows & d$grp == "WT"])
+  tested <- tage_compare_groups(d, "y", "grp", "WT", covariates = "sex", p_adjust = "none")
+  adj <- tage_adjust_covariates(d, "y", "sex", group_column = "grp")
+  expect_equal(mean_diff(adj), tested$estimate, tolerance = 1e-10)
+  expect_equal(mean(adj), mean(d$y), tolerance = 1e-10)
+  # the covariate-only model does not: it gives part of the KO effect to sex
+  expect_gt(abs(mean_diff(tage_adjust_covariates(d, "y", "sex")) - tested$estimate), 0.1)
+
+  # one model per stratum, as in tage_compare_groups()
+  by_tissue <- tage_compare_groups(d, "y", "grp", "WT", covariates = "sex", split_by = "tissue",
+                                   p_adjust = "none")
+  adj_split <- tage_adjust_covariates(d, "y", "sex", split_by = "tissue", group_column = "grp")
+  for (t in c("A", "B")) {
+    expect_equal(mean_diff(adj_split, d$tissue == t), by_tissue$estimate[by_tissue$split == t],
+                 tolerance = 1e-10)
+  }
+
+  # Bayesian ridge: the covariate effect of the meta-regression is removed
+  skip_if_not_installed("metafor")
+  adj_br <- tage_adjust_covariates(d, "y", "sex", se_column = "y_sd", group_column = "grp")
+  fit <- metafor::rma.uni(yi = d$y, sei = d$y_sd, mods = ~ grp + sex, data = d, method = "REML")
+  beta_sex <- coef(fit)[["sexM"]]
+  x <- as.numeric(d$sex == "M")
+  expect_equal(adj_br, d$y - beta_sex * (x - mean(x)), tolerance = 1e-8)
+})
+
 test_that("column names that are not syntactic work in every model", {
   d <- .stats_fixture()
   d[["Normalized age"]] <- d$tAge

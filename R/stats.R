@@ -840,18 +840,30 @@ tage_module_stats <- function(data,
 #' Covariate-adjusted tAge values for plotting
 #'
 #' Removes the fitted covariate effects from a tAge column while keeping the
-#' group effect, so that box plots show what the model tested: the covariate
-#' model is fitted without the grouping variable, and the mean covariate effect is added
-#' back so the adjusted values stay on the original scale.
+#' group effect, and adds the mean covariate effect back so the adjusted values
+#' stay on the original scale.
+#'
+#' With \code{group_column} the covariate effects are those of the model the
+#' statistics fit -- \code{value ~ group + covariates}, one model per stratum,
+#' \code{lm} or the weighted meta-regression -- so the difference between group
+#' means of the adjusted values is the tested estimate (exactly for elastic net
+#' clocks with \code{variance_strata = "all_data"}). Without it the covariate
+#' model leaves the group out; when the covariates are unevenly distributed
+#' across groups (more females among the treated, say) that model attributes
+#' part of the group effect to the covariates, and the adjusted values no
+#' longer show what was tested.
 #'
 #' @param data Data frame of per-sample predictions.
 #' @param value_column Column to adjust.
 #' @param covariates Covariate columns to regress out.
-#' @param split_by Optional stratifying column, included as a fixed effect for
-#'   elastic net clocks and used to fit one model per stratum for Bayesian
+#' @param split_by Optional stratifying column. With \code{group_column}, one
+#'   model per stratum, as in \code{\link{tage_compare_groups}}; without it, a
+#'   fixed effect for elastic net clocks and one model per stratum for Bayesian
 #'   ridge clocks.
 #' @param se_column Per-sample standard deviations for a Bayesian ridge clock.
 #'   Default \code{NULL} uses \code{\link[stats]{lm}}.
+#' @param group_column Column holding the experimental groups, fitted together
+#'   with the covariates. Default \code{NULL} keeps the covariate-only model.
 #'
 #' @return Numeric vector of adjusted values, in the row order of \code{data};
 #'   rows with missing values in the model return \code{NA}.
@@ -859,7 +871,8 @@ tage_module_stats <- function(data,
 #' @examples
 #' \dontrun{
 #' results$adjusted <- tage_adjust_covariates(
-#'   results, "yugene_diff_EN_tAge", covariates = "Sex", split_by = "Tissue"
+#'   results, "yugene_diff_EN_tAge", covariates = "Sex", split_by = "Tissue",
+#'   group_column = "Genotype"
 #' )
 #' }
 #' @export
@@ -867,13 +880,20 @@ tage_adjust_covariates <- function(data,
                                    value_column,
                                    covariates,
                                    split_by = NULL,
-                                   se_column = NULL) {
+                                   se_column = NULL,
+                                   group_column = NULL) {
   data       <- as.data.frame(data)
   covariates <- .tage_clean_chr(covariates)
   split_by   <- .tage_clean_chr(split_by)
   se_column  <- .tage_clean_chr(se_column)
+  group_column <- .tage_clean_chr(group_column)
 
   if (is.null(covariates)) return(as.numeric(data[[value_column]]))
+
+  if (!is.null(group_column)) {
+    return(.tage_adjust_with_group(data, value_column, covariates, split_by, se_column,
+                                   group_column))
+  }
 
   missing <- setdiff(c(value_column, covariates, split_by, se_column), colnames(data))
   if (length(missing)) stop("Column(s) not found in data: ", paste(missing, collapse = ", "), call. = FALSE)
@@ -946,4 +966,64 @@ tage_adjust_covariates <- function(data,
     out[idx[sel]] <- as.numeric(stats::resid(model)) + mean(part[[value_column]], na.rm = TRUE)
   }
   out
+}
+
+# Covariate adjustment from the model the statistics fit: value ~ group +
+# covariates, one model per stratum.
+.tage_adjust_with_group <- function(data, value_column, covariates, split_by, se_column,
+                                    group_column) {
+  missing <- setdiff(c(value_column, group_column, covariates, split_by, se_column), colnames(data))
+  if (length(missing)) stop("Column(s) not found in data: ", paste(missing, collapse = ", "), call. = FALSE)
+
+  out <- rep(NA_real_, nrow(data))
+  ok <- stats::complete.cases(data[, c(value_column, group_column, covariates, split_by, se_column),
+                                   drop = FALSE])
+  idx <- which(ok)
+  sub <- data[ok, , drop = FALSE]
+  labels <- if (is.null(split_by)) rep(NA_character_, nrow(sub)) else as.character(sub[[split_by]])
+
+  for (lev in unique(labels)) {
+    sel <- if (is.na(lev)) rep(TRUE, nrow(sub)) else !is.na(labels) & labels == lev
+    adj <- .tage_adjust_one(sub[sel, , drop = FALSE], value_column, group_column, covariates,
+                            se_column)
+    if (is.character(adj)) {
+      .tage_skip(value_column, lev, paste("covariate adjustment not computed:", adj))
+      next
+    }
+    out[idx[sel]] <- adj
+  }
+  out
+}
+
+# One stratum: subtract the covariate part of the fitted model, centred so the
+# mean covariate effect stays in. Returns the values, or why they could not be
+# computed.
+.tage_adjust_one <- function(df, value_column, group_column, covariates, se_column) {
+  y <- df[[value_column]]
+  df[[group_column]] <- droplevels(as.factor(df[[group_column]]))
+  covariates <- .tage_varying_covariates(df, covariates)
+  if (is.null(covariates)) return(y)
+
+  terms <- c(if (nlevels(df[[group_column]]) > 1L) group_column, covariates)
+  X <- stats::model.matrix(stats::as.formula(paste("~", .tage_rhs(terms))), data = df)
+  # Main effects keep their order, so the covariate terms are the last ones.
+  first_cov <- length(terms) - length(covariates) + 1L
+  cov_cols <- which(attr(X, "assign") >= first_cov)
+  if (nrow(X) <= ncol(X)) return(sprintf("%d sample(s) for %d model coefficients", nrow(X), ncol(X)))
+
+  if (is.null(se_column)) {
+    beta <- stats::lm.fit(X, y)$coefficients
+    if (anyNA(beta)) return("redundant predictor(s) - check for collinear covariates")
+  } else {
+    .tage_require("metafor")
+    model <- try(suppressWarnings(
+      metafor::rma.uni(yi = y, sei = df[[se_column]], mods = X, intercept = FALSE, method = "REML")
+    ), silent = TRUE)
+    if (inherits(model, "try-error")) return(paste("rma.uni failed:", .tage_try_reason(model)))
+    beta <- as.numeric(stats::coef(model))
+    if (length(beta) != ncol(X)) return("redundant predictor(s) - check for collinear covariates")
+  }
+
+  effect <- as.vector(X[, cov_cols, drop = FALSE] %*% beta[cov_cols])
+  y - effect + mean(effect)
 }

@@ -249,11 +249,12 @@ tage_boxplot <- function(
       p_adjust_scope  = p_adjust_scope
     )
 
-    # Plot what the model tested: with covariates, partial residuals rather
-    # than raw predictions.
+    # Plot what the model tested: with covariates, the values with the
+    # covariate part of the group + covariates model removed.
     if (!is.null(covariates)) {
       data[[".tage_adjusted"]] <- tage_adjust_covariates(
-        data, y_var, covariates, split_by = subgroup_var, se_column = se_column
+        data, y_var, covariates, split_by = subgroup_var, se_column = se_column,
+        group_column = x_var
       )
       y_var <- ".tage_adjusted"
     }

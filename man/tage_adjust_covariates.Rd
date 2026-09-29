@@ -9,7 +9,8 @@ tage_adjust_covariates(
   value_column,
   covariates,
   split_by = NULL,
-  se_column = NULL
+  se_column = NULL,
+  group_column = NULL
 )
 }
 \arguments{
@@ -19,12 +20,16 @@ tage_adjust_covariates(
 
 \item{covariates}{Covariate columns to regress out.}
 
-\item{split_by}{Optional stratifying column, included as a fixed effect for
-elastic net clocks and used to fit one model per stratum for Bayesian
+\item{split_by}{Optional stratifying column. With \code{group_column}, one
+model per stratum, as in \code{\link{tage_compare_groups}}; without it, a
+fixed effect for elastic net clocks and one model per stratum for Bayesian
 ridge clocks.}
 
 \item{se_column}{Per-sample standard deviations for a Bayesian ridge clock.
 Default \code{NULL} uses \code{\link[stats]{lm}}.}
+
+\item{group_column}{Column holding the experimental groups, fitted together
+with the covariates. Default \code{NULL} keeps the covariate-only model.}
 }
 \value{
 Numeric vector of adjusted values, in the row order of \code{data};
@@ -32,14 +37,25 @@ Numeric vector of adjusted values, in the row order of \code{data};
 }
 \description{
 Removes the fitted covariate effects from a tAge column while keeping the
-group effect, so that box plots show what the model tested: the covariate
-model is fitted without the grouping variable, and the mean covariate effect is added
-back so the adjusted values stay on the original scale.
+group effect, and adds the mean covariate effect back so the adjusted values
+stay on the original scale.
+}
+\details{
+With \code{group_column} the covariate effects are those of the model the
+statistics fit -- \code{value ~ group + covariates}, one model per stratum,
+\code{lm} or the weighted meta-regression -- so the difference between group
+means of the adjusted values is the tested estimate (exactly for elastic net
+clocks with \code{variance_strata = "all_data"}). Without it the covariate
+model leaves the group out; when the covariates are unevenly distributed
+across groups (more females among the treated, say) that model attributes
+part of the group effect to the covariates, and the adjusted values no
+longer show what was tested.
 }
 \examples{
 \dontrun{
 results$adjusted <- tage_adjust_covariates(
-  results, "yugene_diff_EN_tAge", covariates = "Sex", split_by = "Tissue"
+  results, "yugene_diff_EN_tAge", covariates = "Sex", split_by = "Tissue",
+  group_column = "Genotype"
 )
 }
 }
