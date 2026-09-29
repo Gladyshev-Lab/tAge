@@ -2,14 +2,14 @@
 % Please edit documentation in R/predict.R
 \name{predict_tAge}
 \alias{predict_tAge}
-\title{Predict transcriptomic age for multiple processed ExpressionSet objects}
+\title{Predict transcriptomic age with several clocks}
 \usage{
 predict_tAge(
   tAge_eset,
   model_paths,
   species = NULL,
-  mode,
-  return_std = identical(mode, "BR"),
+  mode = NULL,
+  return_std = NULL,
   age_units = c("auto", "months", "years"),
   normalized_age = c("fraction", "percent")
 )
@@ -19,7 +19,8 @@ predict_tAge(
 normalization method (e.g., "scaled", "scaled_diff", "yugene", "yugene_diff"),
 as returned by \code{\link{tAge_preprocessing}}.}
 
-\item{model_paths}{A named list of model paths corresponding to each normalization method.}
+\item{model_paths}{A clock table with a \code{path} column, or a named list
+of model paths per representation; see Details.}
 
 \item{species}{Species of the \emph{samples}: \code{"mouse"}, \code{"rat"},
 \code{"human"} or \code{"monkey"} (see \code{\link{tage_species}}). Its
@@ -30,14 +31,14 @@ it. It is \emph{not} the species group the model was trained on
 Default \code{NULL} takes the species recorded by
 \code{\link{tAge_preprocessing}}.}
 
-\item{mode}{Character string specifying the model type. Must be either "EN" for
-Elastic Net or "BR" for Bayesian Ridge.}
+\item{mode}{\code{"EN"} or \code{"BR"}. Default \code{NULL} takes each
+model's type from the clock table, the registry or its file name.}
 
 \item{return_std}{Logical. Whether to keep the per-sample predictive standard
-deviation of Bayesian Ridge clocks. Defaults to \code{TRUE} for
-\code{mode = "BR"}, adding one \code{<normalisation>_BR_tAge_sd} column per
-clock. Pass these to the \code{se_columns} argument of
-\code{\link{tage_compare_groups}} for the Bayesian ridge statistics.}
+deviation of Bayesian Ridge clocks. Default \code{NULL} keeps it for every
+Bayesian ridge clock, as a \code{<column>_sd} column. Pass these to the
+\code{se_columns} argument of \code{\link{tage_compare_groups}} for the
+Bayesian ridge statistics.}
 
 \item{age_units}{Units of chronological-age predictions: \code{"auto"}
 (default; months for rodents, years for primates), \code{"months"} or
@@ -54,7 +55,29 @@ A data frame containing the predicted transcriptomic age results for all
   every prediction column (e.g. \code{"months"}, \code{"log10 hazard ratio"}).
 }
 \description{
-Applies one model per normalisation (\code{scaled_diff}, \code{yugene_diff},
-...) and returns the sample metadata with one prediction column per
-normalisation, named \code{<normalisation>_<mode>_tAge}.
+Applies clocks to the preprocessed representations returned by
+\code{\link{tAge_preprocessing}} and returns the sample metadata with one
+prediction column per clock.
+}
+\details{
+\code{model_paths} is either
+\itemize{
+  \item a clock table from \code{\link{list_clocks}} or
+  \code{\link{list_module_clocks}} with a \code{path} column (e.g. from
+  \code{\link{download_clocks}}): each row is applied to the representation
+  its \code{scaling} names (\code{Scaled} -> \code{scaled_diff},
+  \code{YuGene} -> \code{yugene_diff}), and the column is named after the
+  model file, as in the Python package; or
+  \item a named list, representation -> model path(s). With one path per
+  representation the column is \code{<representation>_<mode>_tAge}; with
+  several, each column is named after its model file.
+}
+}
+\examples{
+\dontrun{
+clocks <- download_clocks(list_clocks(type = "EN", species = "Rodents",
+                                      tissue = "Multi-Tissue"))
+res <- predict_tAge(tAge_eset, clocks)       # six columns, named by model file
+attr(res, "tage_units")
+}
 }

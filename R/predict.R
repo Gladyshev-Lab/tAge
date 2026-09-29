@@ -36,9 +36,11 @@ predict_tAge_one <- function(eset, model_path, species = NULL, mode,
                              return_std = identical(mode, "BR"),
                              age_units = c("auto", "months", "years"),
                              normalized_age = c("fraction", "percent")) {
-  if (missing(model_path) || !file.exists(model_path)) {
-    stop("Model path is missing or the file does not exist.")
+  if (missing(model_path) || length(model_path) != 1L) {
+    stop("`model_path` must be the path of one model; use predict_tAge() for several.",
+         call. = FALSE)
   }
+  if (!file.exists(model_path)) stop("Model file does not exist: ", model_path, call. = FALSE)
   if (!(mode %in% c("EN", "BR"))) {
     stop("Mode must be either 'EN' or 'BR'.")
   }
@@ -115,64 +117,75 @@ predict_tAge_one <- function(eset, model_path, species = NULL, mode,
   )
 }
 
-#' Predict transcriptomic age for multiple processed ExpressionSet objects
+#' Predict transcriptomic age with several clocks
 #'
-#' Applies one model per normalisation (\code{scaled_diff}, \code{yugene_diff},
-#' ...) and returns the sample metadata with one prediction column per
-#' normalisation, named \code{<normalisation>_<mode>_tAge}.
+#' Applies clocks to the preprocessed representations returned by
+#' \code{\link{tAge_preprocessing}} and returns the sample metadata with one
+#' prediction column per clock.
+#'
+#' \code{model_paths} is either
+#' \itemize{
+#'   \item a clock table from \code{\link{list_clocks}} or
+#'   \code{\link{list_module_clocks}} with a \code{path} column (e.g. from
+#'   \code{\link{download_clocks}}): each row is applied to the representation
+#'   its \code{scaling} names (\code{Scaled} -> \code{scaled_diff},
+#'   \code{YuGene} -> \code{yugene_diff}), and the column is named after the
+#'   model file, as in the Python package; or
+#'   \item a named list, representation -> model path(s). With one path per
+#'   representation the column is \code{<representation>_<mode>_tAge}; with
+#'   several, each column is named after its model file.
+#' }
 #'
 #' @param tAge_eset A named list of ExpressionSet objects, each representing a different
 #'   normalization method (e.g., "scaled", "scaled_diff", "yugene", "yugene_diff"),
 #'   as returned by \code{\link{tAge_preprocessing}}.
-#' @param model_paths A named list of model paths corresponding to each normalization method.
+#' @param model_paths A clock table with a \code{path} column, or a named list
+#'   of model paths per representation; see Details.
+#' @param mode \code{"EN"} or \code{"BR"}. Default \code{NULL} takes each
+#'   model's type from the clock table, the registry or its file name.
 #' @inheritParams predict_tAge_one
 #' @param return_std Logical. Whether to keep the per-sample predictive standard
-#'   deviation of Bayesian Ridge clocks. Defaults to \code{TRUE} for
-#'   \code{mode = "BR"}, adding one \code{<normalisation>_BR_tAge_sd} column per
-#'   clock. Pass these to the \code{se_columns} argument of
-#'   \code{\link{tage_compare_groups}} for the Bayesian ridge statistics.
+#'   deviation of Bayesian Ridge clocks. Default \code{NULL} keeps it for every
+#'   Bayesian ridge clock, as a \code{<column>_sd} column. Pass these to the
+#'   \code{se_columns} argument of \code{\link{tage_compare_groups}} for the
+#'   Bayesian ridge statistics.
 #' @return A data frame containing the predicted transcriptomic age results for all
 #'   provided ExpressionSet objects, with appropriately named columns. The
 #'   attribute \code{"tage_units"} is a named character vector giving the unit of
 #'   every prediction column (e.g. \code{"months"}, \code{"log10 hazard ratio"}).
+#' @examples
+#' \dontrun{
+#' clocks <- download_clocks(list_clocks(type = "EN", species = "Rodents",
+#'                                       tissue = "Multi-Tissue"))
+#' res <- predict_tAge(tAge_eset, clocks)       # six columns, named by model file
+#' attr(res, "tage_units")
+#' }
 #' @export
-predict_tAge <- function(tAge_eset, model_paths, species = NULL, mode,
-                         return_std = identical(mode, "BR"),
+predict_tAge <- function(tAge_eset, model_paths, species = NULL, mode = NULL,
+                         return_std = NULL,
                          age_units = c("auto", "months", "years"),
                          normalized_age = c("fraction", "percent")) {
   if (!is.list(tAge_eset) || length(tAge_eset) == 0) {
     stop("tAge_eset must be a non-empty list of ExpressionSet objects.")
   }
-  valid_names <- c("scaled", "scaled_diff", "yugene", "yugene_diff")
-  tAge_eset <- tAge_eset[names(tAge_eset) %in% valid_names]
-  if (length(tAge_eset) == 0) {
-    stop("No valid ExpressionSet objects found in tAge_eset. Valid names are: 'scaled', 'scaled_diff', 'yugene', 'yugene_diff'.")
-  }
-  if (!is.list(model_paths) || length(model_paths) == 0) {
-    stop("model_paths must be a non-empty named list of model paths.")
-  }
-  model_paths <- model_paths[names(model_paths) %in% valid_names]
-  if (length(model_paths) == 0) {
-    stop("No valid model paths found in model_paths. Valid names are: 'scaled', 'scaled_diff', 'yugene', 'yugene_diff'.")
-  }
-  # Use only common names between tAge_eset and model_paths
-  common_names <- intersect(names(tAge_eset), names(model_paths))
-  if (length(common_names) == 0) {
-    stop("No overlapping names between tAge_eset and model_paths. Ensure at least one shared name like 'scaled_diff'.")
-  }
   age_units      <- match.arg(age_units)
   normalized_age <- match.arg(normalized_age)
+  if (!is.null(mode) && !mode %in% c("EN", "BR")) stop("Mode must be either 'EN' or 'BR'.")
+
+  jobs <- .tage_prediction_jobs(model_paths, names(tAge_eset), mode)
 
   results <- NULL
   units <- character(0)
-  for (name in common_names) {
-    eset <- tAge_eset[[name]]
+  for (i in seq_len(nrow(jobs))) {
+    eset <- tAge_eset[[jobs$eset[i]]]
     if (!inherits(eset, "ExpressionSet")) {
-      stop(paste("Element", name, "in tAge_eset is not an ExpressionSet."))
+      stop("Element ", jobs$eset[i], " in tAge_eset is not an ExpressionSet.", call. = FALSE)
     }
-
-    model_path <- model_paths[[name]]
-    res <- predict_tAge_one(eset, model_path, species, mode, return_std = return_std,
+    m <- jobs$mode[i]
+    # An explicit return_std = TRUE reaches the elastic net models too, which
+    # say that they have no standard deviation.
+    keep_std <- if (is.null(return_std)) m == "BR" else isTRUE(return_std)
+    res <- predict_tAge_one(eset, jobs$path[i], species, m, return_std = keep_std,
                             age_units = age_units, normalized_age = normalized_age)
     res_units <- attr(res, "tage_units")
 
@@ -181,31 +194,89 @@ predict_tAge <- function(tAge_eset, model_paths, species = NULL, mode,
     # single column, which breaks the colnames<- below).
     res <- as.data.frame(res, check.names = FALSE)
 
-    # Rename 'EN_tAge' or 'BR_tAge' to name + mode + '_tAge', and the matching
-    # predictive standard deviation to '<name>_<mode>_tAge_sd'.
-    tAge_col <- paste0(mode, "_tAge")
-    new_tAge_col <- paste0(name, "_", mode, "_tAge")
-    colnames(res)[colnames(res) == tAge_col] <- new_tAge_col
-    units[new_tAge_col] <- unname(res_units[tAge_col])
+    tAge_col <- paste0(m, "_tAge")
+    column <- jobs$column[i]
+    colnames(res)[colnames(res) == tAge_col] <- column
+    units[column] <- unname(res_units[tAge_col])
+    new_cols <- column
 
-    new_cols <- new_tAge_col
-    std_col <- paste0(mode, "_tAge_std")
+    std_col <- paste0(m, "_tAge_std")
     if (std_col %in% colnames(res)) {
-      new_sd_col <- paste0(new_tAge_col, "_sd")
-      colnames(res)[colnames(res) == std_col] <- new_sd_col
-      new_cols <- c(new_cols, new_sd_col)
-      units[new_sd_col] <- unname(res_units[tAge_col])
+      sd_col <- paste0(column, "_sd")
+      colnames(res)[colnames(res) == std_col] <- sd_col
+      new_cols <- c(new_cols, sd_col)
+      units[sd_col] <- unname(res_units[tAge_col])
     }
 
-    if (is.null(results)) {
-      results <- res
-    } else {
-      # Add new columns to results, only the prediction columns at a time
-      results <- cbind(results, res[, new_cols, drop = FALSE])
-    }
+    results <- if (is.null(results)) res else cbind(results, res[, new_cols, drop = FALSE])
   }
   attr(results, "tage_units") <- units
   results
+}
+
+# One row per prediction: which representation, which model, which type and
+# which output column.
+.tage_prediction_jobs <- function(model_paths, eset_names, mode) {
+  valid_names <- c("scaled", "scaled_diff", "yugene", "yugene_diff")
+
+  if (is.data.frame(model_paths)) {
+    if (!"path" %in% names(model_paths)) {
+      stop("The clock table needs a `path` column; add it with download_clocks() or ",
+           "clocks$path <- file.path(dir, clocks$filename).", call. = FALSE)
+    }
+    if (!"scaling" %in% names(model_paths)) {
+      stop("The clock table needs a `scaling` column (Scaled / YuGene).", call. = FALSE)
+    }
+    rep <- c(Scaled = "scaled_diff", YuGene = "yugene_diff")[as.character(model_paths$scaling)]
+    if (anyNA(rep)) stop("Unknown `scaling` in the clock table; expected Scaled or YuGene.", call. = FALSE)
+    path <- as.character(model_paths$path)
+    type <- if (!is.null(mode)) rep(mode, length(path))
+            else if ("type" %in% names(model_paths)) as.character(model_paths$type)
+            else vapply(path, .tage_clock_type, character(1))
+    jobs <- data.frame(eset = unname(rep), path = path, mode = type, column = basename(path),
+                       stringsAsFactors = FALSE)
+  } else {
+    if (!is.list(model_paths) || length(model_paths) == 0 || is.null(names(model_paths))) {
+      stop("model_paths must be a clock table with a `path` column or a named list of model paths.",
+           call. = FALSE)
+    }
+    model_paths <- model_paths[names(model_paths) %in% valid_names]
+    if (length(model_paths) == 0) {
+      stop("No valid model paths found in model_paths. Valid names are: 'scaled', 'scaled_diff', 'yugene', 'yugene_diff'.")
+    }
+    by_file <- any(lengths(model_paths) > 1L)
+    jobs <- do.call(rbind, lapply(names(model_paths), function(nm) {
+      path <- as.character(model_paths[[nm]])
+      type <- if (!is.null(mode)) rep(mode, length(path)) else vapply(path, .tage_clock_type, character(1))
+      data.frame(eset = nm, path = path, mode = unname(type),
+                 column = if (by_file) basename(path) else paste0(nm, "_", type, "_tAge"),
+                 stringsAsFactors = FALSE)
+    }))
+  }
+
+  missing_eset <- setdiff(jobs$eset, eset_names)
+  if (length(missing_eset)) {
+    stop("tAge_eset has no ", paste(unique(missing_eset), collapse = ", "),
+         " element; pass the list returned by tAge_preprocessing().", call. = FALSE)
+  }
+  dup <- unique(jobs$column[duplicated(jobs$column)])
+  if (length(dup)) stop("Several predictions would share the column ", paste(dup, collapse = ", "), ".",
+                        call. = FALSE)
+  jobs
+}
+
+# Model type from the registries or, for models outside them, the file name.
+.tage_clock_type <- function(model_path) {
+  fn <- basename(as.character(model_path))
+  for (reg in list(tryCatch(.clock_registry(), error = function(e) NULL),
+                   tryCatch(.module_clock_registry(), error = function(e) NULL))) {
+    hit <- reg[reg$filename == fn, , drop = FALSE]
+    if (nrow(hit) == 1) return(as.character(hit$type))
+  }
+  prefix <- sub("_.*$", "", fn)
+  if (prefix %in% c("EN", "BR")) return(prefix)
+  stop("Cannot tell whether ", fn, " is an elastic net or a Bayesian ridge model; pass mode.",
+       call. = FALSE)
 }
 
 
@@ -219,9 +290,10 @@ predict_tAge <- function(tAge_eset, model_paths, species = NULL, mode,
 #'
 #' @param eset An ExpressionSet, e.g. from pseudobulk aggregation.
 #' @param split_by Character. Column in pData to split by (e.g., "tissue").
-#' @param model_paths Named list of model paths.
+#' @param model_paths Clock table with a \code{path} column, or named list of
+#'   model paths; see \code{\link{predict_tAge}}.
 #' @inheritParams tAge_preprocessing
-#' @inheritParams predict_tAge_one
+#' @inheritParams predict_tAge
 #' @param min_samples Integer. Strata with fewer samples are left out, with a
 #'   warning. Default 5.
 #' @return Data frame with predictions for all strata combined (the
@@ -232,7 +304,7 @@ tAge_by_group <- function(
   split_by,
   model_paths,
   species = "mouse",
-  mode = "EN",
+  mode = NULL,
   control_group_column = NULL,
   control_group_label = NULL,
   count_threshold = 10,
@@ -240,7 +312,7 @@ tAge_by_group <- function(
   min_samples = 5,
   verbose = TRUE,
   gene_mapping_type = "auto",
-  return_std = identical(mode, "BR"),
+  return_std = NULL,
   age_units = c("auto", "months", "years"),
   normalized_age = c("fraction", "percent")
 ) {

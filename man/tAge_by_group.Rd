@@ -9,7 +9,7 @@ tAge_by_group(
   split_by,
   model_paths,
   species = "mouse",
-  mode = "EN",
+  mode = NULL,
   control_group_column = NULL,
   control_group_label = NULL,
   count_threshold = 10,
@@ -17,7 +17,7 @@ tAge_by_group(
   min_samples = 5,
   verbose = TRUE,
   gene_mapping_type = "auto",
-  return_std = identical(mode, "BR"),
+  return_std = NULL,
   age_units = c("auto", "months", "years"),
   normalized_age = c("fraction", "percent")
 )
@@ -27,13 +27,14 @@ tAge_by_group(
 
 \item{split_by}{Character. Column in pData to split by (e.g., "tissue").}
 
-\item{model_paths}{Named list of model paths.}
+\item{model_paths}{Clock table with a \code{path} column, or named list of
+model paths; see \code{\link{predict_tAge}}.}
 
 \item{species}{Species of the samples: "mouse", "rat", "human" or "monkey"
 (see \code{\link{tage_species}}). Default is "mouse".}
 
-\item{mode}{Character string specifying the model type. Must be either "EN" for
-Elastic Net or "BR" for Bayesian Ridge.}
+\item{mode}{\code{"EN"} or \code{"BR"}. Default \code{NULL} takes each
+model's type from the clock table, the registry or its file name.}
 
 \item{control_group_column}{Character string specifying the column name in phenoData
 that contains control group labels. Default is NULL.}
@@ -59,11 +60,11 @@ warning. Default 5.}
 "Gene.Symbol", "Entrez" or "auto" (default, detected from the gene table;
 see \code{\link{map_genes}}).}
 
-\item{return_std}{Logical. Whether to also return the per-sample predictive
-standard deviation, which only Bayesian Ridge models provide. Defaults to
-\code{TRUE} for \code{mode = "BR"}. The standard deviations are what
-\code{\link{tage_compare_groups}} weights samples by, so keep them if you
-intend to run statistics on BR predictions.}
+\item{return_std}{Logical. Whether to keep the per-sample predictive standard
+deviation of Bayesian Ridge clocks. Default \code{NULL} keeps it for every
+Bayesian ridge clock, as a \code{<column>_sd} column. Pass these to the
+\code{se_columns} argument of \code{\link{tage_compare_groups}} for the
+Bayesian ridge statistics.}
 
 \item{age_units}{Units of chronological-age predictions: \code{"auto"}
 (default; months for rodents, years for primates), \code{"months"} or

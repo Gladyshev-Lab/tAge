@@ -159,3 +159,53 @@ test_that("tAge_by_group predicts per-tissue preprocessed data", {
   expect_true(all(c("Tissue", "scaled_diff_EN_tAge") %in% names(res)))
   expect_true(all(is.finite(res$scaled_diff_EN_tAge)))
 })
+
+test_that("model_paths: clock tables and lists of several models are resolved per model", {
+  cl <- list_clocks(type = "EN", species = "Rodents", tissue = "Multi-Tissue")
+  cl$path <- file.path("clocks", cl$filename)
+  jobs <- tAge:::.tage_prediction_jobs(cl, c("scaled_diff", "yugene_diff"), NULL)
+  expect_equal(nrow(jobs), 6L)
+  expect_equal(jobs$column, cl$filename)
+  expect_equal(jobs$eset, ifelse(cl$scaling == "Scaled", "scaled_diff", "yugene_diff"))
+  expect_true(all(jobs$mode == "EN"))
+
+  # several paths per representation: columns named by model file
+  several <- tAge:::.tage_prediction_jobs(
+    list(scaled_diff = cl$path[cl$scaling == "Scaled"]), "scaled_diff", NULL)
+  expect_equal(several$column, cl$filename[cl$scaling == "Scaled"])
+  # one path per representation keeps the <representation>_<mode>_tAge names
+  one <- tAge:::.tage_prediction_jobs(list(scaled_diff = cl$path[1]), "scaled_diff", NULL)
+  expect_equal(one$column, "scaled_diff_EN_tAge")
+
+  br <- list_clocks(type = "BR", outcome = "Mortality", species = "Rodents", tissue = "Multi-Tissue")
+  br$path <- br$filename
+  expect_true(all(tAge:::.tage_prediction_jobs(br, c("scaled_diff", "yugene_diff"), NULL)$mode == "BR"))
+  expect_equal(tAge:::.tage_clock_type("BR_custom_model.pkl"), "BR")
+  expect_error(tAge:::.tage_clock_type("custom.pkl"), "pass mode")
+  expect_error(tAge:::.tage_prediction_jobs(cl[, names(cl) != "path"], "scaled_diff", NULL), "path")
+  expect_error(tAge:::.tage_prediction_jobs(cl, "scaled_diff", NULL), "no yugene_diff")
+  expect_error(tAge:::.tage_prediction_jobs(list(scaled_diff = rep(cl$path[1], 2)), "scaled_diff", NULL),
+               "share the column")
+})
+
+test_that("several clocks in one call give the same numbers as one call per clock", {
+  skip_on_cran()
+  skip_if_offline()
+  skip_if_no_python()
+  mort  <- .tage_test_model("EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl")
+  chron <- .tage_test_model("EN_Chronoage_Multispecies_Multitissue_scaleddiff.pkl")
+  skip_if(is.null(mort) || is.null(chron), "clock models could not be downloaded")
+
+  processed <- tAge_preprocessing(.tage_example_eset(), species = "mouse", verbose = FALSE)
+  both <- predict_tAge(processed, list(scaled_diff = c(mort, chron)))
+  expect_equal(both[[basename(mort)]],
+               predict_tAge(processed, list(scaled_diff = mort), mode = "EN")$scaled_diff_EN_tAge)
+  expect_equal(both[[basename(chron)]],
+               predict_tAge(processed, list(scaled_diff = chron), mode = "EN")$scaled_diff_EN_tAge)
+  expect_equal(unname(attr(both, "tage_units")), c("log10 hazard ratio", "months"))
+
+  table <- data.frame(filename = basename(c(mort, chron)), scaling = "Scaled",
+                      path = c(mort, chron), stringsAsFactors = FALSE)
+  expect_equal(predict_tAge(processed, table)[, table$filename], both[, table$filename])
+  expect_error(predict_tAge_one(processed$scaled_diff, c(mort, chron), mode = "EN"), "one model")
+})

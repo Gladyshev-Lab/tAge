@@ -1,5 +1,20 @@
 # tAge (development version)
 
+## New features
+
+* `predict_tAge()` takes the clock table from `list_clocks()` /
+  `list_module_clocks()` with a `path` column (e.g. from `download_clocks()`):
+  every row is applied to the representation its `scaling` names and gets a
+  column named after the model file, the names the Python package uses. A
+  named list of paths still works; with several paths per representation it
+  used to fail with "'length = 3' in coercion to 'logical(1)'" and now names
+  its columns by model file, while one path per representation keeps the
+  `<representation>_<mode>_tAge` names. `mode` and `return_std` default to
+  `NULL`: each model's type comes from the table, the registry or its file
+  name, and Bayesian ridge clocks keep their `_sd` column. `tAge_by_group()`
+  follows. `predict_tAge_one()` refuses more than one path with a clear
+  message.
+
 ## Breaking changes
 
 * `tage_module_heatmap()` and `load_module_functions()` no longer default to
