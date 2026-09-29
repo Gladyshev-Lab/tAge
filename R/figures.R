@@ -15,8 +15,12 @@ TAGE_OUTCOME_COLORS <- c(
 )
 TAGE_OUTCOME_ORDER <- c("Chronological", "NormalizedAge", "Lifespan", "Mortality")
 
+# Units per outcome when nothing more precise is known. Chronological clocks
+# are reported in months for rodents and in years for primates, so "age units"
+# is the only default that is never wrong; the figures take the exact unit of
+# every column from the "tage_units" attribute predict_tAge() sets.
 TAGE_OUTCOME_UNITS <- c(
-  "Chronological" = "months",
+  "Chronological" = "age units",
   "Mortality"     = "log10 hazard ratio",
   "Lifespan"      = "fraction of max lifespan",
   "NormalizedAge" = "fraction of max lifespan"
@@ -95,10 +99,23 @@ TAGE_OUTCOME_UNITS <- c(
 }
 
 .tage_outcome_unit <- function(outcome, units = NULL) {
-  merged <- c(TAGE_OUTCOME_UNITS, units)
+  if (length(units)) names(units) <- .tage_canonical_outcome(names(units))
+  # `[` by name takes the first match, so the caller's units go first.
+  merged <- c(units, TAGE_OUTCOME_UNITS)
   out <- unname(merged[as.character(outcome)])
   out[is.na(out)] <- "effect"
   out
+}
+
+# Unit of each prediction column: units[column], then the units predict_tAge()
+# recorded for it, then units[outcome], then the default of the outcome.
+.tage_clock_units <- function(columns, outcomes, units = NULL, data_units = NULL) {
+  vapply(seq_along(columns), function(i) {
+    for (src in list(units, data_units)) {
+      if (!is.null(src) && columns[i] %in% names(src)) return(unname(as.character(src[[columns[i]]])))
+    }
+    .tage_outcome_unit(outcomes[i], units)
+  }, character(1))
 }
 
 #' Module colour to biological function map
@@ -244,8 +261,11 @@ tage_save_plot <- function(p, filename, width = NULL, height = NULL,
 #' @param sort_by_effect Order clocks by effect size within each panel.
 #' @param label_column,outcome_column Columns of \code{clocks_meta} holding the
 #'   display label and the outcome.
-#' @param units Named character vector overriding the x-axis unit per outcome,
-#'   e.g. \code{c(Chronological = "years")} for human data.
+#' @param units Named character vector of x-axis units, keyed by prediction
+#'   column or by outcome (e.g. \code{c(Chronological = "years")}). By default
+#'   the unit of each column comes from the \code{"tage_units"} attribute
+#'   \code{\link{predict_tAge}} sets on \code{data}; without either, a
+#'   chronological axis reads "age units".
 #' @param title,subtitle,caption Figure text. \code{subtitle} defaults to a
 #'   description of the markers; pass \code{NULL} to drop it.
 #' @param base_size Base font size.
@@ -362,7 +382,10 @@ tage_clock_forest <- function(data,
 
   # The unit goes in the strip, because the x axis is shared down a column and
   # a single axis title cannot describe months and log10 hazard ratios at once.
-  unit_by_outcome <- .tage_outcome_unit(levels(d$outcome_f), units)
+  d$unit <- .tage_clock_units(d$value_column, d$outcome, units, attr(data, "tage_units"))
+  unit_by_outcome <- vapply(levels(d$outcome_f), function(l) {
+    paste(unique(d$unit[d$outcome_f == l]), collapse = " / ")
+  }, character(1))
   pretty_outcome <- c(NormalizedAge = "Normalized age")[levels(d$outcome_f)]
   pretty_outcome[is.na(pretty_outcome)] <- levels(d$outcome_f)[is.na(pretty_outcome)]
   strip <- ifelse(levels(d$outcome_f) == "Effect",

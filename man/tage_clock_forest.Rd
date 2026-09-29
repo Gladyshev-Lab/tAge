@@ -63,8 +63,11 @@ which is what "filled = significant" implies.}
 \item{label_column, outcome_column}{Columns of \code{clocks_meta} holding the
 display label and the outcome.}
 
-\item{units}{Named character vector overriding the x-axis unit per outcome,
-e.g. \code{c(Chronological = "years")} for human data.}
+\item{units}{Named character vector of x-axis units, keyed by prediction
+column or by outcome (e.g. \code{c(Chronological = "years")}). By default
+the unit of each column comes from the \code{"tage_units"} attribute
+\code{\link{predict_tAge}} sets on \code{data}; without either, a
+chronological axis reads "age units".}
 
 \item{title, subtitle, caption}{Figure text. \code{subtitle} defaults to a
 description of the markers; pass \code{NULL} to drop it.}

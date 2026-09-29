@@ -39,6 +39,15 @@
 
 ## Bug fixes
 
+* `tage_clock_forest()` labels each axis with the unit of its clocks: from
+  `units` keyed by prediction column, else from the `"tage_units"` attribute
+  `predict_tAge()` sets (years for primates, percent with
+  `normalized_age = "percent"`), else from `units` keyed by outcome. `units`
+  used to be ignored -- the defaults came first in the lookup, so
+  `units = c(Chronological = "years")` still printed "months" -- and every
+  chronological axis read "months", human data included. Without any unit
+  information a chronological axis now reads "age units".
+
 * `tage_adjust_covariates()` gains `group_column`. With it, the covariate
   effects removed are those of the model the statistics fit (`value ~ group +
   covariates`, one model per stratum, `lm` or the weighted meta-regression), so

@@ -272,3 +272,25 @@ test_that("the module set is named, not assumed", {
   p <- tage_module_heatmap(fx$data, fx$modules, "Genotype", "WT", module_functions = character(0))
   expect_true("blue" %in% levels(p$data$module_label))
 })
+
+test_that("forest axis units come from predict_tAge(), then from `units`", {
+  fx <- .figure_fixture()
+  strips <- function(p) levels(p$data$outcome_panel)
+  forest <- function(data, ...) {
+    tage_clock_forest(data, clocks_meta = fx$meta, group_column = "Genotype",
+                      reference_group = "WT", compare_groups = "KO", ...)
+  }
+  # predict_tAge() records the unit of every column, e.g. years for human data
+  d <- fx$data
+  attr(d, "tage_units") <- stats::setNames(
+    ifelse(fx$meta$outcome == "Chronological", "years", "log10 hazard ratio"), fx$meta$filename)
+  expect_true("Chronological\n(years)" %in% strips(forest(d)))
+  # an outcome key overrides the default, and the caller's units win
+  expect_true("Chronological\n(months)" %in% strips(forest(fx$data, units = c(Chronological = "months"))))
+  # a column key beats the outcome key
+  col_units <- stats::setNames(rep("years", 4), fx$meta$filename[fx$meta$outcome == "Chronological"])
+  expect_true("Chronological\n(years)" %in%
+                strips(forest(fx$data, units = c(Chronological = "months", col_units))))
+  # without either, the axis does not claim months for data that may be in years
+  expect_true("Chronological\n(age units)" %in% strips(forest(fx$data)))
+})
