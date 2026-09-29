@@ -68,11 +68,18 @@ eset <- aggregate_on_obs_columns(
 # eset <- aggregate_pseudobulk(seurat_subset, coverage_threshold = 1e6)
 ```
 
-## 4. Remove outliers
+## 4. Outlier samples
+
+[`flag_outliers()`](https://gladyshev-lab.github.io/tAge/reference/flag_outliers.md)
+flags samples whose log-CPM profile is far from the median profile of
+their tissue (robust z of `1 - r` above 5); look at them, then remove
+them explicitly.
 
 ``` r
 
-eset_clean <- remove_outliers(eset, split_by = "tissue")
+eset <- flag_outliers(eset, split_by = "tissue")
+Biobase::pData(eset)[eset$tage_outlier, c("tissue", "tage_outlier_z")]
+eset_clean <- eset[, !eset$tage_outlier]
 plot_eset_density(eset_clean)
 ```
 

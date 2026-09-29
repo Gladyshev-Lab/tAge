@@ -130,7 +130,8 @@ eset <- aggregate_on_obs_columns(
   obs_column_names = c("sample_id", "tissue"),
   coverage_threshold = 1e7
 )
-eset_clean <- remove_outliers(eset, split_by = "tissue")
+eset <- flag_outliers(eset, split_by = "tissue")   # adds eset$tage_outlier
+eset_clean <- eset[, !eset$tage_outlier]
 
 results <- tAge_by_group(
   eset_clean,

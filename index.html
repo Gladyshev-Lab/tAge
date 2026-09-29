@@ -162,7 +162,8 @@
 <span>  obs_column_names <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"sample_id"</span>, <span class="st">"tissue"</span><span class="op">)</span>,</span>
 <span>  coverage_threshold <span class="op">=</span> <span class="fl">1e7</span></span>
 <span><span class="op">)</span></span>
-<span><span class="va">eset_clean</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/remove_outliers.html">remove_outliers</a></span><span class="op">(</span><span class="va">eset</span>, split_by <span class="op">=</span> <span class="st">"tissue"</span><span class="op">)</span></span>
+<span><span class="va">eset</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/flag_outliers.html">flag_outliers</a></span><span class="op">(</span><span class="va">eset</span>, split_by <span class="op">=</span> <span class="st">"tissue"</span><span class="op">)</span>   <span class="co"># adds eset$tage_outlier</span></span>
+<span><span class="va">eset_clean</span> <span class="op">&lt;-</span> <span class="va">eset</span><span class="op">[</span>, <span class="op">!</span><span class="va">eset</span><span class="op">$</span><span class="va">tage_outlier</span><span class="op">]</span></span>
 <span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/tAge_by_group.html">tAge_by_group</a></span><span class="op">(</span></span>
 <span>  <span class="va">eset_clean</span>,</span>

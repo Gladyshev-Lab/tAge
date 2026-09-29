@@ -66,8 +66,8 @@ in from Seurat or h5ad.
   groups
 - [`pseudobulk_summary()`](https://gladyshev-lab.github.io/tAge/reference/pseudobulk_summary.md)
   : Get summary statistics for pseudobulk samples
-- [`remove_outliers()`](https://gladyshev-lab.github.io/tAge/reference/remove_outliers.md)
-  : Remove outlier samples
+- [`flag_outliers()`](https://gladyshev-lab.github.io/tAge/reference/flag_outliers.md)
+  : Flag outlier samples
 - [`load_h5ad_simple()`](https://gladyshev-lab.github.io/tAge/reference/load_h5ad_simple.md)
   : Load h5ad file using reticulate and anndata
 - [`load_h5ad_to_seurat()`](https://gladyshev-lab.github.io/tAge/reference/load_h5ad_to_seurat.md)

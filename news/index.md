@@ -27,6 +27,19 @@
 
 ### Breaking changes
 
+- [`flag_outliers()`](https://gladyshev-lab.github.io/tAge/reference/flag_outliers.md)
+  replaces
+  [`remove_outliers()`](https://gladyshev-lab.github.io/tAge/reference/remove_outliers.md),
+  as `tage.pp.flag_outliers` does in the Python package, with the same
+  numbers. It flags, in the phenoData, samples whose log2(CPM + 1)
+  profile (genes with mean CPM \>= 10) is far from the median profile of
+  their stratum – robust z of `1 - r` above 5 – and leaves the removal
+  to the caller (`eset[, !eset$tage_outlier]`). `method = "pca_iqr"` is
+  the paper’s PC1/PC2 1.5-IQR rule on the same input. The removed
+  detectors ran PCA on log10(raw counts), where PC1 follows sequencing
+  depth; in strata of a dozen samples the 1.5-IQR rule removed normal
+  samples in most strata. `robustbase` is no longer suggested.
+
 - [`tage_module_heatmap()`](https://gladyshev-lab.github.io/tAge/reference/tage_module_heatmap.md)
   and
   [`load_module_functions()`](https://gladyshev-lab.github.io/tAge/reference/load_module_functions.md)
