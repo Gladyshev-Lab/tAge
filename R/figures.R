@@ -106,9 +106,10 @@ TAGE_OUTCOME_UNITS <- c(
 #' Reads the bundled annotation that names each co-expression module, e.g.
 #' \code{"blue"} -> \code{"Respiration/Mitochondrial translation"}.
 #'
-#' @param module_set Module set: \code{"rodent"} (default) or
-#'   \code{"multispecies"}, the two sets published with the clocks (see
-#'   \code{\link{list_module_clocks}}), or \code{"human"}.
+#' @param module_set Module set: \code{"rodent"} or \code{"multispecies"},
+#'   the two sets published with the clocks (see
+#'   \code{\link{list_module_clocks}}), or \code{"human"}. Required: a module
+#'   colour names a different module in each set.
 #'
 #' @return A named character vector, module colour to function, or an empty
 #'   vector when the annotation is unavailable.
@@ -116,8 +117,9 @@ TAGE_OUTCOME_UNITS <- c(
 #' @examples
 #' head(load_module_functions("rodent"))
 #' @export
-load_module_functions <- function(module_set = c("rodent", "multispecies", "human")) {
-  module_set <- match.arg(module_set)
+load_module_functions <- function(module_set) {
+  if (missing(module_set)) stop(.tage_module_set_message(), call. = FALSE)
+  module_set <- match.arg(module_set, c("rodent", "multispecies", "human"))
   path <- system.file("extdata", "modules",
                       sprintf("Module_to_function_map_%s.csv", module_set), package = "tAge")
   if (!nzchar(path) || !file.exists(path)) return(stats::setNames(character(0), character(0)))
@@ -126,6 +128,14 @@ load_module_functions <- function(module_set = c("rodent", "multispecies", "huma
     return(stats::setNames(character(0), character(0)))
   }
   stats::setNames(as.character(tab$Function), as.character(tab$Module))
+}
+
+# Why the module set has to be named rather than assumed.
+.tage_module_set_message <- function() {
+  paste0("Pass `module_set` (\"rodent\", \"multispecies\" or \"human\") or `module_functions`: ",
+         "module colours name different modules in each set, e.g. \"blue\" is ",
+         "Respiration/Mitochondrial translation in the rodent set and Myogenesis/Muscle ",
+         "contraction in the multispecies set. module_functions = character(0) labels by colour only.")
 }
 
 # Attach the size a figure wants to be printed at, and -- inside a notebook --
@@ -466,9 +476,12 @@ tage_clock_forest <- function(data,
 #' @param sig_threshold Adjusted p-value below which a cell is starred.
 #' @param module_set Module set used for the row labels, one of
 #'   \code{"rodent"}, \code{"multispecies"} or \code{"human"}; see
-#'   \code{\link{load_module_functions}}.
-#' @param module_functions Named character vector overriding the bundled
-#'   module-to-function annotation.
+#'   \code{\link{load_module_functions}}. Either this or
+#'   \code{module_functions} is required: a module colour names a different
+#'   module in each set.
+#' @param module_functions Named character vector, module column to
+#'   function, used instead of the bundled annotation; \code{character(0)}
+#'   labels the rows by module name only.
 #' @param color_scale \code{"robust"} divides each column by its
 #'   \code{robust_pct} percentile of \code{|effect|} so differently scaled
 #'   columns share one colour bar; \code{"absolute"} uses the raw effect.
@@ -509,7 +522,7 @@ tage_module_heatmap <- function(data,
                                 p_adjust = "BH",
                                 p_adjust_scope = "across_columns",
                                 sig_threshold = 0.05,
-                                module_set = c("rodent", "multispecies", "human"),
+                                module_set = NULL,
                                 module_functions = NULL,
                                 color_scale = c("robust", "absolute"),
                                 robust_pct = 95,
@@ -527,7 +540,10 @@ tage_module_heatmap <- function(data,
                                 stats = NULL) {
   .tage_gg_require()
   variance_strata <- match.arg(variance_strata)
-  module_set <- match.arg(module_set)
+  if (is.null(module_functions)) {
+    if (is.null(module_set)) stop(.tage_module_set_message(), call. = FALSE)
+    module_set <- match.arg(module_set, c("rodent", "multispecies", "human"))
+  }
   color_scale <- match.arg(color_scale)
 
   module_columns <- intersect(as.character(module_columns), colnames(data))

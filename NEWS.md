@@ -1,5 +1,16 @@
 # tAge (development version)
 
+## Breaking changes
+
+* `tage_module_heatmap()` and `load_module_functions()` no longer default to
+  the rodent module set: pass `module_set` (or `module_functions`). A module
+  colour names a different module in each set -- 7 of the 8 colours shared by
+  the rodent and multispecies sets differ, "blue" being
+  Respiration/Mitochondrial translation in one and Myogenesis/Muscle
+  contraction in the other -- so multispecies and human module clocks were
+  labelled with rodent functions whenever the argument was left out.
+  `module_functions = character(0)` labels the rows by module name only.
+
 ## Bug fixes
 
 * `tage_adjust_covariates()` gains `group_column`. With it, the covariate

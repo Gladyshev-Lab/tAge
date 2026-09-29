@@ -110,7 +110,7 @@ test_that("the module heatmap carries the statistics it drew", {
   skip_if_not_installed("ggplot2")
   fx <- .figure_fixture()
 
-  p <- tage_module_heatmap(fx$data, fx$modules, "Genotype", "WT",
+  p <- tage_module_heatmap(fx$data, fx$modules, "Genotype", "WT", module_set = "rodent",
                            compare_groups = "KO", split_by = "Tissue")
   expect_s3_class(p, "ggplot")
   st <- attr(p, "tage_stats")
@@ -125,10 +125,10 @@ test_that("module standardisation makes differently scaled modules comparable", 
   d <- fx$data
   d$blue <- d$blue * 100                     # same signal, different units
 
-  std <- attr(tage_module_heatmap(d, fx$modules, "Genotype", "WT",
+  std <- attr(tage_module_heatmap(d, fx$modules, "Genotype", "WT", module_set = "rodent",
                                   compare_groups = "KO", standardize = TRUE),
               "tage_stats")
-  raw <- attr(tage_module_heatmap(d, fx$modules, "Genotype", "WT",
+  raw <- attr(tage_module_heatmap(d, fx$modules, "Genotype", "WT", module_set = "rodent",
                                   compare_groups = "KO", standardize = FALSE),
               "tage_stats")
   blue_std <- abs(std$estimate[std$module == "blue"])
@@ -145,7 +145,7 @@ test_that("figures reject columns that are not in the data", {
     "None of the requested"
   )
   expect_error(
-    tage_module_heatmap(fx$data, "nope", "Genotype", "WT"),
+    tage_module_heatmap(fx$data, "nope", "Genotype", "WT", module_set = "rodent"),
     "None of the requested"
   )
 })
@@ -193,9 +193,9 @@ test_that("the auto height grows with the number of rows", {
                             compare_groups = "KO")
   expect_gte(tage_fig_size(many)[["height"]], tage_fig_size(few)[["height"]])
 
-  small <- tage_module_heatmap(fx$data, fx$modules[1:2], "Genotype", "WT",
+  small <- tage_module_heatmap(fx$data, fx$modules[1:2], "Genotype", "WT", module_set = "rodent",
                                compare_groups = "KO")
-  big <- tage_module_heatmap(fx$data, fx$modules, "Genotype", "WT",
+  big <- tage_module_heatmap(fx$data, fx$modules, "Genotype", "WT", module_set = "rodent",
                              compare_groups = "KO")
   expect_gt(tage_fig_size(big)[["height"]], tage_fig_size(small)[["height"]])
 })
@@ -203,7 +203,7 @@ test_that("the auto height grows with the number of rows", {
 test_that("tage_save_plot uses the recorded size and honours overrides", {
   skip_if_not_installed("ggplot2")
   fx <- .figure_fixture()
-  p <- tage_module_heatmap(fx$data, fx$modules, "Genotype", "WT",
+  p <- tage_module_heatmap(fx$data, fx$modules, "Genotype", "WT", module_set = "rodent",
                            compare_groups = "KO")
   size <- tage_fig_size(p)
 
@@ -261,4 +261,14 @@ test_that("two registry rows on one prediction column is an error", {
     tage_clock_forest(d, clocks_meta = clocks, group_column = "Genotype", reference_group = "WT"),
     "same prediction column"
   )
+})
+
+test_that("the module set is named, not assumed", {
+  fx <- .figure_fixture()
+  expect_error(tage_module_heatmap(fx$data, fx$modules, "Genotype", "WT"), "module_set")
+  expect_error(load_module_functions(), "module_set")
+  p <- tage_module_heatmap(fx$data, fx$modules, "Genotype", "WT", module_set = "multispecies")
+  expect_true(any(grepl("blue \u2014 Myogenesis/Muscle contraction", levels(p$data$module_label))))
+  p <- tage_module_heatmap(fx$data, fx$modules, "Genotype", "WT", module_functions = character(0))
+  expect_true("blue" %in% levels(p$data$module_label))
 })

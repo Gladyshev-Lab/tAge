@@ -17,7 +17,7 @@ tage_module_heatmap(
   p_adjust = "BH",
   p_adjust_scope = "across_columns",
   sig_threshold = 0.05,
-  module_set = c("rodent", "multispecies", "human"),
+  module_set = NULL,
   module_functions = NULL,
   color_scale = c("robust", "absolute"),
   robust_pct = 95,
@@ -53,10 +53,13 @@ facet. \code{NULL} uses every other level.}
 
 \item{module_set}{Module set used for the row labels, one of
 \code{"rodent"}, \code{"multispecies"} or \code{"human"}; see
-\code{\link{load_module_functions}}.}
+\code{\link{load_module_functions}}. Either this or
+\code{module_functions} is required: a module colour names a different
+module in each set.}
 
-\item{module_functions}{Named character vector overriding the bundled
-module-to-function annotation.}
+\item{module_functions}{Named character vector, module column to
+function, used instead of the bundled annotation; \code{character(0)}
+labels the rows by module name only.}
 
 \item{color_scale}{\code{"robust"} divides each column by its
 \code{robust_pct} percentile of \code{|effect|} so differently scaled

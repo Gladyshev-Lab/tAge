@@ -4,12 +4,13 @@
 \alias{load_module_functions}
 \title{Module colour to biological function map}
 \usage{
-load_module_functions(module_set = c("rodent", "multispecies", "human"))
+load_module_functions(module_set)
 }
 \arguments{
-\item{module_set}{Module set: \code{"rodent"} (default) or
-\code{"multispecies"}, the two sets published with the clocks (see
-\code{\link{list_module_clocks}}), or \code{"human"}.}
+\item{module_set}{Module set: \code{"rodent"} or \code{"multispecies"},
+the two sets published with the clocks (see
+\code{\link{list_module_clocks}}), or \code{"human"}. Required: a module
+colour names a different module in each set.}
 }
 \value{
 A named character vector, module colour to function, or an empty
