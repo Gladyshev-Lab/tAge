@@ -13,6 +13,7 @@ aggregate_on_obs_columns(
   shuffle = FALSE,
   seed = NULL,
   new_sample_prefix = "",
+  drop_incomplete = FALSE,
   verbose = TRUE
 )
 }
@@ -38,6 +39,10 @@ aggregation within each group. Default is FALSE.}
 
 \item{new_sample_prefix}{Character string prefix for pseudobulk sample names.
 Default is "".}
+
+\item{drop_incomplete}{Logical. Within each group, drop the last pseudobulk
+sample when its leftover cells do not reach \code{coverage_threshold}.
+Default FALSE.}
 
 \item{verbose}{Logical indicating whether to print progress messages. Default is TRUE.}
 }

@@ -2,9 +2,11 @@
 #'
 #' This function aggregates single-cell RNA-seq data into pseudobulk samples
 #' by sequentially accumulating cells until a cumulative read coverage threshold
-#' is reached. Each pseudobulk sample is guaranteed to contain at least the
-#' specified number of total reads, ensuring sufficient sequencing depth for
-#' downstream transcriptomic age prediction.
+#' is reached; the next cell starts a new sample. Every pseudobulk sample holds
+#' at least \code{coverage_threshold} reads, except the last one, made of the
+#' cells left over, which is dropped with \code{drop_incomplete = TRUE}. The
+#' rule is the one of \code{\link{aggregate_on_obs_columns}} and of the Python
+#' package's \code{tage.pp.aggregate}.
 #'
 #' @param seurat_obj A Seurat object containing single-cell RNA-seq data.
 #' @param coverage_threshold Integer specifying the minimum cumulative read count
@@ -17,6 +19,8 @@
 #' @param seed Integer seed for reproducibility when shuffle = TRUE. Default is NULL.
 #' @param new_sample_prefix Character string prefix for pseudobulk sample names.
 #'   Default is "".
+#' @param drop_incomplete Logical. Drop the last pseudobulk sample when its
+#'   leftover cells do not reach \code{coverage_threshold}. Default FALSE.
 #' @param verbose Logical indicating whether to print progress messages. Default is TRUE.
 #' @return An ExpressionSet object with pseudobulk expression data and metadata
 #'   including cumulative_coverage (total reads) and n_cells per pseudobulk sample.
@@ -38,6 +42,7 @@ aggregate_pseudobulk <- function(
   shuffle = FALSE,
   seed = NULL,
   new_sample_prefix = "",
+  drop_incomplete = FALSE,
   verbose = TRUE
 ) {
   if (!requireNamespace("Seurat", quietly = TRUE)) stop("Seurat package is required.")
@@ -46,82 +51,46 @@ aggregate_pseudobulk <- function(
   if (coverage_threshold <= 0) stop("coverage_threshold must be positive")
 
   counts <- Seurat::GetAssayData(seurat_obj, assay = assay, layer = layer)
-  n_cells <- ncol(counts)
-  n_genes <- nrow(counts)
 
   if (verbose) {
     cat("Aggregating pseudobulk samples by coverage...\n")
-    cat("  - Total cells:", n_cells, "\n")
-    cat("  - Total genes:", n_genes, "\n")
+    cat("  - Total cells:", ncol(counts), "\n")
+    cat("  - Total genes:", nrow(counts), "\n")
     cat("  - Coverage threshold:", format(coverage_threshold, big.mark = ","), "reads\n")
   }
 
-  cell_totals <- Matrix::colSums(counts)
+  result <- .aggregate_matrix(counts, coverage_threshold, shuffle = shuffle, seed = seed,
+                              drop_incomplete = drop_incomplete)
+  if (is.null(result)) stop("No pseudobulk sample reaches the coverage threshold.")
 
-  # Cell ordering
-  if (shuffle) {
-    if (!is.null(seed)) set.seed(seed)
-    indices <- sample.int(n_cells)
-  } else {
-    indices <- seq_len(n_cells)
-  }
-
-  # Assign groups by cumulative coverage
-  ordered_totals <- cell_totals[indices]
-  cum_totals <- cumsum(ordered_totals)
-  group_assignments <- as.integer(cum_totals %/% coverage_threshold) + 1L
-
-  # Last group may not reach threshold -- that's ok
-  n_groups <- max(group_assignments)
-
-  # Build sparse indicator matrix (cells x groups) for fast aggregation
-  indicator <- Matrix::sparseMatrix(
-    i = seq_len(n_cells),
-    j = group_assignments,
-    x = 1,
-    dims = c(n_cells, n_groups)
-  )
-
-  # Single matrix multiply: (genes x cells) %*% (cells x groups) = (genes x groups)
-  pseudobulk_counts <- counts[, indices] %*% indicator
-
-  # Compute group stats
-  group_cell_counts <- as.integer(Matrix::colSums(indicator))
-  group_coverages <- as.numeric(Matrix::colSums(
-    Matrix::Diagonal(n_cells, ordered_totals) %*% indicator
-  ))
-
-  # Convert to regular matrix
-  pseudobulk_counts <- as.matrix(pseudobulk_counts)
-
+  n_groups <- ncol(result$counts)
   sample_names <- paste0(new_sample_prefix, "pseudobulk_", seq_len(n_groups))
-  colnames(pseudobulk_counts) <- sample_names
-  rownames(pseudobulk_counts) <- rownames(counts)
+  colnames(result$counts) <- sample_names
 
   pseudobulk_meta <- data.frame(
     sample_id = sample_names,
-    cumulative_coverage = group_coverages,
-    n_cells = group_cell_counts,
+    cumulative_coverage = result$coverages,
+    n_cells = result$cell_counts,
     row.names = sample_names,
     stringsAsFactors = FALSE
   )
 
   if (verbose) {
-    n_full <- sum(group_coverages >= coverage_threshold)
+    n_full <- sum(result$coverages >= coverage_threshold)
     cat("  - Pseudobulk samples created:", n_groups, "\n")
     cat("  - Samples meeting threshold:", n_full, "\n")
     if (n_groups > n_full) {
       cat("  - Remainder sample (below threshold): 1 (",
-          format(group_coverages[n_groups], big.mark = ","), " reads, ",
-          group_cell_counts[n_groups], " cells)\n")
+          format(result$coverages[n_groups], big.mark = ","), " reads, ",
+          result$cell_counts[n_groups], " cells)\n")
     }
     cat("  - Coverage per sample (median):",
-        format(median(group_coverages), big.mark = ","), "reads\n")
-    cat("  - Cells per sample (median):", median(group_cell_counts), "\n")
+        format(median(result$coverages), big.mark = ","), "reads\n")
+    cat("  - Cells per sample (median):", median(result$cell_counts), "\n")
   }
 
   eset <- make_ExpressionSet(
-    exprs_data = as.data.frame(pseudobulk_counts),
+    exprs_data = as.data.frame(result$counts),
     phenodata = pseudobulk_meta,
     verbose = verbose
   )
@@ -153,6 +122,9 @@ aggregate_pseudobulk <- function(
 #' @param seed Integer seed for reproducibility when shuffle = TRUE. Default is NULL.
 #' @param new_sample_prefix Character string prefix for pseudobulk sample names.
 #'   Default is "".
+#' @param drop_incomplete Logical. Within each group, drop the last pseudobulk
+#'   sample when its leftover cells do not reach \code{coverage_threshold}.
+#'   Default FALSE.
 #' @param verbose Logical indicating whether to print progress messages. Default is TRUE.
 #' @return An ExpressionSet object with pseudobulk expression data. Metadata includes
 #'   the stratification columns, cumulative_coverage, and n_cells.
@@ -178,6 +150,7 @@ aggregate_on_obs_columns <- function(
   shuffle = FALSE,
   seed = NULL,
   new_sample_prefix = "",
+  drop_incomplete = FALSE,
   verbose = TRUE
 ) {
   if (!all(obs_column_names %in% colnames(seurat_obj@meta.data))) {
@@ -214,7 +187,8 @@ aggregate_on_obs_columns <- function(
       counts_matrix = grp_counts,
       coverage_threshold = coverage_threshold,
       shuffle = shuffle,
-      seed = seed
+      seed = seed,
+      drop_incomplete = drop_incomplete
     )
 
     if (is.null(result)) next
@@ -248,7 +222,7 @@ aggregate_on_obs_columns <- function(
   eset <- make_ExpressionSet(
     exprs_data = as.data.frame(combined_exprs),
     phenodata = combined_meta,
-    verbose = TRUE
+    verbose = verbose
   )
 
   if (verbose) {
@@ -261,17 +235,31 @@ aggregate_on_obs_columns <- function(
 }
 
 
-# Internal: aggregate a count matrix by coverage threshold
-.aggregate_matrix <- function(counts_matrix, coverage_threshold, shuffle, seed) {
-  n_cells <- ncol(counts_matrix)
-  n_genes <- nrow(counts_matrix)
-
-  if (is(counts_matrix, "dgCMatrix") || is(counts_matrix, "sparseMatrix")) {
-    cell_totals <- Matrix::colSums(counts_matrix)
-  } else {
-    cell_totals <- colSums(counts_matrix)
+# Pseudobulk group of every cell, taken in order: cells are added until the
+# group holds at least `threshold` reads, and the next cell opens a new group.
+# Every group but the last reaches the threshold and none is empty.
+.coverage_groups <- function(totals, threshold) {
+  group <- integer(length(totals))
+  g <- 1L
+  acc <- 0
+  for (i in seq_along(totals)) {
+    acc <- acc + totals[i]
+    group[i] <- g
+    if (acc >= threshold) {
+      g <- g + 1L
+      acc <- 0
+    }
   }
+  group
+}
 
+# Aggregate a genes x cells count matrix into pseudobulk samples by coverage.
+.aggregate_matrix <- function(counts_matrix, coverage_threshold, shuffle, seed,
+                              drop_incomplete = FALSE) {
+  n_cells <- ncol(counts_matrix)
+  if (n_cells == 0) return(NULL)
+
+  cell_totals <- Matrix::colSums(counts_matrix)
   if (shuffle) {
     if (!is.null(seed)) set.seed(seed)
     indices <- sample.int(n_cells)
@@ -279,53 +267,27 @@ aggregate_on_obs_columns <- function(
     indices <- seq_len(n_cells)
   }
 
-  ordered_totals <- cell_totals[indices]
+  group <- .coverage_groups(cell_totals[indices], coverage_threshold)
+  coverages <- as.numeric(tapply(cell_totals[indices], group, sum))
+  cell_counts <- tabulate(group)
 
-  group_assignments <- integer(n_cells)
-  group_coverages <- numeric()
-  group_cell_counts <- integer()
-  current_group <- 1L
-  current_coverage <- 0
-  current_n_cells <- 0L
-
-  for (i in seq_len(n_cells)) {
-    current_coverage <- current_coverage + ordered_totals[i]
-    current_n_cells <- current_n_cells + 1L
-    group_assignments[i] <- current_group
-
-    if (current_coverage >= coverage_threshold) {
-      group_coverages <- c(group_coverages, current_coverage)
-      group_cell_counts <- c(group_cell_counts, current_n_cells)
-      current_group <- current_group + 1L
-      current_coverage <- 0
-      current_n_cells <- 0L
-    }
+  last <- length(coverages)
+  if (drop_incomplete && coverages[last] < coverage_threshold) {
+    keep <- group < last
+    indices <- indices[keep]
+    group <- group[keep]
+    coverages <- coverages[-last]
+    cell_counts <- cell_counts[-last]
   }
+  if (length(indices) == 0) return(NULL)
 
-  if (current_n_cells > 0) {
-    group_coverages <- c(group_coverages, current_coverage)
-    group_cell_counts <- c(group_cell_counts, current_n_cells)
-  }
+  # One sparse product sums the cells of every group: (genes x cells) %*% (cells x groups).
+  indicator <- Matrix::sparseMatrix(i = seq_along(indices), j = group, x = 1,
+                                    dims = c(length(indices), length(coverages)))
+  pseudobulk <- as.matrix(counts_matrix[, indices, drop = FALSE] %*% indicator)
+  dimnames(pseudobulk) <- list(rownames(counts_matrix), NULL)
 
-  n_groups <- length(group_coverages)
-  if (n_groups == 0) return(NULL)
-
-  pseudobulk <- matrix(0, nrow = n_genes, ncol = n_groups)
-  rownames(pseudobulk) <- rownames(counts_matrix)
-
-  for (g in seq_len(n_groups)) {
-    member_positions <- which(group_assignments == g)
-    member_indices <- indices[member_positions]
-    grp <- counts_matrix[, member_indices, drop = FALSE]
-
-    if (is(grp, "dgCMatrix") || is(grp, "sparseMatrix")) {
-      pseudobulk[, g] <- Matrix::rowSums(grp)
-    } else {
-      pseudobulk[, g] <- rowSums(grp)
-    }
-  }
-
-  list(counts = pseudobulk, coverages = group_coverages, cell_counts = group_cell_counts)
+  list(counts = pseudobulk, coverages = coverages, cell_counts = as.integer(cell_counts))
 }
 
 #' Load AnnData h5ad file and convert to Seurat object

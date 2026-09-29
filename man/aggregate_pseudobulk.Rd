@@ -12,6 +12,7 @@ aggregate_pseudobulk(
   shuffle = FALSE,
   seed = NULL,
   new_sample_prefix = "",
+  drop_incomplete = FALSE,
   verbose = TRUE
 )
 }
@@ -34,6 +35,9 @@ aggregation. Shuffling breaks any ordering present in the data. Default is FALSE
 \item{new_sample_prefix}{Character string prefix for pseudobulk sample names.
 Default is "".}
 
+\item{drop_incomplete}{Logical. Drop the last pseudobulk sample when its
+leftover cells do not reach \code{coverage_threshold}. Default FALSE.}
+
 \item{verbose}{Logical indicating whether to print progress messages. Default is TRUE.}
 }
 \value{
@@ -43,9 +47,11 @@ An ExpressionSet object with pseudobulk expression data and metadata
 \description{
 This function aggregates single-cell RNA-seq data into pseudobulk samples
 by sequentially accumulating cells until a cumulative read coverage threshold
-is reached. Each pseudobulk sample is guaranteed to contain at least the
-specified number of total reads, ensuring sufficient sequencing depth for
-downstream transcriptomic age prediction.
+is reached; the next cell starts a new sample. Every pseudobulk sample holds
+at least \code{coverage_threshold} reads, except the last one, made of the
+cells left over, which is dropped with \code{drop_incomplete = TRUE}. The
+rule is the one of \code{\link{aggregate_on_obs_columns}} and of the Python
+package's \code{tage.pp.aggregate}.
 }
 \examples{
 \dontrun{

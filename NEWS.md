@@ -2,6 +2,16 @@
 
 ## Bug fixes
 
+* `aggregate_pseudobulk()` adds cells until a pseudobulk sample reaches
+  `coverage_threshold` and then starts the next one, as
+  `aggregate_on_obs_columns()` and the Python package do. It used to cut the
+  cumulative read count at multiples of the threshold, so the first sample and
+  about half of the others held fewer reads than the threshold, and a cell with
+  more reads than the threshold left empty samples (0 cells, 0 counts) behind.
+  Both functions gain `drop_incomplete` (as in Python) to drop the leftover last
+  sample, and share one implementation that sums with a sparse indicator
+  matrix. `aggregate_on_obs_columns()` now respects `verbose`.
+
 * `tAge_preprocessing()` refuses input that is not raw counts -- missing,
   negative or non-integer values (TPM, CPM, log data), with the tolerance the
   Python package uses -- and a `control_group_column` that does not exist or a
