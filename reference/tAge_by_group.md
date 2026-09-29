@@ -16,7 +16,7 @@ tAge_by_group(
   split_by,
   model_paths,
   species = "mouse",
-  mode = "EN",
+  mode = NULL,
   control_group_column = NULL,
   control_group_label = NULL,
   count_threshold = 10,
@@ -24,7 +24,7 @@ tAge_by_group(
   min_samples = 5,
   verbose = TRUE,
   gene_mapping_type = "auto",
-  return_std = identical(mode, "BR"),
+  return_std = NULL,
   age_units = c("auto", "months", "years"),
   normalized_age = c("fraction", "percent")
 )
@@ -42,7 +42,8 @@ tAge_by_group(
 
 - model_paths:
 
-  Named list of model paths.
+  Clock table with a `path` column, or named list of model paths; see
+  [`predict_tAge`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge.md).
 
 - species:
 
@@ -52,8 +53,8 @@ tAge_by_group(
 
 - mode:
 
-  Character string specifying the model type. Must be either "EN" for
-  Elastic Net or "BR" for Bayesian Ridge.
+  `"EN"` or `"BR"`. Default `NULL` takes each model's type from the
+  clock table, the registry or its file name.
 
 - control_group_column:
 
@@ -96,12 +97,12 @@ tAge_by_group(
 
 - return_std:
 
-  Logical. Whether to also return the per-sample predictive standard
-  deviation, which only Bayesian Ridge models provide. Defaults to
-  `TRUE` for `mode = "BR"`. The standard deviations are what
+  Logical. Whether to keep the per-sample predictive standard deviation
+  of Bayesian Ridge clocks. Default `NULL` keeps it for every Bayesian
+  ridge clock, as a `<column>_sd` column. Pass these to the `se_columns`
+  argument of
   [`tage_compare_groups`](https://gladyshev-lab.github.io/tAge/reference/tage_compare_groups.md)
-  weights samples by, so keep them if you intend to run statistics on BR
-  predictions.
+  for the Bayesian ridge statistics.
 
 - age_units:
 

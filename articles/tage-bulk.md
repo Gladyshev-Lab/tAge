@@ -113,50 +113,38 @@ model_paths <- list(
 ## 4. Predict
 
 [`predict_tAge()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge.md)
-takes one model per normalisation, so applying several clocks means one
-call per outcome. Renaming the columns as we go keeps them apart and
-builds the clock table the figures use.
+takes the clock table itself: every row is applied to the representation
+its `scaling` names, and each prediction column is named after the model
+file, as in the Python package. The same table labels the rows of the
+figures and gives each clock’s outcome.
 
 ``` r
 
 Sys.setenv(RETICULATE_PYTHON = Sys.getenv("RETICULATE_PYTHON"))  # use your env
 
-predict_one_outcome <- function(outcome) {
-  cl <- .clocks[.clocks$outcome == outcome, ]
-  res <- predict_tAge(
-    tAge_eset,
-    model_paths = list(scaled_diff = cl$path[cl$scaling == "Scaled"],
-                       yugene_diff = cl$path[cl$scaling == "YuGene"]),
-    mode = "EN"
-  )
-  out <- res[, c("scaled_diff_EN_tAge", "yugene_diff_EN_tAge"), drop = FALSE]
-  names(out) <- paste0(outcome, c("_Scaled", "_YuGene"))
-  out
-}
+results <- predict_tAge(tAge_eset, .clocks)
+attr(results, "tage_units")
+#> EN_Chronoage_Multispecies_Multitissue_scaleddiff.pkl 
+#>                                             "months" 
+#> EN_Chronoage_Multispecies_Multitissue_yugenediff.pkl 
+#>                                             "months" 
+#> EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl 
+#>                                 "log10 hazard ratio" 
+#> EN_Mortality_Multispecies_Multitissue_yugenediff.pkl 
+#>                                 "log10 hazard ratio"
 
-results <- cbind(
-  Biobase::pData(tAge_eset$scaled_diff),
-  predict_one_outcome("Chronological"),
-  predict_one_outcome("Mortality")
-)
+clocks_meta <- .clocks
+clocks_meta$name <- paste(clocks_meta$type, clocks_meta$scaling)
+mortality_scaled <- with(clocks_meta, filename[outcome == "Mortality" & scaling == "Scaled"])
 
-# The table the figures use to label rows and pick units per outcome.
-clocks_meta <- data.frame(
-  filename = c("Chronological_Scaled", "Chronological_YuGene",
-               "Mortality_Scaled", "Mortality_YuGene"),
-  name     = c("EN Scaled", "EN YuGene", "EN Scaled", "EN YuGene"),
-  outcome  = rep(c("Chronological", "Mortality"), each = 2),
-  stringsAsFactors = FALSE
-)
-
-head(results[, c("Genotype", "Tissue", "Mortality_Scaled")])
-#>         Genotype Tissue Mortality_Scaled
-#> Klo93K        WT Kidney      0.022934135
-#> Klo94K        WT Kidney     -0.068923471
-#> Klo95K        WT Kidney      0.127629789
-#> Klo96K        WT Kidney      0.584237945
-#> Klo99K        WT Kidney     -0.011345993
-#> Klo100K       WT Kidney     -0.004835266
+head(results[, c("Genotype", "Tissue", mortality_scaled)])
+#>         Genotype Tissue EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl
+#> Klo93K        WT Kidney                                          0.022934135
+#> Klo94K        WT Kidney                                         -0.068923471
+#> Klo95K        WT Kidney                                          0.127629789
+#> Klo96K        WT Kidney                                          0.584237945
+#> Klo99K        WT Kidney                                         -0.011345993
+#> Klo100K       WT Kidney                                         -0.004835266
 ```
 
 The mortality values are `log10(hazard ratio)` — small numbers centred
@@ -183,24 +171,24 @@ stats <- tage_compare_groups(
 
 stats[, c("value_column", "split", "group2", "estimate",
           "ci_low", "ci_high", "p_adjusted", "label")]
-#>           value_column           split    group2  estimate    ci_low   ci_high
-#> 1 Chronological_Scaled          Kidney Klotho KO 6.8815265 3.7835072  9.979546
-#> 2 Chronological_Scaled Skeletal muscle Klotho KO 8.5465910 4.0084004 13.084782
-#> 3 Chronological_YuGene          Kidney Klotho KO 9.7994616 6.1556913 13.443232
-#> 4 Chronological_YuGene Skeletal muscle Klotho KO 8.0065956 3.0476482 12.965543
-#> 5     Mortality_Scaled          Kidney Klotho KO 0.6441031 0.2724851  1.015721
-#> 6     Mortality_Scaled Skeletal muscle Klotho KO 0.6141689 0.1241048  1.104233
-#> 7     Mortality_YuGene          Kidney Klotho KO 0.9934256 0.5292257  1.457625
-#> 8     Mortality_YuGene Skeletal muscle Klotho KO 0.6491303 0.1306110  1.167650
-#>     p_adjusted label
-#> 1 0.0010118358    **
-#> 2 0.0073594525    **
-#> 3 0.0005338923   ***
-#> 4 0.0097361695    **
-#> 5 0.0031504821    **
-#> 6 0.0191398010     *
-#> 7 0.0010118358    **
-#> 8 0.0191398010     *
+#>                                           value_column           split
+#> 1 EN_Chronoage_Multispecies_Multitissue_scaleddiff.pkl          Kidney
+#> 2 EN_Chronoage_Multispecies_Multitissue_scaleddiff.pkl Skeletal muscle
+#> 3 EN_Chronoage_Multispecies_Multitissue_yugenediff.pkl          Kidney
+#> 4 EN_Chronoage_Multispecies_Multitissue_yugenediff.pkl Skeletal muscle
+#> 5 EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl          Kidney
+#> 6 EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl Skeletal muscle
+#> 7 EN_Mortality_Multispecies_Multitissue_yugenediff.pkl          Kidney
+#> 8 EN_Mortality_Multispecies_Multitissue_yugenediff.pkl Skeletal muscle
+#>      group2  estimate    ci_low   ci_high   p_adjusted label
+#> 1 Klotho KO 6.8815265 3.7835072  9.979546 0.0010118358    **
+#> 2 Klotho KO 8.5465910 4.0084004 13.084782 0.0073594525    **
+#> 3 Klotho KO 9.7994616 6.1556913 13.443232 0.0005338923   ***
+#> 4 Klotho KO 8.0065956 3.0476482 12.965543 0.0097361695    **
+#> 5 Klotho KO 0.6441031 0.2724851  1.015721 0.0031504821    **
+#> 6 Klotho KO 0.6141689 0.1241048  1.104233 0.0191398010     *
+#> 7 Klotho KO 0.9934256 0.5292257  1.457625 0.0010118358    **
+#> 8 Klotho KO 0.6491303 0.1306110  1.167650 0.0191398010     *
 ```
 
 `estimate` is always `group2 - group1`, in the clock’s own units, and
@@ -210,8 +198,9 @@ knowing:
 - `covariates` puts nuisance variables in the model instead of ignoring
   them.
 - `se_columns` switches to the weighted meta-regression for Bayesian
-  ridge clocks — pass the `_sd` columns that `predict_tAge(mode = "BR")`
-  returns.
+  ridge clocks — pass the `_sd` columns
+  [`predict_tAge()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge.md)
+  adds for every Bayesian ridge clock.
 - `variance_strata` chooses whether the residual variance comes from the
   two compared groups or from every group present.
 - `p_adjust_scope` chooses the correction family: `"within_column"`
@@ -249,7 +238,7 @@ engine, so the stars agree with the table above.
 tage_boxplot(
   results,
   x_var        = "Genotype",
-  y_var        = "Mortality_Scaled",
+  y_var        = mortality_scaled,
   subgroup_var = "Tissue",
   x_order      = c("WT", "Klotho KO"),
   ylab         = "Mortality tAge, log10 HR"

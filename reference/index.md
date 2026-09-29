@@ -11,8 +11,7 @@ consumes.
 - [`tAge_preprocessing()`](https://gladyshev-lab.github.io/tAge/reference/tAge_preprocessing.md)
   : Complete preprocessing pipeline for tAge analysis
 - [`predict_tAge()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge.md)
-  : Predict transcriptomic age for multiple processed ExpressionSet
-  objects
+  : Predict transcriptomic age with several clocks
 - [`predict_tAge_one()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge_one.md)
   : Predict transcriptomic age with one pre-trained model
 - [`tAge_by_group()`](https://gladyshev-lab.github.io/tAge/reference/tAge_by_group.md)

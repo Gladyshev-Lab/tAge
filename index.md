@@ -99,11 +99,18 @@ tAge_eset <- tAge_preprocessing(
   control_group_column = "Genotype", control_group_label = "WT"
 )
 
-# 3. Predict (the species was recorded by tAge_preprocessing)
-results <- predict_tAge(tAge_eset, model_paths, mode = "EN")
+# 3. Predict (the species was recorded by tAge_preprocessing). The clock table
+#    from download_clocks() can be passed as is: one column per clock, named
+#    after the model file, as in the Python package.
+results <- predict_tAge(tAge_eset, clocks)
 head(results)
 attr(results, "tage_units")   # unit of every prediction column
 ```
+
+A named list, `list(scaled_diff = ..., yugene_diff = ...)`, works too:
+with one model per representation the columns are `scaled_diff_EN_tAge`
+and `yugene_diff_EN_tAge`, with several they are named after the model
+files.
 
 `species` is the species of the *samples* and only sets the maximum
 lifespan used to express chronological-age clocks in months (rodents) or
@@ -150,7 +157,7 @@ reports z-tests.
 
 ``` r
 
-# BR predictions carry a matching <normalisation>_BR_tAge_sd column.
+# BR predictions carry a matching <column>_sd column.
 results <- predict_tAge(tAge_eset, model_paths, species = "mouse", mode = "BR")
 
 tage_compare_groups(

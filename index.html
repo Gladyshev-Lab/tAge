@@ -142,10 +142,13 @@
 <span>  control_group_column <span class="op">=</span> <span class="st">"Genotype"</span>, control_group_label <span class="op">=</span> <span class="st">"WT"</span></span>
 <span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 3. Predict (the species was recorded by tAge_preprocessing)</span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/predict_tAge.html">predict_tAge</a></span><span class="op">(</span><span class="va">tAge_eset</span>, <span class="va">model_paths</span>, mode <span class="op">=</span> <span class="st">"EN"</span><span class="op">)</span></span>
+<span><span class="co"># 3. Predict (the species was recorded by tAge_preprocessing). The clock table</span></span>
+<span><span class="co">#    from download_clocks() can be passed as is: one column per clock, named</span></span>
+<span><span class="co">#    after the model file, as in the Python package.</span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/predict_tAge.html">predict_tAge</a></span><span class="op">(</span><span class="va">tAge_eset</span>, <span class="va">clocks</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">)</span></span>
 <span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">results</span>, <span class="st">"tage_units"</span><span class="op">)</span>   <span class="co"># unit of every prediction column</span></span></code></pre></div>
+<p>A named list, <code>list(scaled_diff = ..., yugene_diff = ...)</code>, works too: with one model per representation the columns are <code>scaled_diff_EN_tAge</code> and <code>yugene_diff_EN_tAge</code>, with several they are named after the model files.</p>
 <p><code>species</code> is the species of the <em>samples</em> and only sets the maximum lifespan used to express chronological-age clocks in months (rodents) or years (primates); it is not the species group a clock was trained on. <code>age_units</code> forces months or years, and <code>normalized_age = "percent"</code> reports normalized-age clocks as a percentage of the expected maximum lifespan, as the paper does.</p>
 </div>
 <div class="section level3">
@@ -177,7 +180,7 @@
 </h2>
 <p><code><a href="reference/tage_compare_groups.html">tage_compare_groups()</a></code> and friends implement the statistical models of the paper’s clock analyses; the R and Python packages agree numerically. Elastic net clocks are compared with estimated marginal-mean contrasts of <code>value ~ group + covariates</code> (<code>emmeans</code> on an <code>lm</code>); Bayesian ridge clocks go through a REML meta-regression (<code><a href="https://wviechtb.github.io/metafor/reference/rma.uni.html" class="external-link">metafor::rma.uni</a></code>) that weights each sample by its own prediction standard deviation and reports z-tests.</p>
 <div class="sourceCode" id="cb7"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="co"># BR predictions carry a matching &lt;normalisation&gt;_BR_tAge_sd column.</span></span>
+<code class="sourceCode R"><span><span class="co"># BR predictions carry a matching &lt;column&gt;_sd column.</span></span>
 <span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="reference/predict_tAge.html">predict_tAge</a></span><span class="op">(</span><span class="va">tAge_eset</span>, <span class="va">model_paths</span>, species <span class="op">=</span> <span class="st">"mouse"</span>, mode <span class="op">=</span> <span class="st">"BR"</span><span class="op">)</span></span>
 <span></span>
 <span><span class="fu"><a href="reference/tage_compare_groups.html">tage_compare_groups</a></span><span class="op">(</span></span>

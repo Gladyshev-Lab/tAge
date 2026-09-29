@@ -173,49 +173,37 @@ R (reads the bundled registry):</p>
 <div class="section level2">
 <h2 id="predict">4. Predict<a class="anchor" aria-label="anchor" href="#predict"></a>
 </h2>
-<p><code><a href="../reference/predict_tAge.html">predict_tAge()</a></code> takes one model per normalisation, so
-applying several clocks means one call per outcome. Renaming the columns
-as we go keeps them apart and builds the clock table the figures
-use.</p>
+<p><code><a href="../reference/predict_tAge.html">predict_tAge()</a></code> takes the clock table itself: every row
+is applied to the representation its <code>scaling</code> names, and
+each prediction column is named after the model file, as in the Python
+package. The same table labels the rows of the figures and gives each
+clock’s outcome.</p>
 <div class="sourceCode" id="cb5"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="https://rdrr.io/r/base/Sys.setenv.html" class="external-link">Sys.setenv</a></span><span class="op">(</span>RETICULATE_PYTHON <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Sys.getenv.html" class="external-link">Sys.getenv</a></span><span class="op">(</span><span class="st">"RETICULATE_PYTHON"</span><span class="op">)</span><span class="op">)</span>  <span class="co"># use your env</span></span>
 <span></span>
-<span><span class="va">predict_one_outcome</span> <span class="op">&lt;-</span> <span class="kw">function</span><span class="op">(</span><span class="va">outcome</span><span class="op">)</span> <span class="op">{</span></span>
-<span>  <span class="va">cl</span> <span class="op">&lt;-</span> <span class="va">.clocks</span><span class="op">[</span><span class="va">.clocks</span><span class="op">$</span><span class="va">outcome</span> <span class="op">==</span> <span class="va">outcome</span>, <span class="op">]</span></span>
-<span>  <span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict_tAge.html">predict_tAge</a></span><span class="op">(</span></span>
-<span>    <span class="va">tAge_eset</span>,</span>
-<span>    model_paths <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>scaled_diff <span class="op">=</span> <span class="va">cl</span><span class="op">$</span><span class="va">path</span><span class="op">[</span><span class="va">cl</span><span class="op">$</span><span class="va">scaling</span> <span class="op">==</span> <span class="st">"Scaled"</span><span class="op">]</span>,</span>
-<span>                       yugene_diff <span class="op">=</span> <span class="va">cl</span><span class="op">$</span><span class="va">path</span><span class="op">[</span><span class="va">cl</span><span class="op">$</span><span class="va">scaling</span> <span class="op">==</span> <span class="st">"YuGene"</span><span class="op">]</span><span class="op">)</span>,</span>
-<span>    mode <span class="op">=</span> <span class="st">"EN"</span></span>
-<span>  <span class="op">)</span></span>
-<span>  <span class="va">out</span> <span class="op">&lt;-</span> <span class="va">res</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"scaled_diff_EN_tAge"</span>, <span class="st">"yugene_diff_EN_tAge"</span><span class="op">)</span>, drop <span class="op">=</span> <span class="cn">FALSE</span><span class="op">]</span></span>
-<span>  <span class="fu"><a href="https://rdrr.io/r/base/names.html" class="external-link">names</a></span><span class="op">(</span><span class="va">out</span><span class="op">)</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste0</a></span><span class="op">(</span><span class="va">outcome</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"_Scaled"</span>, <span class="st">"_YuGene"</span><span class="op">)</span><span class="op">)</span></span>
-<span>  <span class="va">out</span></span>
-<span><span class="op">}</span></span>
+<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/predict_tAge.html">predict_tAge</a></span><span class="op">(</span><span class="va">tAge_eset</span>, <span class="va">.clocks</span><span class="op">)</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/attr.html" class="external-link">attr</a></span><span class="op">(</span><span class="va">results</span>, <span class="st">"tage_units"</span><span class="op">)</span></span>
+<span><span class="co">#&gt; EN_Chronoage_Multispecies_Multitissue_scaleddiff.pkl </span></span>
+<span><span class="co">#&gt;                                             "months" </span></span>
+<span><span class="co">#&gt; EN_Chronoage_Multispecies_Multitissue_yugenediff.pkl </span></span>
+<span><span class="co">#&gt;                                             "months" </span></span>
+<span><span class="co">#&gt; EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl </span></span>
+<span><span class="co">#&gt;                                 "log10 hazard ratio" </span></span>
+<span><span class="co">#&gt; EN_Mortality_Multispecies_Multitissue_yugenediff.pkl </span></span>
+<span><span class="co">#&gt;                                 "log10 hazard ratio"</span></span>
 <span></span>
-<span><span class="va">results</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/cbind.html" class="external-link">cbind</a></span><span class="op">(</span></span>
-<span>  <span class="fu">Biobase</span><span class="fu">::</span><span class="fu"><a href="https://rdrr.io/pkg/Biobase/man/phenoData.html" class="external-link">pData</a></span><span class="op">(</span><span class="va">tAge_eset</span><span class="op">$</span><span class="va">scaled_diff</span><span class="op">)</span>,</span>
-<span>  <span class="fu">predict_one_outcome</span><span class="op">(</span><span class="st">"Chronological"</span><span class="op">)</span>,</span>
-<span>  <span class="fu">predict_one_outcome</span><span class="op">(</span><span class="st">"Mortality"</span><span class="op">)</span></span>
-<span><span class="op">)</span></span>
+<span><span class="va">clocks_meta</span> <span class="op">&lt;-</span> <span class="va">.clocks</span></span>
+<span><span class="va">clocks_meta</span><span class="op">$</span><span class="va">name</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/paste.html" class="external-link">paste</a></span><span class="op">(</span><span class="va">clocks_meta</span><span class="op">$</span><span class="va">type</span>, <span class="va">clocks_meta</span><span class="op">$</span><span class="va">scaling</span><span class="op">)</span></span>
+<span><span class="va">mortality_scaled</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/with.html" class="external-link">with</a></span><span class="op">(</span><span class="va">clocks_meta</span>, <span class="va">filename</span><span class="op">[</span><span class="va">outcome</span> <span class="op">==</span> <span class="st">"Mortality"</span> <span class="op">&amp;</span> <span class="va">scaling</span> <span class="op">==</span> <span class="st">"Scaled"</span><span class="op">]</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># The table the figures use to label rows and pick units per outcome.</span></span>
-<span><span class="va">clocks_meta</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/data.frame.html" class="external-link">data.frame</a></span><span class="op">(</span></span>
-<span>  filename <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chronological_Scaled"</span>, <span class="st">"Chronological_YuGene"</span>,</span>
-<span>               <span class="st">"Mortality_Scaled"</span>, <span class="st">"Mortality_YuGene"</span><span class="op">)</span>,</span>
-<span>  name     <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"EN Scaled"</span>, <span class="st">"EN YuGene"</span>, <span class="st">"EN Scaled"</span>, <span class="st">"EN YuGene"</span><span class="op">)</span>,</span>
-<span>  outcome  <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/rep.html" class="external-link">rep</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Chronological"</span>, <span class="st">"Mortality"</span><span class="op">)</span>, each <span class="op">=</span> <span class="fl">2</span><span class="op">)</span>,</span>
-<span>  stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span></span>
-<span><span class="op">)</span></span>
-<span></span>
-<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Genotype"</span>, <span class="st">"Tissue"</span>, <span class="st">"Mortality_Scaled"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
-<span><span class="co">#&gt;         Genotype Tissue Mortality_Scaled</span></span>
-<span><span class="co">#&gt; Klo93K        WT Kidney      0.022934135</span></span>
-<span><span class="co">#&gt; Klo94K        WT Kidney     -0.068923471</span></span>
-<span><span class="co">#&gt; Klo95K        WT Kidney      0.127629789</span></span>
-<span><span class="co">#&gt; Klo96K        WT Kidney      0.584237945</span></span>
-<span><span class="co">#&gt; Klo99K        WT Kidney     -0.011345993</span></span>
-<span><span class="co">#&gt; Klo100K       WT Kidney     -0.004835266</span></span></code></pre></div>
+<span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">results</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"Genotype"</span>, <span class="st">"Tissue"</span>, <span class="va">mortality_scaled</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span>
+<span><span class="co">#&gt;         Genotype Tissue EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl</span></span>
+<span><span class="co">#&gt; Klo93K        WT Kidney                                          0.022934135</span></span>
+<span><span class="co">#&gt; Klo94K        WT Kidney                                         -0.068923471</span></span>
+<span><span class="co">#&gt; Klo95K        WT Kidney                                          0.127629789</span></span>
+<span><span class="co">#&gt; Klo96K        WT Kidney                                          0.584237945</span></span>
+<span><span class="co">#&gt; Klo99K        WT Kidney                                         -0.011345993</span></span>
+<span><span class="co">#&gt; Klo100K       WT Kidney                                         -0.004835266</span></span></code></pre></div>
 <p>The mortality values are <code>log10(hazard ratio)</code> — small
 numbers centred near zero, <strong>not</strong> ages. See below.</p>
 </div>
@@ -239,24 +227,24 @@ paper’s clock analyses.</p>
 <span></span>
 <span><span class="va">stats</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"value_column"</span>, <span class="st">"split"</span>, <span class="st">"group2"</span>, <span class="st">"estimate"</span>,</span>
 <span>          <span class="st">"ci_low"</span>, <span class="st">"ci_high"</span>, <span class="st">"p_adjusted"</span>, <span class="st">"label"</span><span class="op">)</span><span class="op">]</span></span>
-<span><span class="co">#&gt;           value_column           split    group2  estimate    ci_low   ci_high</span></span>
-<span><span class="co">#&gt; 1 Chronological_Scaled          Kidney Klotho KO 6.8815265 3.7835072  9.979546</span></span>
-<span><span class="co">#&gt; 2 Chronological_Scaled Skeletal muscle Klotho KO 8.5465910 4.0084004 13.084782</span></span>
-<span><span class="co">#&gt; 3 Chronological_YuGene          Kidney Klotho KO 9.7994616 6.1556913 13.443232</span></span>
-<span><span class="co">#&gt; 4 Chronological_YuGene Skeletal muscle Klotho KO 8.0065956 3.0476482 12.965543</span></span>
-<span><span class="co">#&gt; 5     Mortality_Scaled          Kidney Klotho KO 0.6441031 0.2724851  1.015721</span></span>
-<span><span class="co">#&gt; 6     Mortality_Scaled Skeletal muscle Klotho KO 0.6141689 0.1241048  1.104233</span></span>
-<span><span class="co">#&gt; 7     Mortality_YuGene          Kidney Klotho KO 0.9934256 0.5292257  1.457625</span></span>
-<span><span class="co">#&gt; 8     Mortality_YuGene Skeletal muscle Klotho KO 0.6491303 0.1306110  1.167650</span></span>
-<span><span class="co">#&gt;     p_adjusted label</span></span>
-<span><span class="co">#&gt; 1 0.0010118358    **</span></span>
-<span><span class="co">#&gt; 2 0.0073594525    **</span></span>
-<span><span class="co">#&gt; 3 0.0005338923   ***</span></span>
-<span><span class="co">#&gt; 4 0.0097361695    **</span></span>
-<span><span class="co">#&gt; 5 0.0031504821    **</span></span>
-<span><span class="co">#&gt; 6 0.0191398010     *</span></span>
-<span><span class="co">#&gt; 7 0.0010118358    **</span></span>
-<span><span class="co">#&gt; 8 0.0191398010     *</span></span></code></pre></div>
+<span><span class="co">#&gt;                                           value_column           split</span></span>
+<span><span class="co">#&gt; 1 EN_Chronoage_Multispecies_Multitissue_scaleddiff.pkl          Kidney</span></span>
+<span><span class="co">#&gt; 2 EN_Chronoage_Multispecies_Multitissue_scaleddiff.pkl Skeletal muscle</span></span>
+<span><span class="co">#&gt; 3 EN_Chronoage_Multispecies_Multitissue_yugenediff.pkl          Kidney</span></span>
+<span><span class="co">#&gt; 4 EN_Chronoage_Multispecies_Multitissue_yugenediff.pkl Skeletal muscle</span></span>
+<span><span class="co">#&gt; 5 EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl          Kidney</span></span>
+<span><span class="co">#&gt; 6 EN_Mortality_Multispecies_Multitissue_scaleddiff.pkl Skeletal muscle</span></span>
+<span><span class="co">#&gt; 7 EN_Mortality_Multispecies_Multitissue_yugenediff.pkl          Kidney</span></span>
+<span><span class="co">#&gt; 8 EN_Mortality_Multispecies_Multitissue_yugenediff.pkl Skeletal muscle</span></span>
+<span><span class="co">#&gt;      group2  estimate    ci_low   ci_high   p_adjusted label</span></span>
+<span><span class="co">#&gt; 1 Klotho KO 6.8815265 3.7835072  9.979546 0.0010118358    **</span></span>
+<span><span class="co">#&gt; 2 Klotho KO 8.5465910 4.0084004 13.084782 0.0073594525    **</span></span>
+<span><span class="co">#&gt; 3 Klotho KO 9.7994616 6.1556913 13.443232 0.0005338923   ***</span></span>
+<span><span class="co">#&gt; 4 Klotho KO 8.0065956 3.0476482 12.965543 0.0097361695    **</span></span>
+<span><span class="co">#&gt; 5 Klotho KO 0.6441031 0.2724851  1.015721 0.0031504821    **</span></span>
+<span><span class="co">#&gt; 6 Klotho KO 0.6141689 0.1241048  1.104233 0.0191398010     *</span></span>
+<span><span class="co">#&gt; 7 Klotho KO 0.9934256 0.5292257  1.457625 0.0010118358    **</span></span>
+<span><span class="co">#&gt; 8 Klotho KO 0.6491303 0.1306110  1.167650 0.0191398010     *</span></span></code></pre></div>
 <p><code>estimate</code> is always <code>group2 - group1</code>, in the
 clock’s own units, and <code>ci_low</code>/<code>ci_high</code> are the
 95% interval. A few arguments are worth knowing:</p>
@@ -266,8 +254,8 @@ clock’s own units, and <code>ci_low</code>/<code>ci_high</code> are the
 of ignoring them.</li>
 <li>
 <code>se_columns</code> switches to the weighted meta-regression for
-Bayesian ridge clocks — pass the <code>_sd</code> columns that
-<code>predict_tAge(mode = "BR")</code> returns.</li>
+Bayesian ridge clocks — pass the <code>_sd</code> columns
+<code><a href="../reference/predict_tAge.html">predict_tAge()</a></code> adds for every Bayesian ridge clock.</li>
 <li>
 <code>variance_strata</code> chooses whether the residual variance
 comes from the two compared groups or from every group present.</li>
@@ -302,7 +290,7 @@ agree with the table above.</p>
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/tage_boxplot.html">tage_boxplot</a></span><span class="op">(</span></span>
 <span>  <span class="va">results</span>,</span>
 <span>  x_var        <span class="op">=</span> <span class="st">"Genotype"</span>,</span>
-<span>  y_var        <span class="op">=</span> <span class="st">"Mortality_Scaled"</span>,</span>
+<span>  y_var        <span class="op">=</span> <span class="va">mortality_scaled</span>,</span>
 <span>  subgroup_var <span class="op">=</span> <span class="st">"Tissue"</span>,</span>
 <span>  x_order      <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"WT"</span>, <span class="st">"Klotho KO"</span><span class="op">)</span>,</span>
 <span>  ylab         <span class="op">=</span> <span class="st">"Mortality tAge, log10 HR"</span></span>

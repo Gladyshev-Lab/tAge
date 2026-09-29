@@ -2,6 +2,29 @@
 
 ## tAge (development version)
 
+### New features
+
+- [`predict_tAge()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge.md)
+  takes the clock table from
+  [`list_clocks()`](https://gladyshev-lab.github.io/tAge/reference/list_clocks.md)
+  /
+  [`list_module_clocks()`](https://gladyshev-lab.github.io/tAge/reference/list_module_clocks.md)
+  with a `path` column (e.g. from
+  [`download_clocks()`](https://gladyshev-lab.github.io/tAge/reference/download_clocks.md)):
+  every row is applied to the representation its `scaling` names and
+  gets a column named after the model file, the names the Python package
+  uses. A named list of paths still works; with several paths per
+  representation it used to fail with “‘length = 3’ in coercion to
+  ‘logical(1)’” and now names its columns by model file, while one path
+  per representation keeps the `<representation>_<mode>_tAge` names.
+  `mode` and `return_std` default to `NULL`: each model’s type comes
+  from the table, the registry or its file name, and Bayesian ridge
+  clocks keep their `_sd` column.
+  [`tAge_by_group()`](https://gladyshev-lab.github.io/tAge/reference/tAge_by_group.md)
+  follows.
+  [`predict_tAge_one()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge_one.md)
+  refuses more than one path with a clear message.
+
 ### Breaking changes
 
 - [`tage_module_heatmap()`](https://gladyshev-lab.github.io/tAge/reference/tage_module_heatmap.md)

@@ -60,7 +60,7 @@ combined data. This is <code><a href="tAge_preprocessing.html">tAge_preprocessin
 <span>  <span class="va">split_by</span>,</span>
 <span>  <span class="va">model_paths</span>,</span>
 <span>  species <span class="op">=</span> <span class="st">"mouse"</span>,</span>
-<span>  mode <span class="op">=</span> <span class="st">"EN"</span>,</span>
+<span>  mode <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  control_group_column <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  control_group_label <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  count_threshold <span class="op">=</span> <span class="fl">10</span>,</span>
@@ -68,7 +68,7 @@ combined data. This is <code><a href="tAge_preprocessing.html">tAge_preprocessin
 <span>  min_samples <span class="op">=</span> <span class="fl">5</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  gene_mapping_type <span class="op">=</span> <span class="st">"auto"</span>,</span>
-<span>  return_std <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/identical.html" class="external-link">identical</a></span><span class="op">(</span><span class="va">mode</span>, <span class="st">"BR"</span><span class="op">)</span>,</span>
+<span>  return_std <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  age_units <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"auto"</span>, <span class="st">"months"</span>, <span class="st">"years"</span><span class="op">)</span>,</span>
 <span>  normalized_age <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fraction"</span>, <span class="st">"percent"</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -87,7 +87,8 @@ combined data. This is <code><a href="tAge_preprocessing.html">tAge_preprocessin
 
 
 <dt id="arg-model-paths">model_paths<a class="anchor" aria-label="anchor" href="#arg-model-paths"></a></dt>
-<dd><p>Named list of model paths.</p></dd>
+<dd><p>Clock table with a <code>path</code> column, or named list of
+model paths; see <code><a href="predict_tAge.html">predict_tAge</a></code>.</p></dd>
 
 
 <dt id="arg-species">species<a class="anchor" aria-label="anchor" href="#arg-species"></a></dt>
@@ -96,8 +97,8 @@ combined data. This is <code><a href="tAge_preprocessing.html">tAge_preprocessin
 
 
 <dt id="arg-mode">mode<a class="anchor" aria-label="anchor" href="#arg-mode"></a></dt>
-<dd><p>Character string specifying the model type. Must be either "EN" for
-Elastic Net or "BR" for Bayesian Ridge.</p></dd>
+<dd><p><code>"EN"</code> or <code>"BR"</code>. Default <code>NULL</code> takes each
+model's type from the clock table, the registry or its file name.</p></dd>
 
 
 <dt id="arg-control-group-column">control_group_column<a class="anchor" aria-label="anchor" href="#arg-control-group-column"></a></dt>
@@ -139,11 +140,11 @@ see <code><a href="map_genes.html">map_genes</a></code>).</p></dd>
 
 
 <dt id="arg-return-std">return_std<a class="anchor" aria-label="anchor" href="#arg-return-std"></a></dt>
-<dd><p>Logical. Whether to also return the per-sample predictive
-standard deviation, which only Bayesian Ridge models provide. Defaults to
-<code>TRUE</code> for <code>mode = "BR"</code>. The standard deviations are what
-<code><a href="tage_compare_groups.html">tage_compare_groups</a></code> weights samples by, so keep them if you
-intend to run statistics on BR predictions.</p></dd>
+<dd><p>Logical. Whether to keep the per-sample predictive standard
+deviation of Bayesian Ridge clocks. Default <code>NULL</code> keeps it for every
+Bayesian ridge clock, as a <code>&lt;column&gt;_sd</code> column. Pass these to the
+<code>se_columns</code> argument of <code><a href="tage_compare_groups.html">tage_compare_groups</a></code> for the
+Bayesian ridge statistics.</p></dd>
 
 
 <dt id="arg-age-units">age_units<a class="anchor" aria-label="anchor" href="#arg-age-units"></a></dt>
