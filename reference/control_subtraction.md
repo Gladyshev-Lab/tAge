@@ -61,9 +61,8 @@ eset <- make_ExpressionSet(expr_data, meta_data)
 #>   - Number of samples: 24 
 
 
-# Subtract control group (assuming 'Group' column has 'Control' label)
-control_eset <- control_subtraction(eset, "Group", "Control", verbose = TRUE)
-#> Warning: No sample has Group == 'Control'; centring on all samples instead.
-#> ✓ No control samples found for label 'Control'. Centring on all samples (overall median).
+# Centre on the wild-type samples
+control_eset <- control_subtraction(eset, "Genotype", "WT", verbose = TRUE)
+#> ✓ Control samples found for label 'WT'. Using control group median for subtraction.
 #> Warning: NaNs produced
 ```

@@ -70,7 +70,8 @@ for different analysis approaches.</p>
 
 
 <dl><dt id="arg-eset">eset<a class="anchor" aria-label="anchor" href="#arg-eset"></a></dt>
-<dd><p>An ExpressionSet object containing raw expression data.</p></dd>
+<dd><p>An ExpressionSet object containing raw integer counts (no NA,
+no negative or non-integer values; normalised data are refused).</p></dd>
 
 
 <dt id="arg-species">species<a class="anchor" aria-label="anchor" href="#arg-species"></a></dt>
@@ -97,7 +98,8 @@ that contains control group labels. Default is NULL.</p></dd>
 <dd><p>Character string specifying the label for control samples.
 Default is NULL. With <code>split_by</code>, the controls of each stratum are
 its reference; a stratum without controls is centred on all of its
-samples, with a warning.</p></dd>
+samples, with a warning. A column that does not exist, or a label that no
+sample carries, is an error.</p></dd>
 
 
 <dt id="arg-count-threshold">count_threshold<a class="anchor" aria-label="anchor" href="#arg-count-threshold"></a></dt>

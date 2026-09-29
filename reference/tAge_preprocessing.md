@@ -26,7 +26,8 @@ tAge_preprocessing(
 
 - eset:
 
-  An ExpressionSet object containing raw expression data.
+  An ExpressionSet object containing raw integer counts (no NA, no
+  negative or non-integer values; normalised data are refused).
 
 - species:
 
@@ -55,7 +56,8 @@ tAge_preprocessing(
   Character string specifying the label for control samples. Default is
   NULL. With `split_by`, the controls of each stratum are its reference;
   a stratum without controls is centred on all of its samples, with a
-  warning.
+  warning. A column that does not exist, or a label that no sample
+  carries, is an error.
 
 - count_threshold:
 

@@ -65,7 +65,8 @@ tAge_by_group(
   Character string specifying the label for control samples. Default is
   NULL. With `split_by`, the controls of each stratum are its reference;
   a stratum without controls is centred on all of its samples, with a
-  warning.
+  warning. A column that does not exist, or a label that no sample
+  carries, is an error.
 
 - count_threshold:
 
