@@ -4,6 +4,18 @@
 
 ### Bug fixes
 
+- [`tage_adjust_covariates()`](https://gladyshev-lab.github.io/tAge/reference/tage_adjust_covariates.md)
+  gains `group_column`. With it, the covariate effects removed are those
+  of the model the statistics fit (`value ~ group + covariates`, one
+  model per stratum, `lm` or the weighted meta-regression), so the
+  difference between group means of the adjusted values is the tested
+  estimate. The covariate-only model, still the default, attributes part
+  of the group effect to covariates that are unevenly distributed across
+  groups (tested KO - WT 1.22, plotted 0.91 in an unbalanced example).
+  [`tage_boxplot()`](https://gladyshev-lab.github.io/tAge/reference/tage_boxplot.md)
+  passes its groups, so its covariate-adjusted points now show what its
+  brackets test.
+
 - [`aggregate_pseudobulk()`](https://gladyshev-lab.github.io/tAge/reference/aggregate_pseudobulk.md)
   adds cells until a pseudobulk sample reaches `coverage_threshold` and
   then starts the next one, as
