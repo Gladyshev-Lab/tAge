@@ -96,8 +96,12 @@ tage_clock_forest(
 
 - units:
 
-  Named character vector overriding the x-axis unit per outcome, e.g.
-  `c(Chronological = "years")` for human data.
+  Named character vector of x-axis units, keyed by prediction column or
+  by outcome (e.g. `c(Chronological = "years")`). By default the unit of
+  each column comes from the `"tage_units"` attribute
+  [`predict_tAge`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge.md)
+  sets on `data`; without either, a chronological axis reads "age
+  units".
 
 - title, subtitle, caption:
 

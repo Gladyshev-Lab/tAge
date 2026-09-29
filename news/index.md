@@ -54,6 +54,17 @@
 
 ### Bug fixes
 
+- [`tage_clock_forest()`](https://gladyshev-lab.github.io/tAge/reference/tage_clock_forest.md)
+  labels each axis with the unit of its clocks: from `units` keyed by
+  prediction column, else from the `"tage_units"` attribute
+  [`predict_tAge()`](https://gladyshev-lab.github.io/tAge/reference/predict_tAge.md)
+  sets (years for primates, percent with `normalized_age = "percent"`),
+  else from `units` keyed by outcome. `units` used to be ignored – the
+  defaults came first in the lookup, so
+  `units = c(Chronological = "years")` still printed “months” – and
+  every chronological axis read “months”, human data included. Without
+  any unit information a chronological axis now reads “age units”.
+
 - [`tage_adjust_covariates()`](https://gladyshev-lab.github.io/tAge/reference/tage_adjust_covariates.md)
   gains `group_column`. With it, the covariate effects removed are those
   of the model the statistics fit (`value ~ group + covariates`, one

@@ -142,8 +142,11 @@ display label and the outcome.</p></dd>
 
 
 <dt id="arg-units">units<a class="anchor" aria-label="anchor" href="#arg-units"></a></dt>
-<dd><p>Named character vector overriding the x-axis unit per outcome,
-e.g. <code>c(Chronological = "years")</code> for human data.</p></dd>
+<dd><p>Named character vector of x-axis units, keyed by prediction
+column or by outcome (e.g. <code>c(Chronological = "years")</code>). By default
+the unit of each column comes from the <code>"tage_units"</code> attribute
+<code><a href="predict_tAge.html">predict_tAge</a></code> sets on <code>data</code>; without either, a
+chronological axis reads "age units".</p></dd>
 
 
 <dt id="arg-title-subtitle-caption">title, subtitle, caption<a class="anchor" aria-label="anchor" href="#arg-title-subtitle-caption"></a></dt>
