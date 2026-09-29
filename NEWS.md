@@ -1,19 +1,4 @@
-# tAge (development version)
-
-## New features
-
-* `predict_tAge()` takes the clock table from `list_clocks()` /
-  `list_module_clocks()` with a `path` column (e.g. from `download_clocks()`):
-  every row is applied to the representation its `scaling` names and gets a
-  column named after the model file, the names the Python package uses. A
-  named list of paths still works; with several paths per representation it
-  used to fail with "'length = 3' in coercion to 'logical(1)'" and now names
-  its columns by model file, while one path per representation keeps the
-  `<representation>_<mode>_tAge` names. `mode` and `return_std` default to
-  `NULL`: each model's type comes from the table, the registry or its file
-  name, and Bayesian ridge clocks keep their `_sd` column. `tAge_by_group()`
-  follows. `predict_tAge_one()` refuses more than one path with a clear
-  message.
+# tAge 1.5.0
 
 ## Breaking changes
 
@@ -36,6 +21,43 @@
   contraction in the other -- so multispecies and human module clocks were
   labelled with rodent functions whenever the argument was left out.
   `module_functions = character(0)` labels the rows by module name only.
+
+## Clock registry
+
+* The registry is the Zenodo record 22166800: the 60 composite clocks and,
+  new, the published module clocks. `list_module_clocks()` lists the 78
+  elastic net module clocks of the rodent and multispecies sets (one per
+  co-expression module plus `allmodulegenes`, chronological and mortality,
+  Scaled normalisation) with their annotated function and the archive each
+  set is published as. `download_clocks()` accepts its output: the archive is
+  downloaded once, unpacked into `dest_dir`, and `path` points inside it.
+  Downloads are checked to be a pickle or a zip archive. Module clocks are
+  scaled like the composite clock of the same outcome.
+
+* Module sets are named `"rodent"`, `"multispecies"` and `"human"`:
+  `load_module_functions(module_set = )` and
+  `tage_module_heatmap(module_set = )` replace the `version` /
+  `modules_version` arguments. The bundled annotation files are
+  `Module_to_function_map_<set>.csv`.
+
+* Bundled data files renamed: `Gene_list_rodent_clocks.txt` (the gene list of
+  the rodent clocks, read by `load_gene_list()`) and
+  `metadata/Orthologs_monkey_to_mouse.csv`.
+
+## New features
+
+* `predict_tAge()` takes the clock table from `list_clocks()` /
+  `list_module_clocks()` with a `path` column (e.g. from `download_clocks()`):
+  every row is applied to the representation its `scaling` names and gets a
+  column named after the model file, the names the Python package uses. A
+  named list of paths still works; with several paths per representation it
+  used to fail with "'length = 3' in coercion to 'logical(1)'" and now names
+  its columns by model file, while one path per representation keeps the
+  `<representation>_<mode>_tAge` names. `mode` and `return_std` default to
+  `NULL`: each model's type comes from the table, the registry or its file
+  name, and Bayesian ridge clocks keep their `_sd` column. `tAge_by_group()`
+  follows. `predict_tAge_one()` refuses more than one path with a clear
+  message.
 
 ## Bug fixes
 
@@ -87,30 +109,6 @@
   skipping the stratum on `lm()`'s "contrasts can be applied only to factors
   with 2 or more levels". The Python package already fitted these strata; the
   two now agree.
-
-# tAge 1.5.0
-
-## Clock registry
-
-* The registry is the Zenodo record 22166800: the 60 composite clocks and,
-  new, the published module clocks. `list_module_clocks()` lists the 78
-  elastic net module clocks of the rodent and multispecies sets (one per
-  co-expression module plus `allmodulegenes`, chronological and mortality,
-  Scaled normalisation) with their annotated function and the archive each
-  set is published as. `download_clocks()` accepts its output: the archive is
-  downloaded once, unpacked into `dest_dir`, and `path` points inside it.
-  Downloads are checked to be a pickle or a zip archive. Module clocks are
-  scaled like the composite clock of the same outcome.
-
-* Module sets are named `"rodent"`, `"multispecies"` and `"human"`:
-  `load_module_functions(module_set = )` and
-  `tage_module_heatmap(module_set = )` replace the `version` /
-  `modules_version` arguments. The bundled annotation files are
-  `Module_to_function_map_<set>.csv`.
-
-* Bundled data files renamed: `Gene_list_rodent_clocks.txt` (the gene list of
-  the rodent clocks, read by `load_gene_list()`) and
-  `metadata/Orthologs_monkey_to_mouse.csv`.
 
 # tAge 1.4.0
 
