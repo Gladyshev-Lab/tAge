@@ -18,6 +18,7 @@ aggregate_on_obs_columns(
   shuffle = FALSE,
   seed = NULL,
   new_sample_prefix = "",
+  drop_incomplete = FALSE,
   verbose = TRUE
 )
 ```
@@ -60,6 +61,11 @@ aggregate_on_obs_columns(
 - new_sample_prefix:
 
   Character string prefix for pseudobulk sample names. Default is "".
+
+- drop_incomplete:
+
+  Logical. Within each group, drop the last pseudobulk sample when its
+  leftover cells do not reach `coverage_threshold`. Default FALSE.
 
 - verbose:
 

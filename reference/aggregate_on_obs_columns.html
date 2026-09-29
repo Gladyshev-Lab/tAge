@@ -61,6 +61,7 @@ biological variables such as sample, cell type, tissue, or condition.</p>
 <span>  shuffle <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  seed <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  new_sample_prefix <span class="op">=</span> <span class="st">""</span>,</span>
+<span>  drop_incomplete <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -105,6 +106,12 @@ aggregation within each group. Default is FALSE.</p></dd>
 <dt id="arg-new-sample-prefix">new_sample_prefix<a class="anchor" aria-label="anchor" href="#arg-new-sample-prefix"></a></dt>
 <dd><p>Character string prefix for pseudobulk sample names.
 Default is "".</p></dd>
+
+
+<dt id="arg-drop-incomplete">drop_incomplete<a class="anchor" aria-label="anchor" href="#arg-drop-incomplete"></a></dt>
+<dd><p>Logical. Within each group, drop the last pseudobulk
+sample when its leftover cells do not reach <code>coverage_threshold</code>.
+Default FALSE.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>

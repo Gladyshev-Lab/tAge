@@ -2,10 +2,12 @@
 
 This function aggregates single-cell RNA-seq data into pseudobulk
 samples by sequentially accumulating cells until a cumulative read
-coverage threshold is reached. Each pseudobulk sample is guaranteed to
-contain at least the specified number of total reads, ensuring
-sufficient sequencing depth for downstream transcriptomic age
-prediction.
+coverage threshold is reached; the next cell starts a new sample. Every
+pseudobulk sample holds at least `coverage_threshold` reads, except the
+last one, made of the cells left over, which is dropped with
+`drop_incomplete = TRUE`. The rule is the one of
+[`aggregate_on_obs_columns`](https://gladyshev-lab.github.io/tAge/reference/aggregate_on_obs_columns.md)
+and of the Python package's `tage.pp.aggregate`.
 
 ## Usage
 
@@ -18,6 +20,7 @@ aggregate_pseudobulk(
   shuffle = FALSE,
   seed = NULL,
   new_sample_prefix = "",
+  drop_incomplete = FALSE,
   verbose = TRUE
 )
 ```
@@ -55,6 +58,11 @@ aggregate_pseudobulk(
 - new_sample_prefix:
 
   Character string prefix for pseudobulk sample names. Default is "".
+
+- drop_incomplete:
+
+  Logical. Drop the last pseudobulk sample when its leftover cells do
+  not reach `coverage_threshold`. Default FALSE.
 
 - verbose:
 
