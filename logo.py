@@ -111,7 +111,10 @@ class SvgCanvas:
         outlines render identically everywhere.
 
         Pen positions come from Pillow's getlength(), which applies the font's
-        kerning; stepping through raw advance widths would not.
+        kerning; stepping through raw advance widths would not. A kern pair
+        moves the second glyph, so each glyph's origin is the kerned length up
+        to and including it, minus its own advance (getlength of the prefix
+        alone would leave the kerned glyph in place and shift its neighbour).
         """
         tt = TTFont(font.path, fontNumber=getattr(font, 'index', 0))
         upem = tt['head'].unitsPerEm
@@ -131,7 +134,7 @@ class SvgCanvas:
             commands = pen.getCommands()
             if not commands:          # spaces and other blank glyphs
                 continue
-            x = xy[0] + font.getlength(string[:i])
+            x = xy[0] + font.getlength(string[:i + 1]) - font.getlength(char)
             self.parts.append(
                 f'<path d="{commands}" fill="{colour}"{opacity} '
                 f'transform="translate({x:.2f} {baseline:.2f}) '
